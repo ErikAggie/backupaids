@@ -1,0 +1,93 @@
+package peterson.ttu.edu.backupaids;
+
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageButton;
+
+import java.io.IOException;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
+    private SoundPassthrough soundPassthrough;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Request audio recording permission
+        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
+
+        setContentView(R.layout.activity_main);
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        boolean permissionToRecordAccepted = false;
+        switch (requestCode){
+            case REQUEST_RECORD_AUDIO_PERMISSION:
+                permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                break;
+        }
+        if (!permissionToRecordAccepted ) {
+            finish();
+            return;
+        }
+
+        // Getting here means permission is granted!
+        setUpAudioRecordingAndPlayback();
+    }
+
+
+    private void setUpAudioRecordingAndPlayback()
+    {
+        soundPassthrough = new SoundPassthrough();
+        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+    }
+
+    public void playSound(View view) {
+        ImageButton playButton = findViewById(R.id.playSound);
+        if ( !soundPassthrough.isPlaying())
+        {
+            // Start playing!
+            try
+            {
+                soundPassthrough.start();
+            }
+            catch(IOException e)
+            {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Error initializing app");
+                builder.setMessage("Unable to set up audio recording/playback.");
+                builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                });
+                builder.create().show();
+            }
+            playButton.setImageResource(R.drawable.power_button_red2);
+
+        }
+        else
+        {
+            soundPassthrough.stop();
+            playButton.setImageResource(R.drawable.power_button_blue2);
+        }
+    }
+
+}
