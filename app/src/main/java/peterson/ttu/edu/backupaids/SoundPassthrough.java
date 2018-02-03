@@ -52,6 +52,11 @@ public class SoundPassthrough {
 
     public void start() throws IOException
     {
+        if ( playing)
+        {
+            return;
+        }
+        playing = true;
         final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
@@ -80,7 +85,6 @@ public class SoundPassthrough {
         // Set up the audio effects
         applyEffects(audioTrack.getAudioSessionId());
 
-        playing = true;
         new Thread(new Runnable() {
             @Override
             public void run()
@@ -115,15 +119,31 @@ public class SoundPassthrough {
      */
     private void applyEffects(int audioSessionID)
     {
-        Equalizer equalizer = new Equalizer(1, audioSessionID);
-        int numberOfBands = equalizer.getNumberOfBands();
-        Log.i(TAG, "Number of bands: " + equalizer.getNumberOfBands());
-        for ( int i=0; i<numberOfBands; i++)
-        {
-            Log.i(TAG, "   Band " + (i+1) + ": " + equalizer.getCenterFreq((short)i));
-        }
+        final Equalizer equalizer = new Equalizer(1, audioSessionID);
         equalizer.setEnabled(true);
 
+        new Thread(new Runnable() {
+            public void run(){
+                int numberOfBands = equalizer.getNumberOfBands();
+                short[] values = {-1500, 0, 1500};
+                try {
+                    int i=0;
+                    while ( playing)
+                    {
+                        i++;
+                        for ( short band=0; band<numberOfBands; band++)
+                        {
+                            equalizer.setBandLevel(band, values[i%values.length]);
+                        }
+                        Thread.sleep(5000);
+                    }
+
+                } catch ( InterruptedException e) {
+
+                }
+
+            }
+        }).start();
     }
 
     public void stop()
