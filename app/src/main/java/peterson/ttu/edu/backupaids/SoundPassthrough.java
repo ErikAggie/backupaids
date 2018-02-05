@@ -122,7 +122,7 @@ public class SoundPassthrough {
         final Equalizer equalizer = new Equalizer(1, audioSessionID);
         equalizer.setEnabled(true);
 
-        new Thread(new Runnable() {
+        /*new Thread(new Runnable() {
             public void run(){
                 int numberOfBands = equalizer.getNumberOfBands();
                 short[] values = {-1500, 0, 1500};
@@ -143,7 +143,7 @@ public class SoundPassthrough {
                 }
 
             }
-        }).start();
+        }).start();*/
     }
 
     public void stop()

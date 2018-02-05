@@ -8,8 +8,8 @@
 
     <ImageButton
         android:id="@+id/playSound"
-        android:layout_width="379dp"
-        android:layout_height="442dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:adjustViewBounds="false"
         android:background="@android:color/background_light"
         android:onClick="playSound"
