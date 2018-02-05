@@ -18,10 +18,11 @@
         android:id="@+id/playSounds"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="8dp"
         android:background="@android:color/background_light"
+        android:onClick="startStopPlaying"
         android:scaleType="fitCenter"
         android:src="@drawable/power_button_blue2"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintBottom_toTopOf="@+id/volumeUp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintHeight_default="wrap"
@@ -30,9 +31,27 @@
         app:layout_constraintTop_toBottomOf="@+id/stepInfo"
         app:layout_constraintWidth_default="wrap" />
 
+    <TextView
+        android:id="@+id/volumeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Volume:"
+        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintTop_toTopOf="@+id/nextStep"
+        app:layout_constraintRight_toLeftOf="@+id/volumeText"/>
+
+    <TextView
+        android:id="@+id/volumeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintTop_toTopOf="@+id/nextStep"
+        app:layout_constraintRight_toLeftOf="@+id/volumeUp"/>
+
     <ImageButton
         android:id="@+id/volumeUp"
         android:layout_width="0dp"
+        android:layout_height="0dp"
         android:scaleType="fitCenter"
         android:src="@android:drawable/arrow_up_float"
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
@@ -55,7 +74,7 @@
         android:id="@+id/nextStep"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Next Step ->"
+        android:text="Next Step >"
         app:layout_constraintTop_toBottomOf="@+id/playSounds"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toLeftOf="parent" />

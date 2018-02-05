@@ -6,6 +6,45 @@
     android:layout_height="match_parent"
     tools:context="peterson.ttu.edu.backupaids.MainActivity">
 
+    <TextView
+        android:id="@+id/presetLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Preset:"
+        app:layout_constraintTop_toTopOf="@id/adjustPresetButton"
+        app:layout_constraintBottom_toBottomOf="@+id/adjustPresetButton"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/presetSpinner"/>
+
+    <Spinner
+        android:id="@+id/presetSpinner"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintTop_toTopOf="@id/adjustPresetButton"
+        app:layout_constraintBottom_toBottomOf="@+id/adjustPresetButton"
+        app:layout_constraintLeft_toRightOf="@id/presetLabel"
+        app:layout_constraintRight_toLeftOf="@id/adjustPresetButton"/>
+
+    <Button
+        android:id="@+id/adjustPresetButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Edit Preset"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/presetSpinner"
+        app:layout_constraintRight_toLeftOf="@id/newPresetButton"/>
+
+    <Button
+        android:id="@+id/newPresetButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="newPreset"
+        android:text="New Preset"
+        app:layout_constraintLeft_toRightOf="@id/adjustPresetButton"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/adjustPresetButton" />
+
     <ImageButton
         android:id="@+id/playSound"
         android:layout_width="0dp"
@@ -16,12 +55,10 @@
         android:scaleType="fitCenter"
         android:src="@drawable/power_button_blue2"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/presetSpinner"
         app:layout_constraintVertical_bias="0.492" />
 
 </android.support.constraint.ConstraintLayout>
