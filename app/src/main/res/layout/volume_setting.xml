@@ -11,19 +11,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/playSounds"
+        app:layout_constraintBottom_toTopOf="@+id/volumeTestPlaySounds"
         android:text="Step 1: Press the button to play some sounds. Change the volume of your phone until you can hear at least some sound comfortably." />
 
     <ImageButton
-        android:id="@+id/playSounds"
+        android:id="@+id/volumeTestPlaySounds"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@android:color/background_light"
-        android:onClick="startStopPlaying"
         android:scaleType="fitCenter"
         android:src="@drawable/power_button_blue2"
         app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintBottom_toTopOf="@+id/volumeUp"
+        app:layout_constraintBottom_toTopOf="@+id/volumeSettingsVolumeUp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintHeight_default="wrap"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -46,21 +45,21 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintTop_toTopOf="@+id/nextStep"
-        app:layout_constraintRight_toLeftOf="@+id/volumeUp"/>
+        app:layout_constraintRight_toLeftOf="@+id/volumeSettingsVolumeUp"/>
 
     <ImageButton
-        android:id="@+id/volumeUp"
+        android:id="@+id/volumeSettingsVolumeUp"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="fitCenter"
         android:src="@android:drawable/arrow_up_float"
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintDimensionRatio="h,1:1"
-        app:layout_constraintRight_toLeftOf="@id/volumeDown"
+        app:layout_constraintRight_toLeftOf="@id/volumeSettingsVolumeDown"
         app:layout_constraintTop_toTopOf="@+id/nextStep" />
 
     <ImageButton
-        android:id="@+id/volumeDown"
+        android:id="@+id/volumeSettingsVolumeDown"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="fitCenter"
@@ -75,7 +74,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Next Step >"
-        app:layout_constraintTop_toBottomOf="@+id/playSounds"
+        app:layout_constraintTop_toBottomOf="@+id/volumeTestPlaySounds"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toLeftOf="parent" />
 

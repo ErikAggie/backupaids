@@ -29,4 +29,12 @@ public class AudioSettingObserver extends ContentObserver {
         mVolumeChangeListener.volumeChanged();
 
     }
+
+    /**
+     * Listener to a volume change event
+     */
+    public interface IListenToVolumeChange {
+        void volumeChanged();
+    }
+
 }
