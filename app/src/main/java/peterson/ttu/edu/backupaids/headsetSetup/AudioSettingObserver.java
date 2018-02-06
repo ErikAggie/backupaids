@@ -1,8 +1,6 @@
 package peterson.ttu.edu.backupaids.headsetSetup;
 
-import android.content.Context;
 import android.database.ContentObserver;
-import android.media.AudioManager;
 import android.os.Handler;
 
 /**

@@ -12,10 +12,11 @@ import android.util.Log;
 import java.io.IOException;
 
 /**
- * Created by erika on 1/30/2018.
+ * Plays sounds from the phone's microphones into the headset
+ * Created by Erik Peterson on 1/30/2018.
  */
 
-public class SoundPassthrough {
+class SoundPassthrough {
     private static final String TAG = "SoundPassthrough";
 
     private static final int SAMPLE_RATE = 44100;

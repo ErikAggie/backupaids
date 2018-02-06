@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment">
 
     <TextView
@@ -27,7 +26,7 @@
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintRight_toLeftOf="@id/frequencyAdjustDown"
-        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+        app:layout_constraintTop_toTopOf="@+id/frequencyAdjustNextStep" />
 
     <ImageButton
         android:id="@+id/frequencyAdjustDown"
@@ -38,7 +37,7 @@
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintRight_toLeftOf="@id/nextStep"
-        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+        app:layout_constraintTop_toTopOf="@+id/frequencyAdjustNextStep" />
 
     <Button
         android:id="@+id/frequencyAdjustNextStep"
