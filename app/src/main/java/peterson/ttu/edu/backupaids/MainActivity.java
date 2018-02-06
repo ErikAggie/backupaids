@@ -102,7 +102,8 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        VolumeSetFragment volumeSetFragment = new VolumeSetFragment();
+        // TODO: get this from the current preset (if any)
+        VolumeSetFragment volumeSetFragment = VolumeSetFragment.newInstance(-1);
         fragmentTransaction.add(volumeSetFragment, VOLUME_SET_FRAGMENT_TAG);
         fragmentTransaction.commit();
     }

@@ -1,0 +1,53 @@
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context="peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment">
+
+    <TextView
+        android:id="@+id/frequencyAdjustTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Adjust Frequency: "
+        android:gravity="right"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        style="@style/TextAppearance.AppCompat.Headline" />
+
+
+    <ImageButton
+        android:id="@+id/frequencyAdjustUp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/arrow_up_float"
+        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintDimensionRatio="h,1:1"
+        app:layout_constraintRight_toLeftOf="@id/frequencyAdjustDown"
+        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+
+    <ImageButton
+        android:id="@+id/frequencyAdjustDown"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/arrow_down_float"
+        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintDimensionRatio="h,1:1"
+        app:layout_constraintRight_toLeftOf="@id/nextStep"
+        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+
+    <Button
+        android:id="@+id/frequencyAdjustNextStep"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next Step >"
+        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustTitle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toLeftOf="parent" />
+
+
+</android.support.constraint.ConstraintLayout>

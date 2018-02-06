@@ -30,9 +30,9 @@ import static android.content.Context.AUDIO_SERVICE;
  * create an instance of this fragment.
  */
 public class VolumeSetFragment extends DialogFragment implements View.OnClickListener{
-    private static final String ARG_PRESET_NAME = "presetName";
+    private static final String ARG_INITIAL_VOLUME = "initialVolume";
 
-    private String mPresetName;
+    private int mVolumeLevel;
     private boolean mPlaying = false;
     private AudioSettingObserver mVolumeObserver;
 
@@ -50,13 +50,13 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param presetName The name of the preference (if it's being modified; null/empty otherwise
+     * @param volumeSetting The initial volume; <0 means to use the current headset volume
      * @return A new instance of fragment VolumeSetFragment.
      */
-    public static VolumeSetFragment newInstance(String presetName) {
+    public static VolumeSetFragment newInstance(int volumeSetting) {
         VolumeSetFragment fragment = new VolumeSetFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PRESET_NAME, presetName);
+        args.putInt(ARG_INITIAL_VOLUME, volumeSetting);
         fragment.setArguments(args);
         return fragment;
     }
@@ -65,7 +65,7 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mPresetName = getArguments().getString(ARG_PRESET_NAME);
+            mVolumeLevel = getArguments().getInt(ARG_INITIAL_VOLUME);
         }
         setupSounds();
     }
@@ -120,7 +120,7 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         //mPercentageTextView = (TextView) getView().findViewById(R.id.volumeText);
-        updateVolumePercentage();
+        updateVolumePercentage(true);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
         mVolumeObserver = new AudioSettingObserver(new Handler(), new AudioSettingObserver.IListenToVolumeChange() {
             @Override
             public void volumeChanged() {
-                updateVolumePercentage();
+                updateVolumePercentage(false);
             }
         });
         getContext().getApplicationContext().getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, mVolumeObserver);
@@ -145,12 +145,21 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     /**
      * Update the volume (percentage)
      */
-    private void updateVolumePercentage()
+    private void updateVolumePercentage(boolean reset)
     {
         AudioManager audio = (AudioManager) this.getContext().getSystemService(AUDIO_SERVICE);
-        double currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+
+        // If this is a "reset" (i.e. this fragment was just created AND we have a valid
+        // volume level) force that; otherwise grab the current volume
+        if ( reset && mVolumeLevel >= 0) {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, mVolumeLevel, 0);
+        } else {
+            mVolumeLevel = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        }
+
+        // Put into a double to force floating-point division below
         double maxVolume = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int percentage = (int)(currentVolume / maxVolume * 100);
+        int percentage = (int)(mVolumeLevel / maxVolume * 100);
         TextView volumeText = getView().findViewById(R.id.volumeText);
         volumeText.setText(percentage + "%");
     }
@@ -244,6 +253,10 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
         /*if ( mPlaying) {
             startPlaying();
         }*/
+    }
+
+    public int getVolumeLevel() {
+        return mVolumeLevel;
     }
 
     /**
