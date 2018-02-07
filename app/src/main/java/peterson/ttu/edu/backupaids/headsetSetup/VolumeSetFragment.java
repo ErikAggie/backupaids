@@ -137,6 +137,11 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
             @Override
             public void volumeChanged() {
                 updateVolumePercentage(false);
+                if ( mPlaying)
+                {
+                    // Sound gets killed when the volume changes, so restart it.
+                    startPlaying();
+                }
             }
         });
         getContext().getApplicationContext().getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, mVolumeObserver);
@@ -240,19 +245,11 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     private void volumeUp() {
         AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
-        // Adjusting the volume kills our sound...so restart it
-        /*if ( mPlaying) {
-            startPlaying();
-        }*/
     }
 
     private void volumeDown() {
         AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, 0);
-        // Adjusting the volume kills our sound...so restart it
-        /*if ( mPlaying) {
-            startPlaying();
-        }*/
     }
 
     public int getVolumeLevel() {

@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
             try
             {
                 soundPassthrough.start();
+                playButton.setImageResource(R.drawable.power_button_green2);
             }
             catch(IOException e)
             {
@@ -87,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
                 });
                 builder.create().show();
             }
-            playButton.setImageResource(R.drawable.power_button_red2);
 
         }
         else
