@@ -119,7 +119,6 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        //mPercentageTextView = (TextView) getView().findViewById(R.id.volumeText);
         updateVolumePercentage(true);
     }
 
@@ -174,8 +173,7 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
         super.onDetach();
         mListener = null;
 
-        if ( mVolumeObserver != null)
-        {
+        if ( mVolumeObserver != null) {
             getContext().getApplicationContext().getContentResolver().unregisterContentObserver(mVolumeObserver);
             mVolumeObserver = null;
         }
@@ -185,9 +183,6 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     public void onDestroyView() {
         super.onDestroyView();
         mSoundPool.release();
-    }
-
-    public void startStopPlaying(View view) {
     }
 
     @Override
