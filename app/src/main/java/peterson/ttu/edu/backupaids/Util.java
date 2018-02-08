@@ -3,10 +3,13 @@ package peterson.ttu.edu.backupaids;
 import java.util.HashMap;
 
 /**
- * Created by erika on 2/8/2018.
+ * Stuff that should probably be in a resource someday...
  */
 
 public class Util {
+
+
+    public static final int SAMPLE_RATE = 44100;
 
     public static final int[] TEST_FREQUENCIES = {125, 250, 500, 1000, 2000, 4000, 8000};
 

@@ -19,25 +19,23 @@ import java.io.IOException;
 class SoundPassthrough {
     private static final String TAG = "SoundPassthrough";
 
-    private static final int SAMPLE_RATE = 44100;
-
     private boolean playing = false;
     private int bufferSize;
 
 
     public SoundPassthrough()
     {
-        int inputMinBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
+        int inputMinBufferSize = AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
 
-        int outputMinBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
+        int outputMinBufferSize = AudioTrack.getMinBufferSize(Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_OUT_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
         if ( inputMinBufferSize <= 0 || outputMinBufferSize <= 0)
         {
             Log.e("Playback", "Buffer size not specified. In: " + inputMinBufferSize + ", Out: " + outputMinBufferSize);
-            bufferSize = SAMPLE_RATE * 2;
+            bufferSize = Util.SAMPLE_RATE * 2;
         }
         else
         {
@@ -59,7 +57,7 @@ class SoundPassthrough {
         }
         playing = true;
         final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                SAMPLE_RATE,
+                Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize);
@@ -72,7 +70,7 @@ class SoundPassthrough {
 
         final AudioTrack audioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                 .setBufferSizeInBytes(bufferSize)
                 .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 .setTransferMode(AudioTrack.MODE_STREAM)

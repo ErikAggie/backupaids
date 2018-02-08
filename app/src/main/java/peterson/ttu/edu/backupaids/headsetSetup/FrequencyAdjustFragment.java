@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -40,6 +41,8 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
     private static final String ARG_BAND_FREQUENCY = "argBandFrequency";
     private static final String ARG_BAND_ADJUSTMENT = "argBandAdjustment";
     private static final String TITLE_BASE = "Adjust Frequency: ";
+
+    private static final int AMOUNT_OF_SOUND_TO_READ = 100000;
 
     private int mBandFrequency;
     private short mBandAdjustment;
@@ -64,7 +67,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         FrequencyAdjustFragment fragment = new FrequencyAdjustFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_BAND_FREQUENCY, bandFrequency);
-        args.putInt(ARG_BAND_ADJUSTMENT, bandAdjustment);
+        args.putShort(ARG_BAND_ADJUSTMENT, bandAdjustment);
         fragment.setArguments(args);
         return fragment;
     }
@@ -132,8 +135,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             case R.id.frequencyAdjustPlaySounds:
                 if ( mAudioTrack == null) {
                     startPlaying();
+                    ((ImageButton)view).setImageResource(R.drawable.power_button_green2);
                 } else {
                     stopPlaying();
+                    ((ImageButton)view).setImageResource(R.drawable.power_button_blue2);
                 }
                 break;
             default:
@@ -147,11 +152,16 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack.release();
         }
 
+        int outputMinBufferSize = AudioTrack.getMinBufferSize(Util.SAMPLE_RATE,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT);
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setBufferSizeInBytes(AMOUNT_OF_SOUND_TO_READ)
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();
+
         InputStream inputStream = getResources().openRawResource(Util.FREQUENCY_SOUND_MAP.get(mBandFrequency));
         int amountRead = 0;
         int totalRead = 0;
@@ -160,7 +170,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         try {
             while ( (amountRead = inputStream.read(buffer, 0, bufferSize)) >= 0) {
                 totalRead += amountRead;
-                mAudioTrack.write(buffer, 0, amountRead);
+                mAudioTrack.write(buffer, 0, AMOUNT_OF_SOUND_TO_READ);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -175,10 +185,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         mAudioTrack.play();
 
         // Play this forever
-        mAudioTrack.setLoopPoints(0, amountRead, -1);
+        mAudioTrack.setLoopPoints(0, amountRead / 2, -1);
 
         mEqualizer = new Equalizer(1, mAudioTrack.getAudioSessionId());
-        short band = mEqualizer.getBand(mBandFrequency);
+        short band = mEqualizer.getBand(mBandFrequency*1000); // Millihertz to hertz
         mEqualizer.setBandLevel(band, mBandAdjustment);
         mEqualizer.setEnabled(true);
     }
