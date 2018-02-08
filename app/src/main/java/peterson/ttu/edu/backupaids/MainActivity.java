@@ -17,9 +17,10 @@ import android.widget.ImageButton;
 
 import java.io.IOException;
 
+import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
 import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
 
-public class MainActivity extends AppCompatActivity implements VolumeSetFragment.OnFragmentInteractionListener{
+public class MainActivity extends AppCompatActivity implements VolumeSetFragment.OnFragmentInteractionListener, FrequencyAdjustFragment.OnFragmentInteractionListener{
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String VOLUME_SET_FRAGMENT_TAG = "VolumeSetFragment";
@@ -102,8 +103,10 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
         // TODO: get this from the current preset (if any)
-        VolumeSetFragment volumeSetFragment = VolumeSetFragment.newInstance(-1);
-        fragmentTransaction.add(volumeSetFragment, VOLUME_SET_FRAGMENT_TAG);
+        //VolumeSetFragment volumeSetFragment = VolumeSetFragment.newInstance(-1);
+        //fragmentTransaction.add(volumeSetFragment, VOLUME_SET_FRAGMENT_TAG);
+        FrequencyAdjustFragment frequencyAdjust = FrequencyAdjustFragment.newInstance(Util.TEST_FREQUENCIES[4], (short)0);
+        fragmentTransaction.add(frequencyAdjust, Util.FREQUENCY_FRAGMENT_NAMES[4]);
         fragmentTransaction.commit();
     }
 

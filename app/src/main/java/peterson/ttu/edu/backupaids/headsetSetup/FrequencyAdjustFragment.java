@@ -1,7 +1,10 @@
 package peterson.ttu.edu.backupaids.headsetSetup;
 
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.SoundPool;
 import android.media.audiofx.Equalizer;
 import android.net.Uri;
@@ -15,9 +18,12 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.Util;
 
 import static android.content.Context.AUDIO_SERVICE;
 
@@ -36,24 +42,11 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
     private static final String TITLE_BASE = "Adjust Frequency: ";
 
     private int mBandFrequency;
-    private int mBandAdjustment;
+    private short mBandAdjustment;
 
     private OnFragmentInteractionListener mListener;
-    private SoundPool mSoundPool;
-    private int mSoundId;
-    private boolean mSoundsLoaded;
-
-    private static final HashMap<Integer, Integer> FREQUENCY_SOUND_MAP = new HashMap<>();
-
-    static {
-        FREQUENCY_SOUND_MAP.put(125, R.raw.hz125);
-        FREQUENCY_SOUND_MAP.put(250, R.raw.hz250);
-        FREQUENCY_SOUND_MAP.put(500, R.raw.hz500);
-        FREQUENCY_SOUND_MAP.put(1000, R.raw.hz1000);
-        FREQUENCY_SOUND_MAP.put(2000, R.raw.hz2000);
-        FREQUENCY_SOUND_MAP.put(4000, R.raw.hz4000);
-        FREQUENCY_SOUND_MAP.put(8000, R.raw.hz8000);
-    }
+    private AudioTrack mAudioTrack;
+    private Equalizer mEqualizer;
 
     public FrequencyAdjustFragment() {
         // Required empty public constructor
@@ -67,7 +60,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
      * @param bandAdjustment Initial adjustment (default is 0)
      * @return A new instance of fragment FrequencyAdjustFragment.
      */
-    public static FrequencyAdjustFragment newInstance(int bandFrequency, int bandAdjustment) {
+    public static FrequencyAdjustFragment newInstance(int bandFrequency, short bandAdjustment) {
         FrequencyAdjustFragment fragment = new FrequencyAdjustFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_BAND_FREQUENCY, bandFrequency);
@@ -81,24 +74,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mBandFrequency = getArguments().getInt(ARG_BAND_FREQUENCY);
-            mBandAdjustment = getArguments().getInt(ARG_BAND_ADJUSTMENT);
+            mBandAdjustment = getArguments().getShort(ARG_BAND_ADJUSTMENT);
         }
     }
 
-
-    private void setupSounds() {
-        mSoundPool = new SoundPool(8, AudioManager.STREAM_MUSIC, 0);
-        mSoundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
-            @Override
-            public void onLoadComplete(SoundPool soundPool, int sampleId,
-                                       int status) {
-                mSoundsLoaded = true;
-            }
-        });
-
-        Context context = this.getContext();
-        mSoundId = mSoundPool.load(context,  FREQUENCY_SOUND_MAP.get(mBandFrequency), 1);
-    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -149,54 +128,76 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
     @Override
     public void onClick(View view) {
-        // TODO: fill in!
+        switch ( view.getId()) {
+            case R.id.frequencyAdjustPlaySounds:
+                if ( mAudioTrack == null) {
+                    startPlaying();
+                } else {
+                    stopPlaying();
+                }
+                break;
+            default:
+        }
     }
 
     private void startPlaying() {
-        AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
-        float actualVolume = (float) audioManager
-                .getStreamVolume(AudioManager.STREAM_MUSIC);
-        float maxVolume = (float) audioManager
-                .getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        float volume = actualVolume / maxVolume;
-        // Is the sound loaded already?
-        if (mSoundsLoaded) {
-            mSoundPool.play(mSoundId, volume, volume, 1, 0, 1f);
+        if ( mAudioTrack != null)
+        {
+            mAudioTrack.stop();
+            mAudioTrack.release();
         }
 
-        final Equalizer equalizer = new Equalizer(1, audioManager.get);
-        equalizer.setEnabled(true);
+        mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build();
+        InputStream inputStream = getResources().openRawResource(Util.FREQUENCY_SOUND_MAP.get(mBandFrequency));
+        int amountRead = 0;
+        int totalRead = 0;
+        int bufferSize = 2048;
+        byte[] buffer = new byte[bufferSize];
+        try {
+            while ( (amountRead = inputStream.read(buffer, 0, bufferSize)) >= 0) {
+                totalRead += amountRead;
+                mAudioTrack.write(buffer, 0, amountRead);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        mAudioTrack.play();
+
+        // Play this forever
+        mAudioTrack.setLoopPoints(0, amountRead, -1);
+
+        mEqualizer = new Equalizer(1, mAudioTrack.getAudioSessionId());
+        short band = mEqualizer.getBand(mBandFrequency);
+        mEqualizer.setBandLevel(band, mBandAdjustment);
+        mEqualizer.setEnabled(true);
     }
 
     private void stopPlaying() {
-        if ( mSoundsLoaded) {
-            mSoundPool.stop(mSoundId);
+        if ( mAudioTrack != null) {
+            mAudioTrack.stop();
+            mAudioTrack.release();
+            mAudioTrack = null;
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mSoundPool.release();
-    }
-
-    private void playSounds() {
-        AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
-        float actualVolume = (float) audioManager
-                .getStreamVolume(AudioManager.STREAM_MUSIC);
-        float maxVolume = (float) audioManager
-                .getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        float volume = actualVolume / maxVolume;
-
-        // Is the sound loaded already?
-        if (mSoundsLoaded) {
-            for (int aSoundId : mSoundIds) {
-                mSoundPool.play(aSoundId, volume, volume, 1, 0, 1f);
-                Log.e("Test", "Played sound");
-            }
+        if ( mAudioTrack != null) {
+            mAudioTrack.stop();
+            mAudioTrack.release();
         }
-
-
     }
 
     /**
