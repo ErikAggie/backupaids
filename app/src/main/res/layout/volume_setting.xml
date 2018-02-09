@@ -31,20 +31,13 @@
         app:layout_constraintWidth_default="wrap" />
 
     <TextView
-        android:id="@+id/volumeLabel"
+        android:id="@+id/volumeLabelWithAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Volume:"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        android:text="@string/volume_with_value"
         app:layout_constraintTop_toTopOf="@+id/nextStep"
-        app:layout_constraintRight_toLeftOf="@+id/volumeText"/>
-
-    <TextView
-        android:id="@+id/volumeText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
-        app:layout_constraintTop_toTopOf="@+id/nextStep"
+        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/volumeSettingsVolumeUp"/>
 
     <ImageButton
@@ -55,6 +48,7 @@
         android:src="@android:drawable/arrow_up_float"
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintDimensionRatio="h,1:1"
+        app:layout_constraintLeft_toRightOf="@+id/volumeLabelWithAmount"
         app:layout_constraintRight_toLeftOf="@id/volumeSettingsVolumeDown"
         app:layout_constraintTop_toTopOf="@+id/nextStep" />
 
@@ -67,15 +61,17 @@
         app:layout_constraintBottom_toBottomOf="@id/nextStep"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintRight_toLeftOf="@id/nextStep"
+        app:layout_constraintLeft_toRightOf="@id/volumeSettingsVolumeUp"
         app:layout_constraintTop_toTopOf="@+id/nextStep" />
 
     <Button
         android:id="@+id/nextStep"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Next Step >"
+        android:text="@string/next_step_for_button"
         app:layout_constraintTop_toBottomOf="@+id/volumeTestPlaySounds"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toLeftOf="parent" />
+        app:layout_constraintLeft_toRightOf="@id/volumeSettingsVolumeDown"
+        app:layout_constraintRight_toRightOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

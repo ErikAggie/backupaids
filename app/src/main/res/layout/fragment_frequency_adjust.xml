@@ -9,13 +9,23 @@
         android:id="@+id/frequencyAdjustTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Adjust Frequency: "
+        android:text="@string/adjust_frequency"
         android:gravity="center"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/frequencyAdjustPlaySounds"
+        app:layout_constraintBottom_toTopOf="@+id/frequencyAdjustInfoText"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         style="@style/TextAppearance.AppCompat.Headline" />
+
+    <TextView
+        android:id="@+id/frequencyAdjustInfoText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/frequency_adjust_instructions"
+        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustTitle"
+        app:layout_constraintBottom_toTopOf="@+id/frequencyAdjustPlaySounds"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
 
     <ImageButton
         android:id="@+id/frequencyAdjustPlaySounds"
@@ -25,7 +35,7 @@
         android:scaleType="fitCenter"
         android:src="@drawable/power_button_blue2"
         app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustTitle"
+        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustInfoText"
         app:layout_constraintBottom_toTopOf="@+id/frequencyAdjustNextStep"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintHeight_default="wrap"
@@ -33,35 +43,27 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintWidth_default="wrap" />
 
-    <ImageButton
-        android:id="@+id/frequencyAdjustUp"
+    <SeekBar
+        android:id="@+id/frequencyAdjustSlider"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:scaleType="fitCenter"
-        android:src="@android:drawable/arrow_up_float"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
-        app:layout_constraintDimensionRatio="h,1:1"
-        app:layout_constraintRight_toLeftOf="@id/frequencyAdjustDown"
-        app:layout_constraintTop_toTopOf="@+id/frequencyAdjustNextStep" />
-
-    <ImageButton
-        android:id="@+id/frequencyAdjustDown"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:scaleType="fitCenter"
-        android:src="@android:drawable/arrow_down_float"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
-        app:layout_constraintDimensionRatio="h,1:1"
-        app:layout_constraintRight_toLeftOf="@id/nextStep"
-        app:layout_constraintTop_toTopOf="@+id/frequencyAdjustNextStep" />
+        android:layout_height="wrap_content"
+        android:min="0"
+        android:max="3000"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintBottom_toBottomOf="@+id/frequencyAdjustNextStep"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/frequencyAdjustNextStep"
+        app:layout_constraintTop_toTopOf="@id/frequencyAdjustNextStep"
+        app:layout_constraintVertical_bias="0.533" />
 
     <Button
         android:id="@+id/frequencyAdjustNextStep"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Next Step >"
-        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustTitle"
+        android:text="@string/next_step_for_button"
+        app:layout_constraintTop_toBottomOf="@+id/frequencyAdjustPlaySounds"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toLeftOf="parent" />
+        app:layout_constraintLeft_toRightOf="@+id/frequencyAdjustSlider"
+        app:layout_constraintRight_toRightOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

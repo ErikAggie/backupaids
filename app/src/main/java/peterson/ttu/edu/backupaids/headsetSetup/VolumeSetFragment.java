@@ -164,8 +164,9 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
         // Put into a double to force floating-point division below
         double maxVolume = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         int percentage = (int)(mVolumeLevel / maxVolume * 100);
-        TextView volumeText = getView().findViewById(R.id.volumeText);
-        volumeText.setText(percentage + "%");
+        String volumeInfo = getString(R.string.volume_with_value, percentage);
+        TextView volumeText = getView().findViewById(R.id.volumeLabelWithAmount);
+        volumeText.setText(volumeInfo);
     }
 
     @Override

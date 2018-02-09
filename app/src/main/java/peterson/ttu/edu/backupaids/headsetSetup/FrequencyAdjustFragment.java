@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
@@ -20,8 +21,6 @@ import java.io.IOException;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
-
-import static android.content.Context.AUDIO_SERVICE;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -31,13 +30,11 @@ import static android.content.Context.AUDIO_SERVICE;
  * Use the {@link FrequencyAdjustFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class FrequencyAdjustFragment extends DialogFragment implements View.OnClickListener {
+public class FrequencyAdjustFragment extends DialogFragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_BAND_FREQUENCY = "argBandFrequency";
     private static final String ARG_BAND_ADJUSTMENT = "argBandAdjustment";
     private static final String TITLE_BASE = "Adjust Frequency: ";
-
-    private static final int AMOUNT_OF_SOUND_TO_READ = 100000;
 
     private int mBandFrequency;
     private short mBandAdjustment;
@@ -82,22 +79,26 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         // Inflate the layout for this fragment
         View fragmentView = inflater.inflate(R.layout.fragment_frequency_adjust, container, false);
 
-        updateTitleText(((TextView)fragmentView.findViewById(R.id.frequencyAdjustTitle)));
+        String frequencyAdjustTitle;
+
+        if ( mBandFrequency >= 1000) {
+            frequencyAdjustTitle = getString(R.string.adjust_frequency, mBandFrequency / 1000, "MHz");
+        } else {
+            frequencyAdjustTitle = getString(R.string.adjust_frequency, mBandFrequency, "Hz");
+        }
+        ((TextView)fragmentView.findViewById(R.id.frequencyAdjustTitle)).setText(frequencyAdjustTitle);
 
 
         // Set up our button's onClickEvents (why can't they target this automatically???
         ImageButton playSoundsButton = fragmentView.findViewById(R.id.frequencyAdjustPlaySounds);
         playSoundsButton.setOnClickListener(this);
-        ImageButton adjustDownButton = fragmentView.findViewById(R.id.frequencyAdjustDown);
-        adjustDownButton.setOnClickListener(this);
-        ImageButton adjustUpButton = fragmentView.findViewById(R.id.frequencyAdjustUp);
-        adjustUpButton.setOnClickListener(this);
+
+        SeekBar adjustmentBar = fragmentView.findViewById(R.id.frequencyAdjustSlider);
+        // Band adjustment is -1500...1500, but SeekBar is 0...3000
+        adjustmentBar.setProgress(mBandAdjustment + 1500);
+        adjustmentBar.setOnSeekBarChangeListener(this);
 
         return fragmentView;
-    }
-
-    private void updateTitleText(TextView titleView) {
-        titleView.setText(TITLE_BASE + mBandFrequency + ": " + mBandAdjustment);
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -140,6 +141,22 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         }
     }
 
+    /**
+     * SeekBar has changed something
+     * @param seekBar
+     * @param i
+     * @param b
+     */
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+        // Convert SeekBar range (0..3000) to Equalizer range (-1500..1500)
+        mBandAdjustment = (short) (i-1500);
+        if ( mEqualizer != null) {
+            short band = mEqualizer.getBand(mBandFrequency * 1000);
+            mEqualizer.setBandLevel(band, mBandAdjustment);
+        }
+    }
+
     private void startPlaying() {
         if ( mAudioTrack != null)
         {
@@ -150,15 +167,12 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         byte[] tone = new byte[100000];
         try
         {
-            BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(Util.FREQUENCY_SOUND_MAP.get(mBandFrequency)));
+            BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(Util.FREQUENCIES_TO_SOUND_IDS.get(mBandFrequency)));
             inputStream.read(tone, 0, tone.length);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        int outputMinBufferSize = AudioTrack.getMinBufferSize(Util.SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
@@ -167,9 +181,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
                 .build();
 
         mAudioTrack.write(tone, 0, tone.length);
+        mAudioTrack.setPlaybackHeadPosition(100); // To avoid a click
 
         // Play this forever
-        mAudioTrack.setLoopPoints(0, tone.length / 2, -1);
+        mAudioTrack.setLoopPoints(100, tone.length / 2, -1);
         mAudioTrack.play();
 
         mEqualizer = new Equalizer(1, mAudioTrack.getAudioSessionId());
@@ -180,6 +195,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
     private void stopPlaying() {
         if ( mAudioTrack != null) {
+            if ( mEqualizer != null) {
+                mEqualizer.release();
+                mEqualizer = null;
+            }
             mAudioTrack.stop();
             mAudioTrack.release();
             mAudioTrack = null;
@@ -193,6 +212,17 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack.stop();
             mAudioTrack.release();
         }
+    }
+
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        // Don't care
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        // Don't care
     }
 
     /**

@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/BackupAids.iml" filepath="$PROJECT_DIR$/BackupAids.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backupaids.iml" filepath="$PROJECT_DIR$/backupaids.iml" />
     </modules>
   </component>
 </project>

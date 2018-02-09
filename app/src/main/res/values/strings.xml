@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">BackupAids</string>
+    <string name="adjust_frequency">Adjust Frequency: %1$d %2$s</string>
+    <string name="frequency_adjust_instructions">Play the tone, then use the buttons to adjust the tone until you hear it comfortably.</string>
+    <string name="next_step_for_button"><![CDATA[Next Step >]]></string>
+    <string name="volume_with_value">Volume: %1$d</string>
 
     <string-array name="HzOrKHz">
         <item>Hz</item>
