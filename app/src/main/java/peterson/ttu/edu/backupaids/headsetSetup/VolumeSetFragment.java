@@ -1,8 +1,10 @@
 package peterson.ttu.edu.backupaids.headsetSetup;
 
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.SoundPool;
+import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -10,14 +12,17 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.Util;
 
 import static android.content.Context.AUDIO_SERVICE;
 
@@ -36,9 +41,7 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     private boolean mPlaying = false;
     private AudioSettingObserver mVolumeObserver;
 
-    private SoundPool mSoundPool;
-    private int[] mSoundIds = new int[8];
-    private boolean mSoundsLoaded;
+    private AudioTrack mAudioTrack;
 
     private OnFragmentInteractionListener mListener;
 
@@ -67,29 +70,6 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
         if (getArguments() != null) {
             mVolumeLevel = getArguments().getInt(ARG_INITIAL_VOLUME);
         }
-        setupSounds();
-    }
-
-    private void setupSounds() {
-        mSoundPool = new SoundPool(8, AudioManager.STREAM_MUSIC, 0);
-        mSoundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
-            @Override
-            public void onLoadComplete(SoundPool soundPool, int sampleId,
-                                       int status) {
-                mSoundsLoaded = true;
-            }
-        });
-
-        Context context = this.getContext();
-
-        mSoundIds[0] = mSoundPool.load(context, R.raw.hz125, 1);
-        mSoundIds[1] = mSoundPool.load(context, R.raw.hz250, 1);
-        mSoundIds[2] = mSoundPool.load(context, R.raw.hz500, 1);
-        mSoundIds[3] = mSoundPool.load(context, R.raw.hz1000, 1);
-        mSoundIds[4] = mSoundPool.load(context, R.raw.hz2000, 1);
-        mSoundIds[5] = mSoundPool.load(context, R.raw.hz3000, 1);
-        mSoundIds[6] = mSoundPool.load(context, R.raw.hz4000, 1);
-        mSoundIds[7] = mSoundPool.load(context, R.raw.hz8000, 1);
     }
 
     @Override
@@ -136,11 +116,6 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
             @Override
             public void volumeChanged() {
                 updateVolumePercentage(false);
-                if ( mPlaying)
-                {
-                    // Sound gets killed when the volume changes, so restart it.
-                    startPlaying();
-                }
             }
         });
         getContext().getApplicationContext().getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, mVolumeObserver);
@@ -183,7 +158,11 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mSoundPool.release();
+        if ( mAudioTrack != null) {
+            mAudioTrack.stop();
+            mAudioTrack.release();
+            mAudioTrack = null;
+        }
     }
 
     @Override
@@ -214,26 +193,42 @@ public class VolumeSetFragment extends DialogFragment implements View.OnClickLis
     }
 
     private void startPlaying() {
-        AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
-        float actualVolume = (float) audioManager
-                .getStreamVolume(AudioManager.STREAM_MUSIC);
-        float maxVolume = (float) audioManager
-                .getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        float volume = actualVolume / maxVolume;
-        // Is the sound loaded already?
-        if (mSoundsLoaded) {
-            for (int aSoundId : mSoundIds) {
-                mSoundPool.play(aSoundId, volume, volume, 1, 0, 1f);
-                Log.e("Test", "Played sound");
-            }
+        if ( mAudioTrack != null)
+        {
+            mAudioTrack.stop();
+            mAudioTrack.release();
         }
+
+        byte[] tone = new byte[100000];
+        try
+        {
+            BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(R.raw.all_freqs));
+            inputStream.read(tone, 0, tone.length);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setBufferSizeInBytes(tone.length)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build();
+
+        mAudioTrack.write(tone, 0, tone.length);
+        mAudioTrack.setPlaybackHeadPosition(100); // To avoid a click
+
+        // Play this forever
+        mAudioTrack.setLoopPoints(100, tone.length / 2, -1);
+        mAudioTrack.play();
+
     }
 
     private void stopPlaying() {
-        if ( mSoundsLoaded) {
-            for ( int aSoundId : mSoundIds) {
-                mSoundPool.stop(aSoundId);
-            }
+        if ( mAudioTrack != null) {
+            mAudioTrack.stop();
+            mAudioTrack.release();
+            mAudioTrack = null;
         }
 
     }
