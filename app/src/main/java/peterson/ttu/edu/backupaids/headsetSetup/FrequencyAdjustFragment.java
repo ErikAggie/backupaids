@@ -3,25 +3,20 @@ package peterson.ttu.edu.backupaids.headsetSetup;
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.SoundPool;
 import android.media.audiofx.Equalizer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.v4.app.DialogFragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
@@ -152,40 +147,30 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack.release();
         }
 
+        byte[] tone = new byte[100000];
+        try
+        {
+            BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(Util.FREQUENCY_SOUND_MAP.get(mBandFrequency)));
+            inputStream.read(tone, 0, tone.length);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         int outputMinBufferSize = AudioTrack.getMinBufferSize(Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_OUT_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-                .setBufferSizeInBytes(AMOUNT_OF_SOUND_TO_READ)
+                .setBufferSizeInBytes(tone.length)
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();
 
-        InputStream inputStream = getResources().openRawResource(Util.FREQUENCY_SOUND_MAP.get(mBandFrequency));
-        int amountRead = 0;
-        int totalRead = 0;
-        int bufferSize = 2048;
-        byte[] buffer = new byte[bufferSize];
-        try {
-            while ( (amountRead = inputStream.read(buffer, 0, bufferSize)) >= 0) {
-                totalRead += amountRead;
-                mAudioTrack.write(buffer, 0, AMOUNT_OF_SOUND_TO_READ);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        mAudioTrack.play();
+        mAudioTrack.write(tone, 0, tone.length);
 
         // Play this forever
-        mAudioTrack.setLoopPoints(0, amountRead / 2, -1);
+        mAudioTrack.setLoopPoints(0, tone.length / 2, -1);
+        mAudioTrack.play();
 
         mEqualizer = new Equalizer(1, mAudioTrack.getAudioSessionId());
         short band = mEqualizer.getBand(mBandFrequency*1000); // Millihertz to hertz
