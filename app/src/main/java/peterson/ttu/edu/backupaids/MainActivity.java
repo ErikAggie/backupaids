@@ -3,6 +3,7 @@ package peterson.ttu.edu.backupaids;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -18,12 +19,12 @@ import android.widget.ImageButton;
 import java.io.IOException;
 
 import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
+import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
 
 public class MainActivity extends AppCompatActivity implements VolumeSetFragment.OnFragmentInteractionListener, FrequencyAdjustFragment.OnFragmentInteractionListener{
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
-    private static final String VOLUME_SET_FRAGMENT_TAG = "VolumeSetFragment";
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
@@ -99,7 +100,10 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
     }
 
     public void newPreset(View view) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        // TODO: In edit we also need to send the current preset
+        Intent intent = new Intent(this, PresetSetupActivity.class);
+        startActivity(intent);
+        /*FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
         // TODO: get this from the current preset (if any)
@@ -107,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
         fragmentTransaction.add(volumeSetFragment, VOLUME_SET_FRAGMENT_TAG);
         //FrequencyAdjustFragment frequencyAdjust = FrequencyAdjustFragment.newInstance(Util.TEST_FREQUENCIES[6], (short)0);
         //fragmentTransaction.add(frequencyAdjust, Util.FREQUENCY_FRAGMENT_NAMES[6]);
-        fragmentTransaction.commit();
+        fragmentTransaction.commit();*/
     }
 
 

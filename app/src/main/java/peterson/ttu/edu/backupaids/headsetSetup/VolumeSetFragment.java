@@ -7,11 +7,10 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,14 +26,14 @@ import peterson.ttu.edu.backupaids.Util;
 import static android.content.Context.AUDIO_SERVICE;
 
 /**
- * A simple {@link Fragment} subclass.
+ * Fragment for setting volume.
  * Activities that contain this fragment must implement the
  * {@link VolumeSetFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
  * Use the {@link VolumeSetFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class VolumeSetFragment extends DialogFragment implements View.OnClickListener{
+public class VolumeSetFragment extends Fragment implements View.OnClickListener{
     private static final String ARG_INITIAL_VOLUME = "initialVolume";
 
     private int mVolumeLevel;
