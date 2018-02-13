@@ -35,8 +35,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/volume_with_value"
-        app:layout_constraintTop_toTopOf="@+id/nextStep"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep"
+        app:layout_constraintBottom_toBottomOf="@id/volumeSettingNextStep"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/volumeSettingsVolumeUp"/>
 
@@ -46,11 +46,11 @@
         android:layout_height="0dp"
         android:scaleType="fitCenter"
         android:src="@android:drawable/arrow_up_float"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintBottom_toBottomOf="@id/volumeSettingNextStep"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintLeft_toRightOf="@+id/volumeLabelWithAmount"
         app:layout_constraintRight_toLeftOf="@id/volumeSettingsVolumeDown"
-        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep" />
 
     <ImageButton
         android:id="@+id/volumeSettingsVolumeDown"
@@ -58,14 +58,14 @@
         android:layout_height="0dp"
         android:scaleType="fitCenter"
         android:src="@android:drawable/arrow_down_float"
-        app:layout_constraintBottom_toBottomOf="@id/nextStep"
+        app:layout_constraintBottom_toBottomOf="@id/volumeSettingNextStep"
         app:layout_constraintDimensionRatio="h,1:1"
-        app:layout_constraintRight_toLeftOf="@id/nextStep"
+        app:layout_constraintRight_toLeftOf="@id/volumeSettingNextStep"
         app:layout_constraintLeft_toRightOf="@id/volumeSettingsVolumeUp"
-        app:layout_constraintTop_toTopOf="@+id/nextStep" />
+        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep" />
 
     <Button
-        android:id="@+id/nextStep"
+        android:id="@+id/volumeSettingNextStep"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/next_step_for_button"

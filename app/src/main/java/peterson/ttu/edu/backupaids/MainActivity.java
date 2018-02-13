@@ -22,7 +22,7 @@ import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
 import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
 
-public class MainActivity extends AppCompatActivity implements VolumeSetFragment.OnFragmentInteractionListener, FrequencyAdjustFragment.OnFragmentInteractionListener{
+public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
@@ -112,11 +112,5 @@ public class MainActivity extends AppCompatActivity implements VolumeSetFragment
         //FrequencyAdjustFragment frequencyAdjust = FrequencyAdjustFragment.newInstance(Util.TEST_FREQUENCIES[6], (short)0);
         //fragmentTransaction.add(frequencyAdjust, Util.FREQUENCY_FRAGMENT_NAMES[6]);
         fragmentTransaction.commit();*/
-    }
-
-
-    @Override
-    public void onFragmentInteraction(Uri uri) {
-        // TODO: what?
     }
 }

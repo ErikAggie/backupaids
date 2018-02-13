@@ -14,6 +14,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -84,21 +85,16 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         volumeDownButton.setOnClickListener(this);
         ImageButton volumeUpButton = view.findViewById(R.id.volumeSettingsVolumeUp);
         volumeUpButton.setOnClickListener(this);
+        Button nextStepButton = view.findViewById(R.id.volumeSettingNextStep);
+        nextStepButton.setOnClickListener(this);
 
         return view;
-    }
-
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         updateVolumePercentage(true);
+        startPlaying((ImageButton)getView().findViewById(R.id.volumeTestPlaySounds));
     }
 
     @Override
@@ -118,6 +114,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
             }
         });
         getContext().getApplicationContext().getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, mVolumeObserver);
+
     }
 
     /**
@@ -168,16 +165,11 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.volumeTestPlaySounds:
-                ImageButton playButton = view.findViewById(R.id.volumeTestPlaySounds);
                 if ( !mPlaying) {
-                    startPlaying();
-                    playButton.setImageResource(R.drawable.power_button_green2);
-                    mPlaying = true;
+                    startPlaying((ImageButton)view);
                 }
                 else {
-                    stopPlaying();
-                    playButton.setImageResource(R.drawable.power_button_blue2);
-                    mPlaying = false;
+                    stopPlaying((ImageButton)view);
                 }
                 break;
             case R.id.volumeSettingsVolumeUp:
@@ -186,12 +178,16 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
             case R.id.volumeSettingsVolumeDown:
                 volumeDown();
                 break;
+            case R.id.volumeSettingNextStep:
+                mListener.volumeAdjustmentComplete(mVolumeLevel);
+                break;
             default:
+                throw new RuntimeException("Unexpected button push!");
                 // Do nothing
         }
     }
 
-    private void startPlaying() {
+    private void startPlaying(ImageButton playButton) {
         if ( mAudioTrack != null)
         {
             mAudioTrack.stop();
@@ -221,15 +217,20 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         mAudioTrack.setLoopPoints(100, tone.length / 2, -1);
         mAudioTrack.play();
 
+        mPlaying = true;
+        playButton.setImageResource(R.drawable.power_button_green2);
+
     }
 
-    private void stopPlaying() {
+    private void stopPlaying(ImageButton playButton) {
         if ( mAudioTrack != null) {
             mAudioTrack.stop();
             mAudioTrack.release();
             mAudioTrack = null;
         }
 
+        playButton.setImageResource(R.drawable.power_button_blue2);
+        mPlaying = false;
     }
 
     private void volumeUp() {
@@ -251,13 +252,8 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        void volumeAdjustmentComplete(int volumeLevel);
     }
 }

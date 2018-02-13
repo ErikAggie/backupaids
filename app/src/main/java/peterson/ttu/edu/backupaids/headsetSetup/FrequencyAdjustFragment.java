@@ -8,10 +8,12 @@ import android.media.audiofx.Equalizer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -92,6 +94,8 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         // Set up our button's onClickEvents (why can't they target this automatically???
         ImageButton playSoundsButton = fragmentView.findViewById(R.id.frequencyAdjustPlaySounds);
         playSoundsButton.setOnClickListener(this);
+        Button nextStepButton = fragmentView.findViewById(R.id.frequencyAdjustNextStep);
+        nextStepButton.setOnClickListener(this);
 
         SeekBar adjustmentBar = fragmentView.findViewById(R.id.frequencyAdjustSlider);
         // Band adjustment is -1500...1500, but SeekBar is 0...3000
@@ -101,11 +105,10 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         return fragmentView;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        startPlaying((ImageButton)view.findViewById(R.id.frequencyAdjustPlaySounds));
     }
 
     @Override
@@ -130,14 +133,16 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         switch ( view.getId()) {
             case R.id.frequencyAdjustPlaySounds:
                 if ( mAudioTrack == null) {
-                    startPlaying();
-                    ((ImageButton)view).setImageResource(R.drawable.power_button_green2);
+                    startPlaying((ImageButton)view);
                 } else {
-                    stopPlaying();
-                    ((ImageButton)view).setImageResource(R.drawable.power_button_blue2);
+                    stopPlaying((ImageButton)view);
                 }
                 break;
+            case R.id.frequencyAdjustNextStep:
+                mListener.frequencyAdjustmentComplete(mBandAdjustment);
+                break;
             default:
+                throw new RuntimeException("Unexpected button push!");
         }
     }
 
@@ -157,7 +162,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         }
     }
 
-    private void startPlaying() {
+    private void startPlaying(ImageButton imageButton) {
         if ( mAudioTrack != null)
         {
             mAudioTrack.stop();
@@ -191,9 +196,11 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         short band = mEqualizer.getBand(mBandFrequency*1000); // Millihertz to hertz
         mEqualizer.setBandLevel(band, mBandAdjustment);
         mEqualizer.setEnabled(true);
+
+        imageButton.setImageResource(R.drawable.power_button_green2);
     }
 
-    private void stopPlaying() {
+    private void stopPlaying(ImageButton imageButton) {
         if ( mAudioTrack != null) {
             if ( mEqualizer != null) {
                 mEqualizer.release();
@@ -203,6 +210,8 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack.release();
             mAudioTrack = null;
         }
+
+        imageButton.setImageResource(R.drawable.power_button_blue2);
     }
 
     @Override
@@ -230,13 +239,8 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        void frequencyAdjustmentComplete(short amount);
     }
 }
