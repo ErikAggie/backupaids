@@ -1,14 +1,18 @@
 package peterson.ttu.edu.backupaids.headsetSetup;
 
-import android.net.Uri;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.InputType;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.model.SoundPreset;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 
 public class PresetSetupActivity extends FragmentActivity implements VolumeSetFragment.OnFragmentInteractionListener, FrequencyAdjustFragment.OnFragmentInteractionListener {
 
@@ -42,12 +46,20 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
 
     private static final String TAG = "PresetSetupActivity";
 
+    private boolean mEditingAPreset = false;
+    private SoundPreset mSoundPreset = new SoundPreset();
     private SetupSteps currentStep = SetupSteps.Start;
     private Fragment mCurrentFragment;
+
+    public void setSoundPreset(SoundPreset soundPreset) {
+        mSoundPreset = soundPreset;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // TODO: check for an "extra" value that shows the index of the preset to edit...
         setContentView(R.layout.activity_preset_setup);
         ProgressBar progressBar = findViewById(R.id.presetSetupProgress);
         progressBar.setMax(SetupSteps.values().length - 2);
@@ -93,8 +105,42 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
      * Called when the setup is finished so we can save off the preset
      */
     private void setupComplete() {
-        // TODO: Save off info from fragments...
-        finish();
+        // TODO: ignore this when we have
+        if ( mEditingAPreset) {
+            savePreset();
+            finish();
+        } else {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Title");
+
+            final EditText input = new EditText(this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
+
+            // Set up the buttons
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    mSoundPreset.setName(input.getText().toString());
+                    savePreset();
+                    finish();
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                    finish();
+                }
+            });
+
+            builder.show();
+        }
+    }
+
+    private void savePreset() {
+        SoundPresetManager.getInstance(this).addOrReplacePreset(mSoundPreset).savePresets();
     }
 
     private void showVolumeFragment() {
@@ -103,13 +149,18 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     public void volumeAdjustmentComplete(int volumeLevel) {
-        // TODO: save off the volume...
+        mSoundPreset.setVolumeAdjust(volumeLevel);
         nextFragment();
     }
     
     private void showFrequencyFragment(SetupSteps step) {
         // TODO: used saved value (if any)
         showFragment(FrequencyAdjustFragment.newInstance(step.getFrequency(), (short)0));
+    }
+
+    public void frequencyAdjustmentComplete(short amount) {
+        mSoundPreset.setFrequencyAdjustment(currentStep.getFrequency(), amount);
+        nextFragment();
     }
 
     private void showFragment(Fragment fragment) {
@@ -120,11 +171,5 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
         mCurrentFragment = fragment;
         fragmentTransaction.add(R.id.presetSetupFragmentLocation, mCurrentFragment);
         fragmentTransaction.commit();
-    }
-
-    public void frequencyAdjustmentComplete(short amount) {
-        // TODO: save off the value...
-        Log.i(TAG,"Frequency " + currentStep.getFrequency() + ": " + amount);
-        nextFragment();
     }
 }

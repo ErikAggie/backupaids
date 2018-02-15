@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateSpinner() {
-        SoundPresetManager presetManager = SoundPresetManager.getInstance(getApplicationContext());
+        SoundPresetManager presetManager = SoundPresetManager.getInstance(this);
         String[] presetNames = presetManager.getSortedPresetNames();
         Spinner presetSpinner = findViewById(R.id.presetSpinner);
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, presetNames);
@@ -115,17 +115,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void newPreset(View view) {
-        // TODO: In edit we also need to send the current preset
-        Intent intent = new Intent(this, PresetSetupActivity.class);
-        startActivity(intent);
-        /*FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        startActivityForResult(new Intent(this, PresetSetupActivity.class), 0);
+    }
 
-        // TODO: get this from the current preset (if any)
-        VolumeSetFragment volumeSetFragment = VolumeSetFragment.newInstance(-1);
-        fragmentTransaction.add(volumeSetFragment, VOLUME_SET_FRAGMENT_TAG);
-        //FrequencyAdjustFragment frequencyAdjust = FrequencyAdjustFragment.newInstance(Util.TEST_FREQUENCIES[6], (short)0);
-        //fragmentTransaction.add(frequencyAdjust, Util.FREQUENCY_FRAGMENT_NAMES[6]);
-        fragmentTransaction.commit();*/
+    public void editPreset(View view) {
+        Intent intent = new Intent(this, PresetSetupActivity.class);
+        Spinner presetSpinner = findViewById(R.id.presetSpinner);
+        intent.putExtra(Util.SELECTED_PRESET_ITEM, presetSpinner.getSelectedItemPosition());
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        updateSpinner();
     }
 }

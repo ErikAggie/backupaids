@@ -2,6 +2,7 @@ package peterson.ttu.edu.backupaids.model;
 
 import android.content.Context;
 import android.util.JsonReader;
+import android.util.JsonToken;
 import android.util.JsonWriter;
 
 import java.io.File;
@@ -10,15 +11,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import peterson.ttu.edu.backupaids.R;
 
@@ -72,20 +70,24 @@ public class SoundPresetManager {
 
     private void readAllPresets(JsonReader jsonReader) throws IOException {
         while(jsonReader.hasNext()) {
+            if ( jsonReader.peek().equals(JsonToken.END_DOCUMENT)) {
+                return;
+            }
             SoundPreset preset = new SoundPreset(jsonReader);
             mPresets.put(preset.getName(), preset);
         }
     }
 
-    public void addPreset(SoundPreset preset) {
+    public SoundPresetManager addOrReplacePreset(SoundPreset preset) {
         mPresets.put(preset.getName(), preset);
         savePresets();
+        return this;
     }
 
     /**
      * Call this when you're ready to save changes to 1+ presets
      */
-    public void savePresets() {
+    public SoundPresetManager savePresets() {
         JsonWriter jsonWriter = null;
         try {
             jsonWriter = new JsonWriter(
@@ -107,6 +109,7 @@ public class SoundPresetManager {
                 }
             }
         }
+        return this;
     }
 
     public String[] getSortedPresetNames() {
@@ -117,6 +120,11 @@ public class SoundPresetManager {
     }
 
     public SoundPreset getPreset(String name) {
-        return mPresets.get(name);
+        SoundPreset original = mPresets.get(name);
+        if ( original == null) {
+            throw new RuntimeException("Asking for non-existent preset " + name);
+        }
+        // Make a copy so that any unsaved changes don't affect the "true" version
+        return new SoundPreset(original);
     }
 }
