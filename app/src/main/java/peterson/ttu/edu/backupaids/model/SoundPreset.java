@@ -1,6 +1,7 @@
 package peterson.ttu.edu.backupaids.model;
 
 import android.util.JsonReader;
+import android.util.JsonWriter;
 
 import java.io.IOException;
 
@@ -98,6 +99,26 @@ public class SoundPreset {
         this.mHz3000 = hz3000;
         this.mHz4000 = hz4000;
         this.mHz8000 = hz8000;
+    }
+
+    /**
+     * Save this preset. Package-private since only SoundPresetManager
+     * should call it
+     * @param jsonWriter
+     */
+    void savePreset(JsonWriter jsonWriter) throws IOException {
+        jsonWriter.beginObject();
+        jsonWriter.name(PRESET_NAME).value(mName);
+        jsonWriter.name(VOLUME_LEVEL).value(mVolumeAdjust);
+        jsonWriter.name(HZ125).value(mHz125);
+        jsonWriter.name(HZ250).value(mHz250);
+        jsonWriter.name(HZ500).value(mHz500);
+        jsonWriter.name(HZ1000).value(mHz1000);
+        jsonWriter.name(HZ2000).value(mHz2000);
+        jsonWriter.name(HZ3000).value(mHz3000);
+        jsonWriter.name(HZ4000).value(mHz4000);
+        jsonWriter.name(HZ8000).value(mHz8000);
+        jsonWriter.endObject();
     }
 
     public String getName() {

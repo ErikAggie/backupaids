@@ -2,11 +2,16 @@ package peterson.ttu.edu.backupaids.model;
 
 import android.content.Context;
 import android.util.JsonReader;
+import android.util.JsonWriter;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,7 +50,7 @@ public class SoundPresetManager {
         mContext = context;
         JsonReader jsonReader = null;
         try {
-            InputStream inputStream = context.getAssets().open(context.getString(R.string.preset_file_name));
+            InputStream inputStream = new FileInputStream(new File(context.getFilesDir(), context.getString(R.string.preset_file_name)));
             jsonReader = new JsonReader(new InputStreamReader(inputStream));
             readAllPresets(jsonReader);
         } catch (FileNotFoundException e) {
@@ -81,7 +86,27 @@ public class SoundPresetManager {
      * Call this when you're ready to save changes to 1+ presets
      */
     public void savePresets() {
-
+        JsonWriter jsonWriter = null;
+        try {
+            jsonWriter = new JsonWriter(
+                            new PrintWriter(
+                               new File(mContext.getFilesDir(),
+                                        mContext.getString(R.string.preset_file_name))));
+            for ( String presetName : mPresets.keySet()) {
+                mPresets.get(presetName).savePreset(jsonWriter);
+            }
+        } catch ( IOException e) {
+            // TODO: handle this better...
+            e.printStackTrace();
+        } finally {
+            if ( jsonWriter != null) {
+                try {
+                    jsonWriter.close();
+                } catch ( IOException e) {
+                    // We tried...
+                }
+            }
+        }
     }
 
     public List<String> getSortedPresetNames() {
