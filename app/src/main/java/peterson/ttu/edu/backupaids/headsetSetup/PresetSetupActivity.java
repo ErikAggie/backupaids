@@ -110,33 +110,42 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
             savePreset();
             finish();
         } else {
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Title");
-
-            final EditText input = new EditText(this);
-            input.setInputType(InputType.TYPE_CLASS_TEXT);
-            builder.setView(input);
-
-            // Set up the buttons
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    mSoundPreset.setName(input.getText().toString());
-                    savePreset();
-                    finish();
-                }
-            });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                    finish();
-                }
-            });
-
-            builder.show();
+            requestName();
         }
+    }
+
+    private void requestName() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Title");
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String name = input.getText().toString();
+                if ( name.isEmpty()) {
+                    // Need a name, people...
+                    requestName();
+                    return;
+                }
+                mSoundPreset.setName(input.getText().toString());
+                savePreset();
+                finish();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+                finish();
+            }
+        });
+
+        builder.show();
     }
 
     private void savePreset() {

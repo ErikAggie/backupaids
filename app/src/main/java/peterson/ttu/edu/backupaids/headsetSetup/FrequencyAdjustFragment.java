@@ -108,7 +108,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        startPlaying((ImageButton)view.findViewById(R.id.frequencyAdjustPlaySounds));
+        startPlaying();
     }
 
     @Override
@@ -133,12 +133,13 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         switch ( view.getId()) {
             case R.id.frequencyAdjustPlaySounds:
                 if ( mAudioTrack == null) {
-                    startPlaying((ImageButton)view);
+                    startPlaying();
                 } else {
-                    stopPlaying((ImageButton)view);
+                    stopPlaying();
                 }
                 break;
             case R.id.frequencyAdjustNextStep:
+                stopPlaying();
                 mListener.frequencyAdjustmentComplete(mBandAdjustment);
                 break;
             default:
@@ -162,7 +163,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         }
     }
 
-    private void startPlaying(ImageButton imageButton) {
+    private void startPlaying() {
         if ( mAudioTrack != null)
         {
             mAudioTrack.stop();
@@ -197,10 +198,11 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         mEqualizer.setBandLevel(band, mBandAdjustment);
         mEqualizer.setEnabled(true);
 
-        imageButton.setImageResource(R.drawable.power_button_green2);
+        ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
+        playSoundsButton.setImageResource(R.drawable.power_button_green2);
     }
 
-    private void stopPlaying(ImageButton imageButton) {
+    private void stopPlaying() {
         if ( mAudioTrack != null) {
             if ( mEqualizer != null) {
                 mEqualizer.release();
@@ -211,7 +213,8 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack = null;
         }
 
-        imageButton.setImageResource(R.drawable.power_button_blue2);
+        ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
+        playSoundsButton.setImageResource(R.drawable.power_button_blue2);
     }
 
     @Override
