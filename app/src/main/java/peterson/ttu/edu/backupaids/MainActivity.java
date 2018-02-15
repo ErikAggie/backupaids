@@ -14,13 +14,18 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.ListAdapter;
+import android.widget.Spinner;
 
 import java.io.IOException;
+import java.util.List;
 
 import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
 import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,8 +43,18 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
         setContentView(R.layout.activity_main);
+
+        updateSpinner();
     }
 
+    private void updateSpinner() {
+        SoundPresetManager presetManager = SoundPresetManager.getInstance(getApplicationContext());
+        String[] presetNames = presetManager.getSortedPresetNames();
+        Spinner presetSpinner = findViewById(R.id.presetSpinner);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, presetNames);
+        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
+        presetSpinner.setAdapter(arrayAdapter);
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

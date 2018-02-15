@@ -109,10 +109,11 @@ public class SoundPresetManager {
         }
     }
 
-    public List<String> getSortedPresetNames() {
+    public String[] getSortedPresetNames() {
         List<String> list = new ArrayList<>(mPresets.keySet());
         Collections.sort(list);
-        return list;
+        String[] array = new String[list.size()];
+        return list.toArray(array);
     }
 
     public SoundPreset getPreset(String name) {
