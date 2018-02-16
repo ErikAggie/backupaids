@@ -69,6 +69,7 @@ public class SoundPresetManager {
     }
 
     private void readAllPresets(JsonReader jsonReader) throws IOException {
+        jsonReader.beginArray();
         while(jsonReader.hasNext()) {
             if ( jsonReader.peek().equals(JsonToken.END_DOCUMENT)) {
                 return;
@@ -76,6 +77,7 @@ public class SoundPresetManager {
             SoundPreset preset = new SoundPreset(jsonReader);
             mPresets.put(preset.getName(), preset);
         }
+        jsonReader.endArray();
     }
 
     public SoundPresetManager addOrReplacePreset(SoundPreset preset) {
@@ -94,9 +96,11 @@ public class SoundPresetManager {
                             new PrintWriter(
                                new File(mContext.getFilesDir(),
                                         mContext.getString(R.string.preset_file_name))));
+            jsonWriter.beginArray();
             for ( String presetName : mPresets.keySet()) {
                 mPresets.get(presetName).savePreset(jsonWriter);
             }
+            jsonWriter.endArray();
         } catch ( IOException e) {
             // TODO: handle this better...
             e.printStackTrace();
