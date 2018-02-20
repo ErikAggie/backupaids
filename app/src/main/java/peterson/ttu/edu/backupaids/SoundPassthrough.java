@@ -1,5 +1,8 @@
 package peterson.ttu.edu.backupaids;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -23,6 +26,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 class SoundPassthrough {
     private static final String TAG = "SoundPassthrough";
 
+    private Context context;
     private Runnable playRunnable;
     private boolean playing = false;
     private boolean threadRunning = false;
@@ -30,8 +34,9 @@ class SoundPassthrough {
     private int bufferSize;
 
 
-    public SoundPassthrough()
+    public SoundPassthrough(Context context)
     {
+        this.context = context;
         int inputMinBufferSize = AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
@@ -68,6 +73,33 @@ class SoundPassthrough {
                 AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize);
 
+//        final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.)
+
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothProfile.ServiceListener serviceListener = new BluetoothProfile.ServiceListener() {
+            @Override
+            public void onServiceConnected(int i, BluetoothProfile bluetoothProfile) {
+                // TODO: record both if profile is headset...and the user wants it
+                Log.i(TAG, "Bluetooth connected: " + i);
+            }
+
+            @Override
+            public void onServiceDisconnected(int i) {
+                // TODO: if this was our profile, stop recording with bluetooth mixed in
+                Log.i(TAG, "Bluetooth disconnected: " + i);
+            }
+        };
+        if ( !bluetoothAdapter.getProfileProxy(context, serviceListener, BluetoothProfile.HEADSET)) {
+            Log.e(TAG, "Unable to get bluetooth profile.");
+        }
+//        bluetoothAdapter.getProfileConnectionState(BluetoothAdapter.)
+//
+//        final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_CALL,
+//                Util.SAMPLE_RATE,
+//                AudioFormat.CHANNEL_IN_MONO,
+//                AudioFormat.ENCODING_PCM_16BIT,
+//                bufferSize);
+
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
@@ -77,7 +109,7 @@ class SoundPassthrough {
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                 .setBufferSizeInBytes(bufferSize)
-                .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+                //.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build();
 

@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
-    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.BLUETOOTH};
     private SoundPassthrough soundPassthrough;
 
 
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setUpAudioRecordingAndPlayback()
     {
-        soundPassthrough = new SoundPassthrough();
+        soundPassthrough = new SoundPassthrough(this);
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
     }
