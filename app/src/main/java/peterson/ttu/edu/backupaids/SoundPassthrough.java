@@ -23,7 +23,10 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 class SoundPassthrough {
     private static final String TAG = "SoundPassthrough";
 
+    private Runnable playRunnable;
     private boolean playing = false;
+    private boolean threadRunning = false;
+    private Object notifyObject = new Object();
     private int bufferSize;
 
 
@@ -90,10 +93,11 @@ class SoundPassthrough {
 
         playing = true;
 
-        new Thread(new Runnable() {
+        playRunnable = new Runnable() {
             @Override
             public void run()
             {
+                threadRunning = true;
                 android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
                 short[] audioBuffer = new short[bufferSize / 2];
@@ -114,8 +118,13 @@ class SoundPassthrough {
                 audioRecord.release();
                 audioTrack.stop();
                 audioTrack.release();
+                synchronized (notifyObject) {
+                    threadRunning = false;
+                    notifyObject.notify();
+                }
             }
-        }).start();
+        };
+        new Thread(playRunnable).start();
     }
 
     /**
@@ -152,6 +161,21 @@ class SoundPassthrough {
     public void stop()
     {
         playing = false;
+        if ( playRunnable != null) {
+            // This really shouldn't be done on the GUI thread, but it shouldn't take long
+            // for the other thread to stop
+            if ( threadRunning ) {
+                synchronized (notifyObject) {
+                    if ( threadRunning) {
+                        try {
+                            notifyObject.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }

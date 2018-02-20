@@ -52,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
         presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                if ( soundPassthrough == null) {
+                    // Still setting up
+                    return;
+                }
                 if ( soundPassthrough.isPlaying()) {
                     // Restart playback so we use the new preset
                     stopPlaying();
