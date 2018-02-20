@@ -153,8 +153,13 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     private void showVolumeFragment() {
-        // TODO: use saved volume (if any)
-        showFragment(VolumeSetFragment.newInstance(-1));
+        int volume = mSoundPreset.getVolumeAdjust();
+        // If this is a new preset (volume = 0), don't set anything...the fragment
+        // will use the current headset volume to start
+        if ( volume == 0) {
+            volume = -1;
+        }
+        showFragment(VolumeSetFragment.newInstance(volume));
     }
 
     public void volumeAdjustmentComplete(int volumeLevel) {
@@ -163,8 +168,9 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
     
     private void showFrequencyFragment(SetupSteps step) {
-        // TODO: used saved value (if any)
-        showFragment(FrequencyAdjustFragment.newInstance(step.getFrequency(), (short)0));
+        showFragment(
+                FrequencyAdjustFragment.newInstance(step.getFrequency(),
+                                                    mSoundPreset.getFrequencyAdjustment(step.getFrequency())));
     }
 
     public void frequencyAdjustmentComplete(short amount) {

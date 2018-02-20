@@ -123,6 +123,15 @@ public class SoundPresetManager {
         return list.toArray(array);
     }
 
+    public SoundPreset getPreset(int position) {
+        List<String> list = new ArrayList<>(mPresets.keySet());
+        Collections.sort(list);
+        if ( list.size() <= position) {
+            throw new RuntimeException("Non-existant preset position: " + position);
+        }
+        return getPreset(list.get(position));
+    }
+
     public SoundPreset getPreset(String name) {
         SoundPreset original = mPresets.get(name);
         if ( original == null) {

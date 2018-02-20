@@ -14,6 +14,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListAdapter;
@@ -25,6 +26,7 @@ import java.util.List;
 import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
 import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
+import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 
 public class MainActivity extends AppCompatActivity {
@@ -45,6 +47,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         updateSpinner();
+
+        Spinner presetSpinner = findViewById(R.id.presetSpinner);
+        presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                if ( soundPassthrough.isPlaying()) {
+                    // Restart playback so we use the new preset
+                    stopPlaying();
+                    playSound(view);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+                // Shouldn't happen
+            }
+        });
     }
 
     private void updateSpinner() {
@@ -89,7 +108,13 @@ public class MainActivity extends AppCompatActivity {
             // Start playing!
             try
             {
-                soundPassthrough.start();
+                SoundPreset preset = null;
+                Spinner presetSpinner = findViewById(R.id.presetSpinner);
+                int position = presetSpinner.getSelectedItemPosition();
+                if ( position >= 0) {
+                    preset = SoundPresetManager.getInstance(this).getPreset(position);
+                }
+                soundPassthrough.start(preset);
                 playButton.setImageResource(R.drawable.power_button_green2);
             }
             catch(IOException e)
@@ -109,9 +134,14 @@ public class MainActivity extends AppCompatActivity {
         }
         else
         {
-            soundPassthrough.stop();
-            playButton.setImageResource(R.drawable.power_button_blue2);
+            stopPlaying();
         }
+    }
+
+    private void stopPlaying() {
+        soundPassthrough.stop();
+        ImageButton playButton = findViewById(R.id.playSound);
+        playButton.setImageResource(R.drawable.power_button_blue2);
     }
 
     public void newPreset(View view) {

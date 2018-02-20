@@ -4,6 +4,8 @@ import android.util.JsonReader;
 import android.util.JsonWriter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Holds a preset
@@ -22,17 +24,29 @@ public class SoundPreset {
     private static final String HZ4000 = "Hz4000";
     private static final String HZ8000 = "Hz8000";
 
+    public enum Frequency {
+        HZ125("Hz125", 125),
+        HZ250("Hz250", 250),
+        HZ500("Hz500", 500),
+        HZ1000("Hz1000", 1000),
+        HZ2000("Hz2000", 2000),
+        HZ3000("Hz3000", 3000),
+        HZ4000("Hz4000", 4000),
+        HZ8000("Hz8000", 8000);
+
+        String name;
+        int frequency;
+
+        Frequency(String name, int frequency) {
+            this.name = name;
+            this.frequency = frequency;
+        }
+    }
+
+    private final Map<Integer, Short> mFrequencyValues = new HashMap<>();
 
     private String mName;
     private int mVolumeAdjust;
-    private short Hz125;
-    private short Hz250;
-    private short Hz500;
-    private short Hz1000;
-    private short Hz2000;
-    private short Hz3000;
-    private short Hz4000;
-    private short Hz8000;
 
     /**
      * Constructor from Json. Package-private since only SoundPresetManager
@@ -49,28 +63,28 @@ public class SoundPreset {
                     mVolumeAdjust = jsonReader.nextInt();
                     break;
                 case HZ125:
-                    Hz125 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ125.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ250:
-                    Hz250 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ250.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ500:
-                    Hz500 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ500.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ1000:
-                    Hz1000 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ1000.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ2000:
-                    Hz2000 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ2000.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ3000:
-                    Hz3000 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ3000.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ4000:
-                    Hz4000 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ4000.frequency, (short)jsonReader.nextInt());
                     break;
                 case HZ8000:
-                    Hz8000 = (short)jsonReader.nextInt();
+                    mFrequencyValues.put(Frequency.HZ8000.frequency, (short)jsonReader.nextInt());
                     break;
                 default:
                     throw new RuntimeException("Unknown Json parameter " + jsonReader.nextName());
@@ -84,36 +98,7 @@ public class SoundPreset {
     public SoundPreset(SoundPreset other) {
         this.mName = other.mName;
         this.mVolumeAdjust = other.mVolumeAdjust;
-        this.Hz125 = other.Hz125;
-        this.Hz250 = other.Hz250;
-        this.Hz500 = other.Hz500;
-        this.Hz1000 = other.Hz1000;
-        this.Hz2000 = other.Hz2000;
-        this.Hz3000 = other.Hz3000;
-        this.Hz4000 = other.Hz4000;
-        this.Hz8000 = other.Hz8000;
-    }
-
-    public SoundPreset(String name,
-                       int volumeAdjust,
-                       short hz125,
-                       short hz250,
-                       short hz500,
-                       short hz1000,
-                       short hz2000,
-                       short hz3000,
-                       short hz4000,
-                       short hz8000) {
-        this.mName = name;
-        this.mVolumeAdjust = volumeAdjust;
-        this.Hz125 = hz125;
-        this.Hz250 = hz250;
-        this.Hz500 = hz500;
-        this.Hz1000 = hz1000;
-        this.Hz2000 = hz2000;
-        this.Hz3000 = hz3000;
-        this.Hz4000 = hz4000;
-        this.Hz8000 = hz8000;
+        this.mFrequencyValues.putAll(other.mFrequencyValues);
     }
 
     /**
@@ -125,46 +110,15 @@ public class SoundPreset {
         jsonWriter.beginObject();
         jsonWriter.name(PRESET_NAME).value(mName);
         jsonWriter.name(VOLUME_LEVEL).value(mVolumeAdjust);
-        jsonWriter.name(HZ125).value(Hz125);
-        jsonWriter.name(HZ250).value(Hz250);
-        jsonWriter.name(HZ500).value(Hz500);
-        jsonWriter.name(HZ1000).value(Hz1000);
-        jsonWriter.name(HZ2000).value(Hz2000);
-        jsonWriter.name(HZ3000).value(Hz3000);
-        jsonWriter.name(HZ4000).value(Hz4000);
-        jsonWriter.name(HZ8000).value(Hz8000);
+        jsonWriter.name(HZ125).value(mFrequencyValues.get(Frequency.HZ125.frequency));
+        jsonWriter.name(HZ250).value(mFrequencyValues.get(Frequency.HZ250.frequency));
+        jsonWriter.name(HZ500).value(mFrequencyValues.get(Frequency.HZ500.frequency));
+        jsonWriter.name(HZ1000).value(mFrequencyValues.get(Frequency.HZ1000.frequency));
+        jsonWriter.name(HZ2000).value(mFrequencyValues.get(Frequency.HZ2000.frequency));
+        jsonWriter.name(HZ3000).value(mFrequencyValues.get(Frequency.HZ3000.frequency));
+        jsonWriter.name(HZ4000).value(mFrequencyValues.get(Frequency.HZ4000.frequency));
+        jsonWriter.name(HZ8000).value(mFrequencyValues.get(Frequency.HZ8000.frequency));
         jsonWriter.endObject();
-    }
-
-    public void setFrequencyAdjustment(int frequency, short value) {
-        switch ( frequency) {
-            case 125:
-                Hz125 = value;
-                break;
-            case 250:
-                Hz250 = value;
-                break;
-            case 500:
-                Hz500 = value;
-                break;
-            case 1000:
-                Hz1000 = value;
-                break;
-            case 2000:
-                Hz2000 = value;
-                break;
-            case 3000:
-                Hz3000 = value;
-                break;
-            case 4000:
-                Hz4000 = value;
-                break;
-            case 8000:
-                Hz8000 = value;
-                break;
-            default:
-                throw new RuntimeException("Unknown frequency " + frequency);
-        }
     }
 
     public String getName() {
@@ -183,68 +137,21 @@ public class SoundPreset {
         this.mVolumeAdjust = mVolumeAdjust;
     }
 
-    public short getHz125() {
-        return Hz125;
+    public void setFrequencyAdjustment(int frequency, short value) {
+        mFrequencyValues.put(frequency, value);
     }
 
-    public void setHz125(short mHz125) {
-        this.Hz125 = mHz125;
+    public short getFrequencyAdjustment(int frequency) {
+        if ( !mFrequencyValues.containsKey(frequency)) {
+            return (short)0;
+        }
+        return mFrequencyValues.get(frequency);
     }
 
-    public short getHz250() {
-        return Hz250;
-    }
-
-    public void setHz250(short mHz250) {
-        this.Hz250 = mHz250;
-    }
-
-    public short getHz500() {
-        return Hz500;
-    }
-
-    public void setHz500(short mHz500) {
-        this.Hz500 = mHz500;
-    }
-
-    public short getHz1000() {
-        return Hz1000;
-    }
-
-    public void setHz1000(short mHz1000) {
-        this.Hz1000 = mHz1000;
-    }
-
-    public short getHz2000() {
-        return Hz2000;
-    }
-
-    public void setHz2000(short mHz2000) {
-        this.Hz2000 = mHz2000;
-    }
-
-    public short getHz3000() {
-        return Hz3000;
-    }
-
-    public void setHz3000(short mHz3000) {
-        this.Hz3000 = mHz3000;
-    }
-
-    public short getHz4000() {
-        return Hz4000;
-    }
-
-    public void setHz4000(short mHz4000) {
-        this.Hz4000 = mHz4000;
-    }
-
-    public short getHz8000() {
-        return Hz8000;
-    }
-
-    public void setHz8000(short mHz8000) {
-        this.Hz8000 = mHz8000;
+    public Map<Integer, Short> getFrequencyAdjustments() {
+        Map newMap = new HashMap<Integer, Short>();
+        newMap.putAll(mFrequencyValues);
+        return newMap;
     }
 
 }

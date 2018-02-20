@@ -10,6 +10,10 @@ import android.os.Process;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import peterson.ttu.edu.backupaids.model.SoundPreset;
 
 /**
  * Plays sounds from the phone's microphones into the headset
@@ -49,13 +53,12 @@ class SoundPassthrough {
         return playing;
     }
 
-    public void start() throws IOException
+    public void start(SoundPreset preset) throws IOException
     {
         if ( playing)
         {
-            return;
+            stop();
         }
-        playing = true;
         final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
                 Util.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
@@ -66,7 +69,6 @@ class SoundPassthrough {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
         }
-
 
         final AudioTrack audioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
@@ -82,7 +84,11 @@ class SoundPassthrough {
         }
 
         // Set up the audio effects
-        applyEffects(audioTrack.getAudioSessionId());
+        if ( preset != null) {
+            applyEffects(preset, audioTrack.getAudioSessionId());
+        }
+
+        playing = true;
 
         new Thread(new Runnable() {
             @Override
@@ -116,33 +122,31 @@ class SoundPassthrough {
      * Apply effects to the audio session
      * @param audioSessionID Session ID to apply to
      */
-    private void applyEffects(int audioSessionID)
+    private void applyEffects(SoundPreset preset, int audioSessionID)
     {
         final Equalizer equalizer = new Equalizer(1, audioSessionID);
+        Map<Integer, Short> frequencyMap = preset.getFrequencyAdjustments();
+
+        // Add the frequency adjustments one by one. Track which equalizer bands we're using
+        // so we make sure the highest adjustment goes to each band
+        Map<Short, Short> bandMap = new HashMap<>();
+
+        for ( int frequency : frequencyMap.keySet()) {
+            short adjustment = frequencyMap.get(frequency);
+            short band = equalizer.getBand(frequency*1000); // Millihertz to hertz
+            if ( bandMap.containsKey(band)) {
+                if ( bandMap.get(band) < frequency) {
+                    equalizer.setBandLevel(band, adjustment);
+                    bandMap.put(band, adjustment);
+                }
+            } else {
+                // First entry in this equalizer band
+                equalizer.setBandLevel(band, adjustment);
+                bandMap.put(band, adjustment);
+            }
+        }
         equalizer.setEnabled(true);
 
-        /*new Thread(new Runnable() {
-            public void run(){
-                int numberOfBands = equalizer.getNumberOfBands();
-                short[] values = {-1500, 0, 1500};
-                try {
-                    int i=0;
-                    while ( playing)
-                    {
-                        i++;
-                        for ( short band=0; band<numberOfBands; band++)
-                        {
-                            equalizer.setBandLevel(band, values[i%values.length]);
-                        }
-                        Thread.sleep(5000);
-                    }
-
-                } catch ( InterruptedException e) {
-
-                }
-
-            }
-        }).start();*/
     }
 
     public void stop()
