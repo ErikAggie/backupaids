@@ -3,12 +3,15 @@ package peterson.ttu.edu.backupaids;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.util.Log;
+
+import java.util.List;
 
 /**
  * Created by erika on 2/21/2018.
@@ -31,28 +34,24 @@ public class BluetoothMonitor extends BroadcastReceiver {
         mActivity = activity;
         Log.e(TAG, "Hello!");
 
-        // TODO: detect what's connected at startup
-        /*        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothProfile.ServiceListener serviceListener = new BluetoothProfile.ServiceListener() {
             @Override
             public void onServiceConnected(int i, BluetoothProfile bluetoothProfile) {
-                // TODO: record both if profile is headset...and the user wants it
-                Log.i(TAG, "Bluetooth connected: " + i);
-                List<BluetoothDevice> bluetoothDeviceList = bluetoothProfile.getConnectedDevices();
-                for ( BluetoothDevice bluetoothDevice : bluetoothDeviceList) {
-                    Log.i(TAG, "Bluetooth device: " + bluetoothDevice.getName() + " connected!");
+                if ( bluetoothProfile.getConnectedDevices().size() > 0) {
+                    // TODO: handle other bluetooth devices (fitness trackers, etc.)
+                    mConnectedDevice = bluetoothProfile.getConnectedDevices().get(0);
                 }
             }
 
             @Override
             public void onServiceDisconnected(int i) {
-                // TODO: if this was our profile, stop recording with bluetooth mixed in
-                Log.i(TAG, "Bluetooth disconnected: " + i);
+                // Don't care; this is handled below
             }
         };
-        if ( !bluetoothAdapter.getProfileProxy(context, serviceListener, BluetoothProfile.HEADSET)) {
+        if ( !bluetoothAdapter.getProfileProxy(activity.getApplicationContext(), serviceListener, BluetoothProfile.HEADSET)) {
             Log.e(TAG, "Unable to get bluetooth profile.");
-        }*/
+        }
 
 
 //        bluetoothAdapter.getProfileConnectionState(BluetoothMonitor.)
