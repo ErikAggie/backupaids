@@ -2,8 +2,11 @@ package peterson.ttu.edu.backupaids;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -31,7 +34,7 @@ import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    private static final int REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION = 200;
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.BLUETOOTH};
     private SoundPassthrough soundPassthrough;
@@ -42,7 +45,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         // Request audio recording permission
-        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
+        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION);
+
+        BluetoothMonitor monitor = BluetoothMonitor.createInstance(this);
+        IntentFilter connectFilter = new IntentFilter();
+        connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+        registerReceiver(monitor, connectFilter);
+
 
         setContentView(R.layout.activity_main);
 
@@ -70,6 +81,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(BluetoothMonitor.getInstance());
+    }
+
     private void updateSpinner() {
         SoundPresetManager presetManager = SoundPresetManager.getInstance(this);
         String[] presetNames = presetManager.getSortedPresetNames();
@@ -84,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         boolean permissionToRecordAccepted = false;
         switch (requestCode){
-            case REQUEST_RECORD_AUDIO_PERMISSION:
+            case REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION:
                 permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                 break;
         }
