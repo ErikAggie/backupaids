@@ -69,36 +69,29 @@ class SoundPassthrough {
         {
             stop();
         }
-        AudioRecord tempRecord;
-        if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
-            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            audioManager.startBluetoothSco();
-            Log.i(TAG, "Creating bluetooth recording...");
-            tempRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                    Util.SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    bufferSize);
-        } else {
-            Log.i(TAG, "Creating camcorder recording");
-            tempRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                    Util.SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    bufferSize);
-        }
-
-
-        final AudioRecord audioRecord = tempRecord;
-
-
-
-//        final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.)
-
-
+        AudioRecord audioRecord =
+                new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
+                                Util.SAMPLE_RATE,
+                                AudioFormat.CHANNEL_IN_MONO,
+                                AudioFormat.ENCODING_PCM_16BIT,
+                                bufferSize);
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
+        }
+        AudioRecord audioRecord2 = null;
+        if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
+            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            audioManager.startBluetoothSco();
+            audioRecord2 = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                                           Util.SAMPLE_RATE,
+                                           AudioFormat.CHANNEL_IN_MONO,
+                                           AudioFormat.ENCODING_PCM_16BIT,
+                                           bufferSize);
+            if (audioRecord2.getState() != AudioRecord.STATE_INITIALIZED) {
+                Log.e(TAG, "Audio Record won't initialize!");
+                throw new IOException("Audio Record won't initialize!");
+            }
         }
 
         final AudioTrack audioTrack = new AudioTrack.Builder().setAudioAttributes(
@@ -108,9 +101,6 @@ class SoundPassthrough {
                 .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build();
-
-        // Force the audio out on wired headphones
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
 
         if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
@@ -124,39 +114,122 @@ class SoundPassthrough {
         }
 
         playing = true;
+        if ( audioRecord2 == null) {
+            new Thread(new RunSingleInput(audioRecord, audioTrack)).start();
+        } else {
+            new Thread(new RunTwoInputs(audioRecord, audioRecord2, audioTrack)).start();
+        }
+    }
 
-        playRunnable = new Runnable() {
-            @Override
-            public void run()
+    private class RunSingleInput implements Runnable {
+
+        private final AudioRecord audioRecord;
+        private final AudioTrack audioTrack;
+
+        public RunSingleInput(AudioRecord audioRecord, AudioTrack audioTrack) {
+            this.audioRecord = audioRecord;
+            this.audioTrack = audioTrack;
+        }
+
+        @Override
+        public void run() {
+            threadRunning = true;
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
+
+            short[] audioBuffer = new short[bufferSize / 2];
+
+            audioTrack.play();
+
+            audioRecord.startRecording();
+
+            // Here's the playing loop!
+            while ( playing)
             {
-                threadRunning = true;
-                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-
-                short[] audioBuffer = new short[bufferSize / 2];
-
-                audioTrack.play();
-
-                audioRecord.startRecording();
-
-                // Here's the playing loop!
-                while ( playing)
-                {
-                    int amountRead = audioRecord.read(audioBuffer, 0, audioBuffer.length);
-                    audioTrack.write(audioBuffer, 0, amountRead);
-                }
-
-                // Clean up
-                audioRecord.stop();
-                audioRecord.release();
-                audioTrack.stop();
-                audioTrack.release();
-                synchronized (notifyObject) {
-                    threadRunning = false;
-                    notifyObject.notify();
-                }
+                int amountRead = audioRecord.read(audioBuffer, 0, audioBuffer.length);
+                audioTrack.write(audioBuffer, 0, amountRead);
             }
-        };
-        new Thread(playRunnable).start();
+
+            // Clean up
+            audioRecord.stop();
+            audioRecord.release();
+            audioTrack.stop();
+            audioTrack.release();
+            synchronized (notifyObject) {
+                threadRunning = false;
+                notifyObject.notify();
+            }
+        }
+    }
+
+    private class RunTwoInputs implements Runnable {
+
+        private final AudioRecord audioRecord1;
+        private final AudioRecord audioRecord2;
+        private final AudioTrack audioTrack;
+
+        public RunTwoInputs(AudioRecord audioRecord1, AudioRecord audioRecord2, AudioTrack audioTrack) {
+            this.audioRecord1 = audioRecord1;
+            this.audioRecord2 = audioRecord2;
+            this.audioTrack = audioTrack;
+        }
+
+        @Override
+        public void run() {
+            threadRunning = true;
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
+
+            short[] audioBuffer1 = new short[bufferSize / 2];
+            short[] audioBuffer2 = new short[bufferSize / 2];
+            short[] outputBuffer = new short[bufferSize / 2];
+
+            audioTrack.play();
+
+            audioRecord1.startRecording();
+            audioRecord2.startRecording();
+
+            // Here's the playing loop!
+            while ( playing)
+            {
+                int amountRead = audioRecord1.read(audioBuffer1, 0, audioBuffer1.length);
+                int amountRead2 = audioRecord2.read(audioBuffer2, 0, audioBuffer2.length);
+                //Log.i(TAG, "Read " + amountRead + " vs." + amountRead2);
+                // We'll drop stuff that we couldn't read
+                amountRead = Math.max(amountRead, amountRead2);
+                // Need this to be even for the code below...
+                if ( amountRead % 2 == 1) {
+                    amountRead++;
+                }
+                int largeResult;
+                // Since this is a time-critical piece, I did some optimizing:
+                //   1. Doing things two at a time is ~11% faster than incrementing by 1
+                //   2. The Math.min(...Math.max(...)) is significantly faster than trying to short-circuit the process
+                //      (perhaps the compiler is inlining it)
+                for ( int index=0, nextIndex = 1; index<amountRead; index+=2, nextIndex += 2) {
+                    largeResult = audioBuffer1[index] + audioBuffer2[index];
+                    outputBuffer[index] = (short)Math.min(Short.MAX_VALUE, (Math.max(largeResult, Short.MIN_VALUE)));
+                    largeResult = audioBuffer1[nextIndex] + audioBuffer2[nextIndex];
+                    outputBuffer[nextIndex] = (short)Math.min(Short.MAX_VALUE, (Math.max(largeResult, Short.MIN_VALUE)));
+                }
+
+                audioTrack.write(outputBuffer, 0, amountRead);
+            }
+
+            // Clean up
+            audioRecord1.stop();
+            audioRecord1.release();
+            audioRecord2.stop();
+            audioRecord2.release();
+            // We know we're using Bluetooth here...
+            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            audioManager.stopBluetoothSco();
+            audioTrack.stop();
+            audioTrack.release();
+            synchronized (notifyObject) {
+                threadRunning = false;
+                notifyObject.notify();
+            }
+
+        }
     }
 
     /**
@@ -210,8 +283,7 @@ class SoundPassthrough {
 
             // Stop the SCO session, if any
             if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
-                AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                audioManager.stopBluetoothSco();
+                // TODO: use a variable to determine if we STARTED using a Bluetooth device
             }
         }
     }
