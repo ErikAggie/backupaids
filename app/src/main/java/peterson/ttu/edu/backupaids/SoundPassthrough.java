@@ -9,8 +9,10 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.media.audiofx.Equalizer;
+import android.os.Build;
 import android.os.Process;
 import android.util.Log;
 
@@ -69,39 +71,62 @@ class SoundPassthrough {
         {
             stop();
         }
+
+        playing = true;
+//        if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
+//            new Thread(new RunSingleInput(createBluetoothAudioRecord(), createAudioTrack(preset))).start();
+//        }
+        new Thread(new RunSingleInput(createHeadsetAudioRecord(), createAudioTrack(preset))).start();
+    }
+
+    private AudioRecord createHeadsetAudioRecord() throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                                Util.SAMPLE_RATE,
-                                AudioFormat.CHANNEL_IN_MONO,
-                                AudioFormat.ENCODING_PCM_16BIT,
-                                bufferSize);
+                        Util.SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        bufferSize);
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
         }
-        AudioRecord audioRecord2 = null;
-        if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
-            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            audioManager.startBluetoothSco();
-            audioRecord2 = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                           Util.SAMPLE_RATE,
-                                           AudioFormat.CHANNEL_IN_MONO,
-                                           AudioFormat.ENCODING_PCM_16BIT,
-                                           bufferSize);
-            if (audioRecord2.getState() != AudioRecord.STATE_INITIALIZED) {
-                Log.e(TAG, "Audio Record won't initialize!");
-                throw new IOException("Audio Record won't initialize!");
-            }
+        return audioRecord;
+    }
+
+    private AudioRecord createBluetoothAudioRecord() throws IOException {
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        audioManager.startBluetoothSco();
+        AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                Util.SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bufferSize);
+        if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+            Log.e(TAG, "Audio Record won't initialize!");
+            throw new IOException("Audio Record won't initialize!");
         }
+        return audioRecord;
+    }
 
-        final AudioTrack audioTrack = new AudioTrack.Builder().setAudioAttributes(
-                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-                .setBufferSizeInBytes(bufferSize)
-                .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-                .setTransferMode(AudioTrack.MODE_STREAM)
-                .build();
-
+    private AudioTrack createAudioTrack(SoundPreset preset) throws IOException {
+        AudioTrack audioTrack;
+        if ( Build.VERSION.SDK_INT >= 26) {
+            // Android O contains a low-latency playback mode
+            audioTrack = new AudioTrack.Builder().setAudioAttributes(
+                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+                    .setTransferMode(AudioTrack.MODE_STREAM)
+                    .build();
+        } else {
+            audioTrack = new AudioTrack.Builder().setAudioAttributes(
+                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .setTransferMode(AudioTrack.MODE_STREAM)
+                    .build();
+        }
 
         if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
             Log.e(TAG, "Audio playback won't initialize!");
@@ -113,12 +138,7 @@ class SoundPassthrough {
             applyEffects(preset, audioTrack.getAudioSessionId());
         }
 
-        playing = true;
-        if ( audioRecord2 == null) {
-            new Thread(new RunSingleInput(audioRecord, audioTrack)).start();
-        } else {
-            new Thread(new RunTwoInputs(audioRecord, audioRecord2, audioTrack)).start();
-        }
+        return audioTrack;
     }
 
     private class RunSingleInput implements Runnable {

@@ -32,7 +32,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
      */
     private BluetoothMonitor(Activity activity) {
         mActivity = activity;
-        Log.e(TAG, "Hello!");
 
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothProfile.ServiceListener serviceListener = new BluetoothProfile.ServiceListener() {
@@ -52,16 +51,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
         if ( !bluetoothAdapter.getProfileProxy(activity.getApplicationContext(), serviceListener, BluetoothProfile.HEADSET)) {
             Log.e(TAG, "Unable to get bluetooth profile.");
         }
-
-
-//        bluetoothAdapter.getProfileConnectionState(BluetoothMonitor.)
-//
-//        final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_CALL,
-//                Util.SAMPLE_RATE,
-//                AudioFormat.CHANNEL_IN_MONO,
-//                AudioFormat.ENCODING_PCM_16BIT,
-//                bufferSize);
-
     }
 
     public static BluetoothMonitor createInstance(Activity activity) {
