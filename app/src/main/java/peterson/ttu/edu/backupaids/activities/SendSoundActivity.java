@@ -31,4 +31,8 @@ public class SendSoundActivity extends AppCompatActivity {
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         registerReceiver(bluetoothMonitor, connectFilter);
     }
+
+    public void sendSound(View view) {
+        // TODO: fill in...
+    }
 }

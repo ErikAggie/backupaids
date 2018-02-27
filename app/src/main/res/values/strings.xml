@@ -11,6 +11,6 @@
         <item>Hz</item>
         <item>kHz</item>
     </string-array>
-    <string name="title_activity_send_sound">SendSoundActivity</string>
+    <string name="title_activity_send_sound">Send Sound (FM style)</string>
 
 </resources>
