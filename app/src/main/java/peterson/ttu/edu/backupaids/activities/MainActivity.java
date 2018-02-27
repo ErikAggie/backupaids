@@ -75,6 +75,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        stopPlaying();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(BluetoothMonitor.getInstance());
@@ -153,6 +159,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopPlaying() {
+        if ( soundPassthrough == null) {
+            // Not initialized yet
+            return;
+        }
         soundPassthrough.stop();
         ImageButton playButton = findViewById(R.id.playSound);
         playButton.setImageResource(R.drawable.power_button_blue2);
