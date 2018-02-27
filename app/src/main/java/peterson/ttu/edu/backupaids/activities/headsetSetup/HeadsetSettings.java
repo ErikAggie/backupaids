@@ -1,4 +1,4 @@
-package peterson.ttu.edu.backupaids.headsetSetup;
+package peterson.ttu.edu.backupaids.activities.headsetSetup;
 
 /**
  * Holds the adjustments for a particular profile;

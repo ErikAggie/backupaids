@@ -1,4 +1,4 @@
-package peterson.ttu.edu.backupaids.headsetSetup;
+package peterson.ttu.edu.backupaids.activities.headsetSetup;
 
 import android.database.ContentObserver;
 import android.os.Handler;

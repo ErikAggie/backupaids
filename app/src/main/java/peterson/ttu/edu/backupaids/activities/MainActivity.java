@@ -2,10 +2,8 @@ package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
@@ -19,12 +17,11 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import java.io.IOException;
-import java.sql.Connection;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
+import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;

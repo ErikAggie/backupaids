@@ -1,11 +1,10 @@
-package peterson.ttu.edu.backupaids.headsetSetup;
+package peterson.ttu.edu.backupaids.activities.headsetSetup;
 
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
 import android.media.audiofx.Equalizer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.annotation.Nullable;
