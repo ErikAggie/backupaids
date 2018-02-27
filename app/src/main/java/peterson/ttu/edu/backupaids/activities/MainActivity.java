@@ -1,59 +1,52 @@
-package peterson.ttu.edu.backupaids;
+package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
-import android.widget.ListAdapter;
 import android.widget.Spinner;
 
 import java.io.IOException;
-import java.util.List;
+import java.sql.Connection;
 
-import peterson.ttu.edu.backupaids.headsetSetup.FrequencyAdjustFragment;
+import peterson.ttu.edu.backupaids.BluetoothMonitor;
+import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.headsetSetup.PresetSetupActivity;
-import peterson.ttu.edu.backupaids.headsetSetup.VolumeSetFragment;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
+import peterson.ttu.edu.backupaids.network.ConnectionListener;
+import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION = 200;
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
-    private String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.BLUETOOTH};
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
+    private ConnectionListener connectionListener;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Request audio recording permission
-        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION);
+        // Request audio recording permission. The app is useless without it, so ask up-front
+        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
-        BluetoothMonitor monitor = BluetoothMonitor.createInstance(this);
-        IntentFilter connectFilter = new IntentFilter();
-        connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-        registerReceiver(monitor, connectFilter);
-
+        connectionListener = new ConnectionListener(this);
 
         setContentView(R.layout.activity_main);
 
@@ -101,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         boolean permissionToRecordAccepted = false;
         switch (requestCode){
-            case REQUEST_RECORD_AUDIO_AND_BLUETOOTH_PERMISSION:
+            case REQUEST_RECORD_AUDIO_PERMISSION:
                 permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                 break;
         }

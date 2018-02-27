@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="peterson.ttu.edu.backupaids.MainActivity">
+    tools:context="peterson.ttu.edu.backupaids.activities.MainActivity">
 
     <TextView
         android:id="@+id/presetLabel"

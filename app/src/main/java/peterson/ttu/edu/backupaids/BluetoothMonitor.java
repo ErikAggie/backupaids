@@ -14,7 +14,7 @@ import android.util.Log;
 import java.util.List;
 
 /**
- * Created by erika on 2/21/2018.
+ * Monitors for Bluetooth connections (for recording from a Bluetooth source)
  */
 
 public class BluetoothMonitor extends BroadcastReceiver {

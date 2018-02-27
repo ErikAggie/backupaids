@@ -11,5 +11,6 @@
         <item>Hz</item>
         <item>kHz</item>
     </string-array>
+    <string name="title_activity_send_sound">SendSoundActivity</string>
 
 </resources>

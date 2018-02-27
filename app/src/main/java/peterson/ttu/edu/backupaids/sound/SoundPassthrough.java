@@ -1,4 +1,4 @@
-package peterson.ttu.edu.backupaids;
+package peterson.ttu.edu.backupaids.sound;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import peterson.ttu.edu.backupaids.BluetoothMonitor;
+import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 
 /**
@@ -28,7 +30,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
  * Created by Erik Peterson on 1/30/2018.
  */
 
-class SoundPassthrough {
+public class SoundPassthrough {
     private static final String TAG = "SoundPassthrough";
 
     private Context context;

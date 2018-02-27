@@ -8,6 +8,7 @@ import android.util.SparseIntArray;
 
 public class Util {
 
+    public static final int LISTENING_PORT = 48735;
 
     public static final int SAMPLE_RATE = 44100;
 
