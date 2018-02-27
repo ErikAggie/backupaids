@@ -24,22 +24,11 @@ public class SendSoundActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // TODO: probably doesn't need to be a singleton. Just create here and destroy when this activity is created/destroyed.
-        bluetoothMonitor = BluetoothMonitor.createInstance(this);
+        bluetoothMonitor = BluetoothMonitor.createIfNeeded(this);
         IntentFilter connectFilter = new IntentFilter();
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         registerReceiver(bluetoothMonitor, connectFilter);
-
-
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
     }
 }

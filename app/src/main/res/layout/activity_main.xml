@@ -76,6 +76,7 @@
         android:layout_height="64dp"
         android:adjustViewBounds="false"
         android:background="@android:color/background_light"
+        android:onClick="sendToOtherPhone"
         android:scaleType="fitEnd"
         android:src="@drawable/phone_to_phone"
         app:layout_constraintTop_toBottomOf="@id/playSound"

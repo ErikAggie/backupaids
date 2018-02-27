@@ -21,7 +21,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
 
     private static final String TAG = "BluetoothMonitor";
     private static BluetoothMonitor smInstance;
-    private final Activity mActivity;
     private BluetoothDevice mConnectedDevice;
 
     private boolean headsetConnected;
@@ -31,8 +30,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
      * This is public so the system can create it. It should not be called directly!
      */
     private BluetoothMonitor(Activity activity) {
-        mActivity = activity;
-
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothProfile.ServiceListener serviceListener = new BluetoothProfile.ServiceListener() {
             @Override
@@ -53,19 +50,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
         }
     }
 
-    public static BluetoothMonitor createInstance(Activity activity) {
-        if ( smInstance != null) {
-            throw new RuntimeException("Can only be one BluetoothMonitor!");
-        }
-        synchronized (BluetoothMonitor.class) {
-            if ( smInstance != null) {
-                throw new RuntimeException("Can only be one BluetoothMonitor!");
-            }
-            smInstance = new BluetoothMonitor(activity);
-        }
-        return smInstance;
-    }
-
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
@@ -84,6 +68,18 @@ public class BluetoothMonitor extends BroadcastReceiver {
 
     public static BluetoothMonitor getInstance() {
         return smInstance;
+    }
+
+    public static BluetoothMonitor createIfNeeded(Activity activity) {
+        if ( smInstance != null) {
+            synchronized (BluetoothMonitor.class) {
+                if (smInstance != null) {
+                    smInstance = new BluetoothMonitor(activity);
+                }
+            }
+        }
+        return smInstance;
+
     }
 
     public boolean isHeadsetConnected() {

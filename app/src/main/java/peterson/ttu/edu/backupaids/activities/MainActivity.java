@@ -179,6 +179,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void sendToOtherPhone(View view) {
+        startActivity(new Intent(this, SendSoundActivity.class));
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
