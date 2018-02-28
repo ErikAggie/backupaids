@@ -1,5 +1,7 @@
 package peterson.ttu.edu.backupaids;
 
+import android.content.IntentFilter;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.util.SparseIntArray;
 
 /**
@@ -26,5 +28,14 @@ public class Util {
         FREQUENCIES_TO_SOUND_IDS.put(4000, R.raw.hz4000);
         FREQUENCIES_TO_SOUND_IDS.put(8000, R.raw.hz8000);
     }
+
+    public static final IntentFilter WIFI_P2P_INTENT_FILTER = new IntentFilter();
+    static {
+        WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+    }
+
 
 }

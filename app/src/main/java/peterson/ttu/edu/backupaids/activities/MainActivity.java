@@ -24,7 +24,7 @@ import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.ConnectionListener;
+import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,8 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
-    private ConnectionListener connectionListener;
-
+    private ConnectionManager connectionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         // Request audio recording permission. The app is useless without it, so ask up-front
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
-        connectionListener = new ConnectionListener(this);
+        connectionManager = new ConnectionManager(this);
 
         setContentView(R.layout.activity_main);
 
@@ -75,6 +74,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         stopPlaying();
+        unregisterReceiver(connectionManager);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
     }
 
     @Override

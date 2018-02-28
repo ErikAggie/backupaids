@@ -4,12 +4,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import peterson.ttu.edu.backupaids.Util;
@@ -18,25 +23,16 @@ import peterson.ttu.edu.backupaids.Util;
  * Listens for connections to this app from other headsets wanting to send data
  */
 
-public class ConnectionListener extends BroadcastReceiver {
+public class ConnectionManager extends BroadcastReceiver implements WifiP2pManager.PeerListListener{
 
-    private static final String TAG = "ConnectionListener";
+    private static final String TAG = "ConnectionManager";
 
     private final AppCompatActivity activity;
-    private final IntentFilter intentFilter = new IntentFilter();
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
 
-    public ConnectionListener(final AppCompatActivity activity) {
+    public ConnectionManager(final AppCompatActivity activity) {
         this.activity = activity;
-
-        // Create an intent filter for events we need.
-        // Taken from https://developer.android.com/training/connect-devices-wirelessly/wifi-direct.html
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        activity.registerReceiver(this, intentFilter);
 
         // Create the P2P manager
         wifiP2pManager = (WifiP2pManager) activity.getSystemService(Context.WIFI_P2P_SERVICE);
@@ -74,6 +70,41 @@ public class ConnectionListener extends BroadcastReceiver {
         });
     }
 
+    /**
+     * Call when you want to find peers
+     */
+    public void beginPeerDiscovery() {
+        wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                // Nothing to do...
+            }
+
+            @Override
+            public void onFailure(int i) {
+                // TODO: create better error handling
+                Log.e(TAG,"Peer discovery is not working!");
+            }
+        });
+    }
+
+    /**
+     * Call when you want to stop finding peers (i.e. when an activity is paused)
+     */
+    public void stopPeerDiscovery() {
+        wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                // Don't care...
+            }
+
+            @Override
+            public void onFailure(int i) {
+                // Don't care...
+            }
+        });
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/wifi-direct.html
@@ -93,8 +124,10 @@ public class ConnectionListener extends BroadcastReceiver {
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Peers changed...");
 
-            // The peer list has changed! We should probably do something about
-            // that.
+            // Request list of peers
+            if ( wifiP2pManager != null) {
+                wifiP2pManager.requestPeers(channel, this);
+            }
 
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Connection changed...");
@@ -108,6 +141,15 @@ public class ConnectionListener extends BroadcastReceiver {
 //                    .findFragmentById(R.id.frag_list);
 //            fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
 //                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
+        }
+    }
+
+    @Override
+    public void onPeersAvailable(WifiP2pDeviceList peerList) {
+        List<WifiP2pDevice> peers = new ArrayList<>();
+        peers.addAll(peerList.getDeviceList());
+        for ( WifiP2pDevice device : peers) {
+            Log.w(TAG, "Peer device: " + device.deviceName);
         }
     }
 }
