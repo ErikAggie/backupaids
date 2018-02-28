@@ -72,15 +72,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        super.onPause();
         stopPlaying();
+        connectionManager.stopServiceDiscovery();
         unregisterReceiver(connectionManager);
+        super.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
+        connectionManager.beginServiceDiscovery();
     }
 
     @Override

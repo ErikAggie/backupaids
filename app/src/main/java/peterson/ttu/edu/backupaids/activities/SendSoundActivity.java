@@ -38,16 +38,16 @@ public class SendSoundActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        super.onPause();
-        connectionManager.stopPeerDiscovery();
+        connectionManager.stopServiceDiscovery();
         unregisterReceiver(connectionManager);
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-        connectionManager.beginPeerDiscovery();
+        connectionManager.beginServiceDiscovery();
     }
 
     public void sendSound(View view) {

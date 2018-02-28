@@ -10,8 +10,6 @@ import android.util.SparseIntArray;
 
 public class Util {
 
-    public static final int LISTENING_PORT = 48735;
-
     public static final int SAMPLE_RATE = 44100;
 
     public static final String SELECTED_PRESET_ITEM = "SelectedPreset";

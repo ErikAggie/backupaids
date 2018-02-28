@@ -3,33 +3,35 @@ package peterson.ttu.edu.backupaids.network;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import peterson.ttu.edu.backupaids.Util;
 
 /**
  * Listens for connections to this app from other headsets wanting to send data
  */
 
-public class ConnectionManager extends BroadcastReceiver implements WifiP2pManager.PeerListListener{
+public class ConnectionManager extends BroadcastReceiver
+        implements WifiP2pManager.PeerListListener, WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener {
 
     private static final String TAG = "ConnectionManager";
 
     private final AppCompatActivity activity;
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
+
+    private WifiP2pDnsSdServiceRequest serviceRequest;
+
+    private final Map<String, String> peerBuddyMap = new HashMap<>();
 
     public ConnectionManager(final AppCompatActivity activity) {
         this.activity = activity;
@@ -40,7 +42,7 @@ public class ConnectionManager extends BroadcastReceiver implements WifiP2pManag
 
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map record = new HashMap();
-        record.put("listenport", String.valueOf(Util.LISTENING_PORT));
+        record.put("listenport", Integer.toString(57364));
         record.put("buddyname", "Hearing Phone" + (int) (Math.random() * 1000));
         record.put("available", "visible");
 
@@ -73,7 +75,7 @@ public class ConnectionManager extends BroadcastReceiver implements WifiP2pManag
     /**
      * Call when you want to find peers
      */
-    public void beginPeerDiscovery() {
+    public void beginServiceDiscovery() {
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -86,12 +88,53 @@ public class ConnectionManager extends BroadcastReceiver implements WifiP2pManag
                 Log.e(TAG,"Peer discovery is not working!");
             }
         });
+        wifiP2pManager.setDnsSdResponseListeners(channel, this, this);
+
+        serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
+        wifiP2pManager.addServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                // Success!
+            }
+
+            @Override
+            public void onFailure(int code) {
+                // TODO: better error handling here...
+                Log.e(TAG, "Creating service request failed! " + code);
+            }
+        });
+
+        wifiP2pManager.discoverServices(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+
+            }
+
+            @Override
+            public void onFailure(int code) {
+                // TODO: better error handling here...
+                Log.e(TAG, "Unable to discover services: " + code);
+            }
+        });
     }
 
     /**
      * Call when you want to stop finding peers (i.e. when an activity is paused)
      */
-    public void stopPeerDiscovery() {
+    public void stopServiceDiscovery() {
+        if ( serviceRequest != null) {
+            wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    // Cool
+                }
+
+                @Override
+                public void onFailure(int i) {
+                    // Nothing we can do, really
+                }
+            });
+        }
         wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -150,6 +193,37 @@ public class ConnectionManager extends BroadcastReceiver implements WifiP2pManag
         peers.addAll(peerList.getDeviceList());
         for ( WifiP2pDevice device : peers) {
             Log.w(TAG, "Peer device: " + device.deviceName);
+
         }
+    }
+
+    @Override
+    public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
+        Log.w(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
+        peerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get("buddyName"));
+        for ( String key : record.keySet()) {
+            Log.i(TAG, key + ":" + record.get(key));
+        }
+    }
+
+    @Override
+    public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice wifiP2pDevice) {
+        // Update the device name with the human-friendly version from
+        // the DnsTxtRecord, assuming one arrived.
+        wifiP2pDevice.deviceName = peerBuddyMap
+                .containsKey(wifiP2pDevice.deviceAddress) ? peerBuddyMap
+                .get(wifiP2pDevice.deviceAddress) : wifiP2pDevice.deviceName;
+
+        // Add to the custom adapter defined specifically for showing
+        // wifi devices.
+        /*WiFiDirectServicesList fragment = (WiFiDirectServicesList) getFragmentManager()
+                .findFragmentById(R.id.frag_peerlist);
+        WiFiDevicesAdapter adapter = ((WiFiDevicesAdapter) fragment
+                .getListAdapter());
+
+        adapter.add(resourceType);
+        adapter.notifyDataSetChanged();*/
+        Log.i(TAG, "onBonjourServiceAvailable " + instanceName);
+
     }
 }
