@@ -7,13 +7,18 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+
+import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 
-public class SendSoundActivity extends AppCompatActivity {
+public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.SupportedPeersChangeListener {
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
@@ -25,7 +30,7 @@ public class SendSoundActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        connectionManager = new ConnectionManager(this);
+        connectionManager = new ConnectionManager(this, this);
 
         // Listen for Bluetooth connections (for recording)
         bluetoothMonitor = BluetoothMonitor.createIfNeeded(this);
@@ -53,4 +58,16 @@ public class SendSoundActivity extends AppCompatActivity {
     public void sendSound(View view) {
         // TODO: fill in...
     }
+
+    public void supportedPeersChanged(List<String> supportedPeers) {
+        updateSpinner(supportedPeers);
+    }
+
+    private void updateSpinner(List<String> supportedPeers) {
+        Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, supportedPeers);
+        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
+        sendSoundPeerSpinner.setAdapter(arrayAdapter);
+    }
+
 }
