@@ -15,18 +15,18 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.model.SoundPreset;
-import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
-public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.SupportedPeersChangeListener {
+public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.ConnectionListener {
 
+    private boolean sending = false;
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
     private SoundPassthrough soundPassthrough;
@@ -53,6 +53,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     protected void onPause() {
+        stopPlaying();
         connectionManager.stopServiceDiscovery();
         unregisterReceiver(connectionManager);
         super.onPause();
@@ -73,28 +74,12 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
             // Start playing!
             Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
             if ( sendSoundPeerSpinner.getAdapter().getCount() == 0) {
-                Toast.makeText(this, "No peers found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No targets found", Toast.LENGTH_SHORT).show();
                 return;
             }
-            try {
-                connectionManager.connect((String)sendSoundPeerSpinner.getSelectedItem());
-                // TODO: this will be in a callback...
-                soundPassthrough.start(null);
-                playButton.setImageResource(R.drawable.power_button_green2);
-            }
-            catch(IOException e) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Error initializing app");
-                builder.setMessage("Unable to set up audio recording/sending.");
-                builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        finish();
-                    }
-                });
-                builder.create().show();
-            }
 
+            connectionManager.connect((String)sendSoundPeerSpinner.getSelectedItem());
+            playButton.setImageResource(R.drawable.power_button_green2);
         }
     }
 
@@ -106,6 +91,22 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     public void supportedPeersChanged(List<String> supportedPeers) {
         updateSpinner(supportedPeers);
+    }
+
+    @Override
+    public void connectionReady(Socket socket) throws IOException {
+        sending = true;
+        soundPassthrough.stream(socket);
+    }
+
+    @Override
+    public void connectionFailed(IOException e) {
+        stopPlaying();
+    }
+
+    @Override
+    public void connectionClosed() {
+        stopPlaying();
     }
 
     private void updateSpinner(List<String> supportedPeers) {

@@ -17,6 +17,8 @@ import android.os.Process;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,18 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
  */
 
 public class SoundPassthrough {
+
+    public enum RecordType {
+        /**
+         * Use the headset mics (in camcorder mode) to get near and far sounds
+         */
+        Ambient,
+        /**
+         * Use whatever mic is connected (bluetooth, earbuds, etc.)
+         */
+        Mic;
+    }
+
     private static final String TAG = "SoundPassthrough";
 
     private Context context;
@@ -75,9 +89,6 @@ public class SoundPassthrough {
         }
 
         playing = true;
-//        if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
-//            new Thread(new RunSingleInput(createBluetoothAudioRecord(), createAudioTrack(preset))).start();
-//        }
         new Thread(new RunSingleInput(createHeadsetAudioRecord(), createAudioTrack(preset))).start();
     }
 
@@ -181,6 +192,43 @@ public class SoundPassthrough {
                 notifyObject.notify();
             }
         }
+    }
+
+    public void stream(Socket socket) throws IOException {
+        // We're already on a separate thread (to ensure that the socket is cleaned up correctly), so don't create another one
+        threadRunning = true;
+        playing = true;
+        AudioRecord audioRecord = null;
+        if (BluetoothMonitor.getInstance().isHeadsetConnected()) {
+            audioRecord = createBluetoothAudioRecord();
+        } else {
+            audioRecord = createHeadsetAudioRecord();
+        }
+
+        try {
+
+            OutputStream outputStream = socket.getOutputStream();
+
+            byte[] byteBuffer = new byte[bufferSize];
+            audioRecord.startRecording();
+
+            while ( playing) {
+                int amountRead = audioRecord.read(byteBuffer, 0, byteBuffer.length);
+                outputStream.write(byteBuffer, 0, amountRead);
+            }
+
+        } finally {
+            threadRunning = false;
+
+            // Clean up
+            audioRecord.stop();
+            audioRecord.release();
+            synchronized (notifyObject) {
+                threadRunning = false;
+                notifyObject.notify();
+            }
+        }
+
     }
 
     private class RunTwoInputs implements Runnable {
@@ -305,6 +353,7 @@ public class SoundPassthrough {
 
             // Stop the SCO session, if any
             if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
+
                 // TODO: use a variable to determine if we STARTED using a Bluetooth device
             }
         }

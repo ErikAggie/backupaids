@@ -3,10 +3,12 @@ package peterson.ttu.edu.backupaids.network;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
@@ -14,6 +16,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,14 +31,16 @@ import peterson.ttu.edu.backupaids.R;
  */
 
 public class ConnectionManager extends BroadcastReceiver
-        implements WifiP2pManager.PeerListListener, WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener {
+        implements WifiP2pManager.PeerListListener, WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
 
     private static final String TAG = "ConnectionManager";
     private static final String SERVICE_NAME = "ListenForExternalMic";
     private static final String BUDDY_NAME_STRING = "buddyname";
+    // TODO: need to figure out how to make this adaptive (take a port that's free)
+    private static final int CONNECTION_PORT = 57364;
 
     private final AppCompatActivity activity;
-    private final SupportedPeersChangeListener listener;
+    private final ConnectionListener connectionListener;
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
 
@@ -43,9 +50,10 @@ public class ConnectionManager extends BroadcastReceiver
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final List<String> buddiesWithOurService = new ArrayList<>();
 
-    public ConnectionManager(final AppCompatActivity activity, SupportedPeersChangeListener listener) {
+    public ConnectionManager(final AppCompatActivity activity,
+                             ConnectionListener connectionListener) {
         this.activity = activity;
-        this.listener = listener;
+        this.connectionListener = connectionListener;
 
         // Create the P2P manager
         wifiP2pManager = (WifiP2pManager) activity.getSystemService(Context.WIFI_P2P_SERVICE);
@@ -53,7 +61,7 @@ public class ConnectionManager extends BroadcastReceiver
 
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map record = new HashMap();
-        record.put("listenport", Integer.toString(57364));
+        record.put("listenport", Integer.toString(CONNECTION_PORT));
         record.put(BUDDY_NAME_STRING, activity.getString(R.string.app_name) + (int) (Math.random() * 1000));
         record.put("available", "visible");
 
@@ -117,9 +125,7 @@ public class ConnectionManager extends BroadcastReceiver
 
         wifiP2pManager.discoverServices(channel, new WifiP2pManager.ActionListener() {
             @Override
-            public void onSuccess() {
-
-            }
+            public void onSuccess() { }
 
             @Override
             public void onFailure(int code) {
@@ -161,7 +167,7 @@ public class ConnectionManager extends BroadcastReceiver
 
     public void connect(String remoteAppInstanceName) {
         // Have to do a reverse lookup to get the
-        WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
+        final WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
 
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
@@ -180,6 +186,10 @@ public class ConnectionManager extends BroadcastReceiver
             }
         });
     }
+
+    private void createSocket(final WifiP2pDevice remoteDevice) {
+    }
+
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -200,7 +210,7 @@ public class ConnectionManager extends BroadcastReceiver
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Peers changed...");
             buddiesWithOurService.clear();
-            listener.supportedPeersChanged(buddiesWithOurService);
+            connectionListener.supportedPeersChanged(buddiesWithOurService);
 
             // Request list of peers
             if ( wifiP2pManager != null) {
@@ -210,8 +220,16 @@ public class ConnectionManager extends BroadcastReceiver
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Connection changed...");
 
-            // Connection state changed! We should probably do something about
-            // that.
+            if (wifiP2pManager == null) {
+                return;
+            }
+
+            NetworkInfo networkInfo = intent
+                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+
+            if (networkInfo.isConnected()) {
+                wifiP2pManager.requestConnectionInfo(channel, this);
+            }
 
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "This device changed...");
@@ -249,12 +267,35 @@ public class ConnectionManager extends BroadcastReceiver
                 Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName);
                 buddiesWithOurService.add(remoteAppInstanceName);
                 buddyNameToDeviceMap.put(remoteAppInstanceName, wifiP2pDevice);
-                listener.supportedPeersChanged(buddiesWithOurService);
+                connectionListener.supportedPeersChanged(buddiesWithOurService);
             }
         }
     }
 
-    public interface SupportedPeersChangeListener {
+    @Override
+    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+                // We're ready to send data!
+        final InetAddress connectionAddress = wifiP2pInfo.groupOwnerAddress;
+
+        // Do this on a separate thread so we don't block the main thread
+        new Thread(new Runnable() {
+            public void run() {
+                try (Socket client = new Socket(connectionAddress, CONNECTION_PORT)){
+                    connectionListener.connectionReady(client);
+                } catch ( IOException e) {
+                    Log.e(TAG, "Connection failure: " + e.getMessage());
+                    connectionListener.connectionFailed(e);
+                } finally {
+                    connectionListener.connectionClosed();
+                }
+            }
+        }).start();
+    }
+
+    public interface ConnectionListener {
         void supportedPeersChanged(List<String> supportedPeers);
+        void connectionReady(Socket socket) throws IOException;
+        void connectionFailed(IOException e);
+        void connectionClosed();
     }
 }

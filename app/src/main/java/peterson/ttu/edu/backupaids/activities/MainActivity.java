@@ -17,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
@@ -43,11 +44,18 @@ public class MainActivity extends AppCompatActivity {
         // Request audio recording permission. The app is useless without it, so ask up-front
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
-        connectionManager = new ConnectionManager(this, new ConnectionManager.SupportedPeersChangeListener() {
+        connectionManager = new ConnectionManager(this, new ConnectionManager.ConnectionListener() {
             @Override
-            public void supportedPeersChanged(List<String> supportedPeers) {
-                // Don't care
-            }
+            public void supportedPeersChanged(List<String> supportedPeers) { }
+
+            @Override
+            public void connectionReady(Socket socket) throws IOException { }
+
+            @Override
+            public void connectionFailed(IOException e) { }
+
+            @Override
+            public void connectionClosed() { }
         });
 
         setContentView(R.layout.activity_main);
