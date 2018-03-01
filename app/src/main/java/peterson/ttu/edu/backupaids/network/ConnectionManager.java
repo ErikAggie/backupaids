@@ -3,6 +3,8 @@ package peterson.ttu.edu.backupaids.network;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -10,6 +12,7 @@ import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +30,7 @@ public class ConnectionManager extends BroadcastReceiver
 
     private static final String TAG = "ConnectionManager";
     private static final String SERVICE_NAME = "ListenForExternalMic";
+    private static final String BUDDY_NAME_STRING = "buddyname";
 
     private final AppCompatActivity activity;
     private final SupportedPeersChangeListener listener;
@@ -36,6 +40,7 @@ public class ConnectionManager extends BroadcastReceiver
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
+    private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final List<String> buddiesWithOurService = new ArrayList<>();
 
     public ConnectionManager(final AppCompatActivity activity, SupportedPeersChangeListener listener) {
@@ -49,7 +54,7 @@ public class ConnectionManager extends BroadcastReceiver
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map record = new HashMap();
         record.put("listenport", Integer.toString(57364));
-        record.put("buddyname", activity.getString(R.string.app_name) + (int) (Math.random() * 1000));
+        record.put(BUDDY_NAME_STRING, activity.getString(R.string.app_name) + (int) (Math.random() * 1000));
         record.put("available", "visible");
 
         // Service information.  Pass it an instance name, service type
@@ -154,8 +159,26 @@ public class ConnectionManager extends BroadcastReceiver
         });
     }
 
-    public void connect() {
+    public void connect(String remoteAppInstanceName) {
+        // Have to do a reverse lookup to get the
+        WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
 
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+
+        wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, "Connection successful!");
+            }
+
+            @Override
+            public void onFailure(int i) {
+                Toast.makeText(activity, "Connect failed. Retry.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -192,10 +215,6 @@ public class ConnectionManager extends BroadcastReceiver
 
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "This device changed...");
-//            DeviceListFragment fragment = (DeviceListFragment) activity.getFragmentManager()
-//                    .findFragmentById(R.id.frag_list);
-//            fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
-//                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
         }
     }
 
@@ -205,17 +224,16 @@ public class ConnectionManager extends BroadcastReceiver
         peers.addAll(peerList.getDeviceList());
         for ( WifiP2pDevice device : peers) {
             Log.w(TAG, "Peer device: " + device.deviceName);
-
         }
     }
 
     @Override
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
         // TODO: the name can include a "security key" (i.e. the random number) that we could use to validate the connection
-        if ( (record.get("buddyname") != null) &&
-              record.get("buddyname").startsWith(activity.getString(R.string.app_name))) {
+        if ( (record.get(BUDDY_NAME_STRING) != null) &&
+              record.get(BUDDY_NAME_STRING).startsWith(activity.getString(R.string.app_name))) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
-            fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get("buddyname"));
+            fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(BUDDY_NAME_STRING));
             for ( String key : record.keySet()) {
                 Log.d(TAG, key + ":" + record.get(key));
             }
@@ -226,25 +244,14 @@ public class ConnectionManager extends BroadcastReceiver
     public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice wifiP2pDevice) {
         if ( instanceName.equals(SERVICE_NAME)) {
             Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName + " at " + wifiP2pDevice.deviceAddress);
-            wifiP2pDevice.deviceName = fullPeerBuddyMap
-                    .containsKey(wifiP2pDevice.deviceAddress) ? fullPeerBuddyMap
-                    .get(wifiP2pDevice.deviceAddress) : wifiP2pDevice.deviceName;
-            Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName);
-            buddiesWithOurService.add(wifiP2pDevice.deviceName);
-            listener.supportedPeersChanged(buddiesWithOurService);
+            if ( fullPeerBuddyMap.containsKey(wifiP2pDevice.deviceAddress)) {
+                String remoteAppInstanceName = fullPeerBuddyMap.get(wifiP2pDevice.deviceAddress);
+                Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName);
+                buddiesWithOurService.add(remoteAppInstanceName);
+                buddyNameToDeviceMap.put(remoteAppInstanceName, wifiP2pDevice);
+                listener.supportedPeersChanged(buddiesWithOurService);
+            }
         }
-        // Update the device name with the human-friendly version from
-        // the DnsTxtRecord, assuming one arrived.
-
-        // Add to the custom adapter defined specifically for showing
-        // wifi devices.
-        /*WiFiDirectServicesList fragment = (WiFiDirectServicesList) getFragmentManager()
-                .findFragmentById(R.id.frag_peerlist);
-        WiFiDevicesAdapter adapter = ((WiFiDevicesAdapter) fragment
-                .getListAdapter());
-
-        adapter.add(resourceType);
-        adapter.notifyDataSetChanged();*/
     }
 
     public interface SupportedPeersChangeListener {

@@ -93,8 +93,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         unregisterReceiver(BluetoothMonitor.getInstance());
+        super.onDestroy();
     }
 
     private void updateSpinner() {
@@ -134,8 +134,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void playSound(View view) {
         ImageButton playButton = findViewById(R.id.playSound);
-        if ( !soundPassthrough.isPlaying())
-        {
+        if ( soundPassthrough.isPlaying()) {
+            stopPlaying();
+        } else {
             // Start playing!
             try
             {
@@ -162,10 +163,6 @@ public class MainActivity extends AppCompatActivity {
                 builder.create().show();
             }
 
-        }
-        else
-        {
-            stopPlaying();
         }
     }
 

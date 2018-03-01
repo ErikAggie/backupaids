@@ -36,7 +36,7 @@
 
 
     <ImageButton
-        android:id="@+id/playSound"
+        android:id="@+id/sendSoundStartButton"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:adjustViewBounds="false"
