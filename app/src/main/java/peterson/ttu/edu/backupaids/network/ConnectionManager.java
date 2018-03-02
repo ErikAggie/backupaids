@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ public class ConnectionManager extends BroadcastReceiver
     private final WifiP2pManager.Channel channel;
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
+    private ServerSocket serverSocket;
 
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
@@ -187,9 +189,81 @@ public class ConnectionManager extends BroadcastReceiver
         });
     }
 
-    private void createSocket(final WifiP2pDevice remoteDevice) {
+    public void listenForConnections() {
+        if ( serverSocket != null) {
+            throw new RuntimeException("Cannot listen for connections twice!");
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    serverSocket = new ServerSocket(CONNECTION_PORT);
+                    // Do this until we're not listening for connections anymore
+                    while ( serverSocket != null) {
+                        Socket clientSocket = serverSocket.accept();
+                        if ( serverSocket == null) {
+                            // We're not listening anymore, so stop
+                            try {
+                                clientSocket.close();
+                            } catch ( Exception e) {
+
+                            }
+                            break;
+                        }
+                        handleSocket(clientSocket);
+                    }
+                } catch (IOException e) {
+                    Log.w(TAG, "Connection listening stopped: " + e.getMessage(), e);
+                    e.printStackTrace();
+                } finally {
+                    if ( serverSocket != null) {
+                        try {
+                            serverSocket.close();
+                        } catch (IOException e) {
+                            // Don't care
+                        } finally {
+                            serverSocket = null;
+                        }
+                    }
+                }
+            }
+        }).start();
     }
 
+    private void handleSocket(final Socket clientSocket) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "Accepted connection from " + clientSocket.getInetAddress().getCanonicalHostName());
+                // TODO: do some sort of security verification (send a code phrase first, perhaps)
+                try {
+                    connectionListener.incomingConnection(clientSocket);
+                } catch ( IOException e) {
+                    // The connection might've been caught elsewhere. This is okay
+                    Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
+                } finally {
+                    if ( clientSocket != null) {
+                        try {
+                            clientSocket.close();
+                        } catch (Exception e) {
+                            // Do nothing
+                        }
+                    }
+                }
+            }
+        }).start();
+    }
+
+    public void stopListeningForConnections() {
+        if ( serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                serverSocket = null;
+            }
+        }
+    }
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -295,6 +369,7 @@ public class ConnectionManager extends BroadcastReceiver
     public interface ConnectionListener {
         void supportedPeersChanged(List<String> supportedPeers);
         void connectionReady(Socket socket) throws IOException;
+        void incomingConnection(Socket socket) throws IOException;
         void connectionFailed(IOException e);
         void connectionClosed();
     }

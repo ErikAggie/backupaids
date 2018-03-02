@@ -1,26 +1,23 @@
 package peterson.ttu.edu.backupaids.sound;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
-import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.media.audiofx.Equalizer;
 import android.os.Build;
 import android.os.Process;
 import android.util.Log;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
@@ -49,6 +46,7 @@ public class SoundPassthrough {
 
     private Context context;
     private Runnable playRunnable;
+    private Socket remoteConnection;
     private boolean playing = false;
     private boolean threadRunning = false;
     private Object notifyObject = new Object();
@@ -154,52 +152,12 @@ public class SoundPassthrough {
         return audioTrack;
     }
 
-    private class RunSingleInput implements Runnable {
-
-        private final AudioRecord audioRecord;
-        private final AudioTrack audioTrack;
-
-        public RunSingleInput(AudioRecord audioRecord, AudioTrack audioTrack) {
-            this.audioRecord = audioRecord;
-            this.audioTrack = audioTrack;
-        }
-
-        @Override
-        public void run() {
-            threadRunning = true;
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-
-            short[] audioBuffer = new short[bufferSize / 2];
-
-            audioTrack.play();
-
-            audioRecord.startRecording();
-
-            // Here's the playing loop!
-            while ( playing)
-            {
-                int amountRead = audioRecord.read(audioBuffer, 0, audioBuffer.length);
-                audioTrack.write(audioBuffer, 0, amountRead);
-            }
-
-            // Clean up
-            audioRecord.stop();
-            audioRecord.release();
-            audioTrack.stop();
-            audioTrack.release();
-            synchronized (notifyObject) {
-                threadRunning = false;
-                notifyObject.notify();
-            }
-        }
-    }
-
     public void stream(Socket socket) throws IOException {
         // We're already on a separate thread (to ensure that the socket is cleaned up correctly), so don't create another one
         threadRunning = true;
         playing = true;
         AudioRecord audioRecord = null;
-        if (BluetoothMonitor.getInstance().isHeadsetConnected()) {
+        if (BluetoothMonitor.createIfNeeded(context).isHeadsetConnected()) {
             audioRecord = createBluetoothAudioRecord();
         } else {
             audioRecord = createHeadsetAudioRecord();
@@ -228,77 +186,38 @@ public class SoundPassthrough {
                 notifyObject.notify();
             }
         }
-
     }
 
-    private class RunTwoInputs implements Runnable {
+    public void playRemoteConnection(Socket socket, SoundPreset preset) throws IOException {
+        this.remoteConnection = socket;
 
-        private final AudioRecord audioRecord1;
-        private final AudioRecord audioRecord2;
-        private final AudioTrack audioTrack;
+        byte[] dataRead = new byte[bufferSize];
 
-        public RunTwoInputs(AudioRecord audioRecord1, AudioRecord audioRecord2, AudioTrack audioTrack) {
-            this.audioRecord1 = audioRecord1;
-            this.audioRecord2 = audioRecord2;
-            this.audioTrack = audioTrack;
-        }
-
-        @Override
-        public void run() {
-            threadRunning = true;
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-
-            short[] audioBuffer1 = new short[bufferSize / 2];
-            short[] audioBuffer2 = new short[bufferSize / 2];
-            short[] outputBuffer = new short[bufferSize / 2];
-
-            audioTrack.play();
-
-            audioRecord1.startRecording();
-            audioRecord2.startRecording();
-
-            // Here's the playing loop!
-            while ( playing)
-            {
-                int amountRead = audioRecord1.read(audioBuffer1, 0, audioBuffer1.length);
-                int amountRead2 = audioRecord2.read(audioBuffer2, 0, audioBuffer2.length);
-                //Log.i(TAG, "Read " + amountRead + " vs." + amountRead2);
-                // We'll drop stuff that we couldn't read
-                amountRead = Math.max(amountRead, amountRead2);
-                // Need this to be even for the code below...
-                if ( amountRead % 2 == 1) {
-                    amountRead++;
-                }
-                int largeResult;
-                // Since this is a time-critical piece, I did some optimizing:
-                //   1. Doing things two at a time is ~11% faster than incrementing by 1
-                //   2. The Math.min(...Math.max(...)) is significantly faster than trying to short-circuit the process
-                //      (perhaps the compiler is inlining it)
-                for ( int index=0, nextIndex = 1; index<amountRead; index+=2, nextIndex += 2) {
-                    largeResult = audioBuffer1[index] + audioBuffer2[index];
-                    outputBuffer[index] = (short)Math.min(Short.MAX_VALUE, (Math.max(largeResult, Short.MIN_VALUE)));
-                    largeResult = audioBuffer1[nextIndex] + audioBuffer2[nextIndex];
-                    outputBuffer[nextIndex] = (short)Math.min(Short.MAX_VALUE, (Math.max(largeResult, Short.MIN_VALUE)));
-                }
-
-                audioTrack.write(outputBuffer, 0, amountRead);
+        InputStream inputStream = socket.getInputStream();
+        final AudioTrack audioTrack = createAudioTrack(preset);
+        // Calling stop will close the connection for us, so we need not worry about stopping
+        // ourselves.
+        try {
+            while ( true) {
+                int amountRead = inputStream.read(dataRead);
+                audioTrack.write(dataRead, 0, amountRead);
             }
-
-            // Clean up
-            audioRecord1.stop();
-            audioRecord1.release();
-            audioRecord2.stop();
-            audioRecord2.release();
-            // We know we're using Bluetooth here...
-            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            audioManager.stopBluetoothSco();
+            // DO NOT CATCH IOExceptions. Allow them to bubble up so the connection is finished
+        } finally {
             audioTrack.stop();
             audioTrack.release();
-            synchronized (notifyObject) {
-                threadRunning = false;
-                notifyObject.notify();
-            }
+        }
+    }
 
+    private void stopPlayingRemoteConnection() {
+        if ( remoteConnection != null) {
+            try {
+                remoteConnection.close();
+            } catch ( Exception e) {
+                // Do nothing
+            } finally {
+                remoteConnection = null;
+            }
         }
     }
 
@@ -335,6 +254,7 @@ public class SoundPassthrough {
 
     public void stop()
     {
+        stopPlayingRemoteConnection();
         playing = false;
         if ( playRunnable != null) {
             // This really shouldn't be done on the GUI thread, but it shouldn't take long
@@ -355,6 +275,46 @@ public class SoundPassthrough {
             if ( BluetoothMonitor.getInstance().isHeadsetConnected()) {
 
                 // TODO: use a variable to determine if we STARTED using a Bluetooth device
+            }
+        }
+    }
+
+    private class RunSingleInput implements Runnable {
+
+        private final AudioRecord audioRecord;
+        private final AudioTrack audioTrack;
+
+        public RunSingleInput(AudioRecord audioRecord, AudioTrack audioTrack) {
+            this.audioRecord = audioRecord;
+            this.audioTrack = audioTrack;
+        }
+
+        @Override
+        public void run() {
+            threadRunning = true;
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
+
+            short[] audioBuffer = new short[bufferSize / 2];
+
+            audioTrack.play();
+
+            audioRecord.startRecording();
+
+            // Here's the playing loop!
+            while ( playing)
+            {
+                int amountRead = audioRecord.read(audioBuffer, 0, audioBuffer.length);
+                audioTrack.write(audioBuffer, 0, amountRead);
+            }
+
+            // Clean up
+            audioRecord.stop();
+            audioRecord.release();
+            audioTrack.stop();
+            audioTrack.release();
+            synchronized (notifyObject) {
+                threadRunning = false;
+                notifyObject.notify();
             }
         }
     }

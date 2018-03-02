@@ -29,7 +29,7 @@ public class BluetoothMonitor extends BroadcastReceiver {
     /**
      * This is public so the system can create it. It should not be called directly!
      */
-    private BluetoothMonitor(Activity activity) {
+    private BluetoothMonitor(Context context) {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothProfile.ServiceListener serviceListener = new BluetoothProfile.ServiceListener() {
             @Override
@@ -45,7 +45,7 @@ public class BluetoothMonitor extends BroadcastReceiver {
                 // Don't care; this is handled below
             }
         };
-        if ( !bluetoothAdapter.getProfileProxy(activity.getApplicationContext(), serviceListener, BluetoothProfile.HEADSET)) {
+        if ( !bluetoothAdapter.getProfileProxy(context.getApplicationContext(), serviceListener, BluetoothProfile.HEADSET)) {
             Log.e(TAG, "Unable to get bluetooth profile.");
         }
     }
@@ -70,11 +70,11 @@ public class BluetoothMonitor extends BroadcastReceiver {
         return smInstance;
     }
 
-    public static BluetoothMonitor createIfNeeded(Activity activity) {
-        if ( smInstance != null) {
+    public static BluetoothMonitor createIfNeeded(Context context) {
+        if ( smInstance == null) {
             synchronized (BluetoothMonitor.class) {
-                if (smInstance != null) {
-                    smInstance = new BluetoothMonitor(activity);
+                if (smInstance == null) {
+                    smInstance = new BluetoothMonitor(context);
                 }
             }
         }

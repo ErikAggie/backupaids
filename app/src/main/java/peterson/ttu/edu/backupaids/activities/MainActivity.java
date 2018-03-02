@@ -52,6 +52,11 @@ public class MainActivity extends AppCompatActivity {
             public void connectionReady(Socket socket) throws IOException { }
 
             @Override
+            public void incomingConnection(Socket socket) throws IOException {
+                soundPassthrough.playRemoteConnection(socket, getCurrentSoundPreset());
+            }
+
+            @Override
             public void connectionFailed(IOException e) { }
 
             @Override
@@ -87,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         stopPlaying();
+        connectionManager.stopListeningForConnections();
         connectionManager.stopServiceDiscovery();
         unregisterReceiver(connectionManager);
         super.onPause();
@@ -96,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
+        connectionManager.listenForConnections();
         connectionManager.beginServiceDiscovery();
     }
 
@@ -148,12 +155,7 @@ public class MainActivity extends AppCompatActivity {
             // Start playing!
             try
             {
-                SoundPreset preset = null;
-                Spinner presetSpinner = findViewById(R.id.presetSpinner);
-                int position = presetSpinner.getSelectedItemPosition();
-                if ( position >= 0) {
-                    preset = SoundPresetManager.getInstance(this).getPreset(position);
-                }
+                SoundPreset preset = getCurrentSoundPreset();
                 soundPassthrough.start(preset);
                 playButton.setImageResource(R.drawable.power_button_green2);
             }
@@ -172,6 +174,15 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+    }
+
+    private SoundPreset getCurrentSoundPreset() {
+        Spinner presetSpinner = findViewById(R.id.presetSpinner);
+        int position = presetSpinner.getSelectedItemPosition();
+        if ( position >= 0) {
+            return SoundPresetManager.getInstance(this).getPreset(position);
+        }
+        return null;
     }
 
     private void stopPlaying() {

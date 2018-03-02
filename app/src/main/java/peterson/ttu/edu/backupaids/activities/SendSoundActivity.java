@@ -38,10 +38,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        soundPassthrough = new SoundPassthrough(this);
-
-        connectionManager = new ConnectionManager(this, this);
-
         // Listen for Bluetooth connections (for recording)
         bluetoothMonitor = BluetoothMonitor.createIfNeeded(this);
         IntentFilter connectFilter = new IntentFilter();
@@ -49,6 +45,17 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         registerReceiver(bluetoothMonitor, connectFilter);
+
+        soundPassthrough = new SoundPassthrough(this);
+
+        connectionManager = new ConnectionManager(this, this);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(bluetoothMonitor);
+        super.onDestroy();
     }
 
     @Override
@@ -100,8 +107,19 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     @Override
+    public void incomingConnection(Socket socket) throws IOException {
+        // Shouldn't happen. Stop it
+        throw new IOException("Shouldn't be a remote connection to this activity...");
+    }
+
+    @Override
     public void connectionFailed(IOException e) {
-        stopPlaying();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopPlaying();
+            }
+        });
     }
 
     @Override
