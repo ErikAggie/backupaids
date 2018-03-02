@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Process;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -173,10 +174,18 @@ public class SoundPassthrough {
             while ( playing) {
                 int amountRead = audioRecord.read(byteBuffer, 0, byteBuffer.length);
                 outputStream.write(byteBuffer, 0, amountRead);
+                outputStream.flush();
+                Log.d(TAG, "Sent " + amountRead + " bytes");
             }
 
         } finally {
             threadRunning = false;
+
+            try {
+                socket.close();
+            } catch ( Exception e) {
+                // Let it go
+            }
 
             // Clean up
             audioRecord.stop();
@@ -192,18 +201,26 @@ public class SoundPassthrough {
         this.remoteConnection = socket;
 
         byte[] dataRead = new byte[bufferSize];
+        playing = true;
 
-        InputStream inputStream = socket.getInputStream();
+        BufferedInputStream inputStream = new BufferedInputStream(socket.getInputStream());
         final AudioTrack audioTrack = createAudioTrack(preset);
+        audioTrack.play();
         // Calling stop will close the connection for us, so we need not worry about stopping
         // ourselves.
         try {
-            while ( true) {
+            while ( playing) {
                 int amountRead = inputStream.read(dataRead);
+                if ( amountRead < 0) {
+                    playing = false;
+                    break;
+                }
                 audioTrack.write(dataRead, 0, amountRead);
+                Log.d(TAG, "Played " + amountRead + " bytes");
             }
             // DO NOT CATCH IOExceptions. Allow them to bubble up so the connection is finished
         } finally {
+            socket.close();
             audioTrack.stop();
             audioTrack.release();
         }

@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -51,6 +52,9 @@ public class ConnectionManager extends BroadcastReceiver
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final List<String> buddiesWithOurService = new ArrayList<>();
+
+    private boolean tryingToConnect = false;
+    private int connectionNumber = 1;
 
     public ConnectionManager(final AppCompatActivity activity,
                              ConnectionListener connectionListener) {
@@ -165,6 +169,7 @@ public class ConnectionManager extends BroadcastReceiver
                 // Don't care...
             }
         });
+        tryingToConnect = false;
     }
 
     public void connect(String remoteAppInstanceName) {
@@ -174,6 +179,7 @@ public class ConnectionManager extends BroadcastReceiver
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
+        tryingToConnect = true;
 
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
@@ -269,7 +275,6 @@ public class ConnectionManager extends BroadcastReceiver
     public void onReceive(Context context, Intent intent) {
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/wifi-direct.html
         String action = intent.getAction();
-        // TODO: this should do more than just log it...
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             // Determine if Wifi P2P mode is enabled or not, alert
             // the Activity.
@@ -347,19 +352,27 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     @Override
-    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-                // We're ready to send data!
+    public void onConnectionInfoAvailable(final WifiP2pInfo wifiP2pInfo) {
+        final int thisConnection = connectionNumber++;
+        if ( !tryingToConnect) {
+            return;
+        }
+        tryingToConnect = false;
+
+        // We're ready to send data!
         final InetAddress connectionAddress = wifiP2pInfo.groupOwnerAddress;
 
         // Do this on a separate thread so we don't block the main thread
         new Thread(new Runnable() {
             public void run() {
                 try (Socket client = new Socket(connectionAddress, CONNECTION_PORT)){
+                    Log.i(TAG, "Connection " + thisConnection + " connected!");
                     connectionListener.connectionReady(client);
                 } catch ( IOException e) {
-                    Log.e(TAG, "Connection failure: " + e.getMessage());
+                    Log.e(TAG, "Connection " + thisConnection + " failure: ", e);
                     connectionListener.connectionFailed(e);
                 } finally {
+                    Log.i(TAG, "Connection " + thisConnection + " closed");
                     connectionListener.connectionClosed();
                 }
             }
