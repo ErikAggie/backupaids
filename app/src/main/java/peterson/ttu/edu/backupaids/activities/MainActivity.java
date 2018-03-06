@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,10 +16,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -36,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
     private ConnectionManager connectionManager;
+    private final Timer discoverableCountdown = new Timer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 if ( soundPassthrough.isPlaying()) {
+                    // TODO: I guess we should re-connect in this case?
                     // Restart playback so we use the new preset
                     stopPlaying();
                     playSound(view);
@@ -93,8 +100,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         stopPlaying();
         connectionManager.stopListeningForConnections();
+        Switch toggleButton = (Switch) findViewById(R.id.makeDiscoverable);
+        toggleButton.setChecked(false);
         connectionManager.stopServiceDiscovery();
         unregisterReceiver(connectionManager);
+        discoverableCountdown.cancel();
         super.onPause();
     }
 
@@ -102,8 +112,6 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-        connectionManager.listenForConnections();
-        connectionManager.beginServiceDiscovery();
     }
 
     @Override
@@ -174,6 +182,32 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+    }
+
+    public void discoverableToggled(View view) {
+        final Switch makeDiscoverableButton = (Switch) view;
+        if ( makeDiscoverableButton.isActivated()) {
+            connectionManager.listenForConnections();
+            connectionManager.beginServiceDiscovery();
+
+            // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
+            discoverableCountdown.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            makeDiscoverableButton.setChecked(false);
+                        }
+                    });
+                }
+            }, 30000); // 30 seconds
+        } else {
+            discoverableCountdown.cancel();
+            connectionManager.stopServiceDiscovery();
+            connectionManager.stopListeningForConnections();
+        }
+
     }
 
     private SoundPreset getCurrentSoundPreset() {
