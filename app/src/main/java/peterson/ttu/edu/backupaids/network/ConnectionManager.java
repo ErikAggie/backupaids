@@ -145,6 +145,7 @@ public class ConnectionManager extends BroadcastReceiver
      * Call when you want to stop finding peers (i.e. when an activity is paused)
      */
     public void stopServiceDiscovery() {
+        Log.i(TAG, "Stopping service discovery");
         if ( serviceRequest != null) {
             wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
                 @Override
@@ -269,6 +270,7 @@ public class ConnectionManager extends BroadcastReceiver
                 serverSocket = null;
             }
         }
+        Log.i(TAG, "Not listening for connections.");
     }
 
     @Override

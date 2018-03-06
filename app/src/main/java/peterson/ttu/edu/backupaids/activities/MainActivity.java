@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
     private ConnectionManager connectionManager;
-    private final Timer discoverableCountdown = new Timer();
+    private Timer discoverableCountdown = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,12 +100,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         stopPlaying();
-        connectionManager.stopListeningForConnections();
+
         Switch toggleButton = (Switch) findViewById(R.id.makeDiscoverable);
         toggleButton.setChecked(false);
-        connectionManager.stopServiceDiscovery();
+        stopServiceDiscovery(true);
+
         unregisterReceiver(connectionManager);
-        discoverableCountdown.cancel();
         super.onPause();
     }
 
@@ -186,11 +187,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void discoverableToggled(View view) {
         final Switch makeDiscoverableButton = (Switch) view;
-        if ( makeDiscoverableButton.isActivated()) {
+        if ( makeDiscoverableButton.isChecked()) {
             connectionManager.listenForConnections();
             connectionManager.beginServiceDiscovery();
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
+            discoverableCountdown = new Timer();
             discoverableCountdown.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -198,16 +200,25 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             makeDiscoverableButton.setChecked(false);
+                            stopServiceDiscovery(false);
                         }
                     });
                 }
             }, 30000); // 30 seconds
         } else {
-            discoverableCountdown.cancel();
-            connectionManager.stopServiceDiscovery();
-            connectionManager.stopListeningForConnections();
         }
 
+    }
+
+    private void stopServiceDiscovery(boolean stopConnectionsAlso) {
+        if ( discoverableCountdown != null) {
+            discoverableCountdown.cancel();
+            discoverableCountdown = null;
+        }
+        connectionManager.stopServiceDiscovery();
+        if ( stopConnectionsAlso) {
+            connectionManager.stopListeningForConnections();
+        }
     }
 
     private SoundPreset getCurrentSoundPreset() {

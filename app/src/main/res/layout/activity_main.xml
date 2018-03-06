@@ -89,7 +89,7 @@
         android:id="@+id/textForSendToOtherPhoneButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Send audio to other app:"
+        android:text="Send audio to another phone:"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"

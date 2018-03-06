@@ -35,8 +35,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_sound);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         // Listen for Bluetooth connections (for recording)
         bluetoothMonitor = BluetoothMonitor.createIfNeeded(this);
