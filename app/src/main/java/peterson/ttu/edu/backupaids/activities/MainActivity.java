@@ -66,6 +66,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void connectionFailed(IOException e) { }
 
+            // We don't do this, so it won't be called
+            @Override
+            public void servicePublishingFailed() { }
+
             @Override
             public void connectionClosed() { }
         });
@@ -206,6 +210,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, 30000); // 30 seconds
         } else {
+            if ( discoverableCountdown != null) {
+                discoverableCountdown.cancel();
+                discoverableCountdown = null;
+            }
+            stopServiceDiscovery(true);
         }
 
     }

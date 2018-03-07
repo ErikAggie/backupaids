@@ -3,6 +3,7 @@ package peterson.ttu.edu.backupaids.network;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -12,6 +13,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
+import android.net.wifi.p2p.nsd.WifiP2pServiceInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
@@ -41,10 +43,12 @@ public class ConnectionManager extends BroadcastReceiver
     // TODO: need to figure out how to make this adaptive (take a port that's free)
     private static final int CONNECTION_PORT = 57364;
 
-    private final AppCompatActivity activity;
+    private final Context context;
     private final ConnectionListener connectionListener;
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
+
+    private WifiP2pServiceInfo serviceInfo;
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
     private ServerSocket serverSocket;
@@ -56,25 +60,31 @@ public class ConnectionManager extends BroadcastReceiver
     private boolean tryingToConnect = false;
     private int connectionNumber = 1;
 
-    public ConnectionManager(final AppCompatActivity activity,
+    public ConnectionManager(final Context context,
                              ConnectionListener connectionListener) {
-        this.activity = activity;
+        this.context = context;
         this.connectionListener = connectionListener;
 
         // Create the P2P manager
-        wifiP2pManager = (WifiP2pManager) activity.getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = wifiP2pManager.initialize(activity, activity.getMainLooper(), null);
+        wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
+        channel = wifiP2pManager.initialize(context, context.getMainLooper(), null);
 
+    }
+
+    public void publishService() {
+        if ( serviceInfo != null) {
+            throw new RuntimeException("Cannot publish a service twice!");
+        }
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
-        Map record = new HashMap();
+        Map<String, String> record = new HashMap<>();
         record.put("listenport", Integer.toString(CONNECTION_PORT));
-        record.put(BUDDY_NAME_STRING, activity.getString(R.string.app_name) + (int) (Math.random() * 1000));
+        record.put(BUDDY_NAME_STRING, context.getString(R.string.app_name) + (int) (Math.random() * 1000));
         record.put("available", "visible");
 
         // Service information.  Pass it an instance name, service type
         // _protocol._transportlayer , and the map containing
         // information other devices will want once they connect to this one.
-        WifiP2pDnsSdServiceInfo serviceInfo =
+        serviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_NAME, "_presence._tcp", record);
 
         // Add the local service, sending the service info, network channel,
@@ -91,10 +101,28 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onFailure(int arg0) {
                 Log.e(TAG, "Failed to set up listener: " + arg0);
-                activity.finish();
-                // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                connectionListener.servicePublishingFailed();
             }
         });
+    }
+
+    public void unpublishService() {
+        if ( serviceInfo == null) {
+            // Nothing to unpublish
+            return;
+        }
+        wifiP2pManager.removeLocalService(channel, serviceInfo, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                // Good, but not something we need to react to...
+            }
+
+            @Override
+            public void onFailure(int i) {
+                // Nothing we can do about it...
+            }
+        });
+        serviceInfo = null;
     }
 
     /**
@@ -190,8 +218,7 @@ public class ConnectionManager extends BroadcastReceiver
 
             @Override
             public void onFailure(int i) {
-                Toast.makeText(activity, "Connect failed. Retry.",
-                        Toast.LENGTH_SHORT).show();
+                connectionListener.connectionFailed(new IOException("WiFiP2pManager.connect failed: " + i));
             }
         });
     }
@@ -330,7 +357,7 @@ public class ConnectionManager extends BroadcastReceiver
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
         // TODO: the name can include a "security key" (i.e. the random number) that we could use to validate the connection
         if ( (record.get(BUDDY_NAME_STRING) != null) &&
-              record.get(BUDDY_NAME_STRING).startsWith(activity.getString(R.string.app_name))) {
+              record.get(BUDDY_NAME_STRING).startsWith(context.getString(R.string.app_name))) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
             fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(BUDDY_NAME_STRING));
             for ( String key : record.keySet()) {
@@ -382,6 +409,7 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     public interface ConnectionListener {
+        void servicePublishingFailed();
         void supportedPeersChanged(List<String> supportedPeers);
         void connectionReady(Socket socket) throws IOException;
         void incomingConnection(Socket socket) throws IOException;

@@ -47,7 +47,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         soundPassthrough = new SoundPassthrough(this);
 
         connectionManager = new ConnectionManager(this, this);
-
     }
 
     @Override
@@ -60,6 +59,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     protected void onPause() {
         stopPlaying();
         connectionManager.stopServiceDiscovery();
+        connectionManager.unpublishService();
         unregisterReceiver(connectionManager);
         super.onPause();
     }
@@ -67,6 +67,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     @Override
     protected void onResume() {
         super.onResume();
+        connectionManager.publishService();
         registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
         connectionManager.beginServiceDiscovery();
     }
@@ -94,6 +95,12 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         playButton.setImageResource(R.drawable.power_button_blue2);
     }
 
+    @Override
+    public void servicePublishingFailed() {
+        Toast.makeText(this, "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG);
+        finish();
+    }
+
     public void supportedPeersChanged(List<String> supportedPeers) {
         updateSpinner(supportedPeers);
     }
@@ -111,10 +118,11 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     @Override
-    public void connectionFailed(IOException e) {
+    public void connectionFailed(final IOException e) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG);
                 stopPlaying();
             }
         });
@@ -122,7 +130,12 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void connectionClosed() {
-        stopPlaying();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopPlaying();
+            }
+        });
     }
 
     private void updateSpinner(List<String> supportedPeers) {
