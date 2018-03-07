@@ -31,6 +31,8 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     private ConnectionManager connectionManager;
     private SoundPassthrough soundPassthrough;
 
+    private boolean fullyStopped = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,20 +58,30 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     @Override
-    protected void onPause() {
-        stopPlaying();
-        connectionManager.stopServiceDiscovery();
-        connectionManager.unpublishService();
-        unregisterReceiver(connectionManager);
-        super.onPause();
+    protected void onStop() {
+        if ( Util.isScreenOn(this)) {
+            // App closed or else we've switched activities. Stop what we're doing
+            stopPlaying();
+            unregisterReceiver(connectionManager);
+            connectionManager.stopServiceDiscovery();
+            connectionManager.unpublishService();
+            fullyStopped = true;
+        } else {
+            // Screen turned off; we should keep going
+            fullyStopped = false;
+        }
+        super.onStop();
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        connectionManager.publishService();
-        registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-        connectionManager.beginServiceDiscovery();
+    protected void onStart() {
+        super.onStart();
+        if ( fullyStopped) {
+            registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
+            connectionManager.publishService();
+            connectionManager.beginServiceDiscovery();
+        }
+        fullyStopped = false;
     }
 
     public void sendSound(View view) {
@@ -136,6 +148,11 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 stopPlaying();
             }
         });
+    }
+
+    @Override
+    public void servicesStopped() {
+        // Nothing for us to do
     }
 
     private void updateSpinner(List<String> supportedPeers) {

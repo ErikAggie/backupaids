@@ -1,8 +1,12 @@
 package peterson.ttu.edu.backupaids;
 
+import android.content.Context;
 import android.content.IntentFilter;
+import android.hardware.display.DisplayManager;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.util.Log;
 import android.util.SparseIntArray;
+import android.view.Display;
 
 /**
  * Stuff that should probably be in a resource someday...
@@ -35,5 +39,17 @@ public class Util {
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
+    // Taken from https://stackoverflow.com/questions/13307565/screen-on-off-detection
+    public static boolean isScreenOn(Context context) {
+        DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+        boolean screenOn = false;
+        for (Display display : dm.getDisplays()) {
+            if (display.getState() != Display.STATE_OFF) {
+                Log.i("Util", "Screen " + display.getName() + " is " + display.getState());
+                screenOn = true;
+            }
+        }
+        return screenOn;
+    }
 
 }

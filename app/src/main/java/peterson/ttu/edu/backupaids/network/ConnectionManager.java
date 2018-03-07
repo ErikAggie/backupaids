@@ -190,6 +190,7 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
+                connectionListener.servicesStopped();
                 // Don't care...
             }
 
@@ -415,5 +416,6 @@ public class ConnectionManager extends BroadcastReceiver
         void incomingConnection(Socket socket) throws IOException;
         void connectionFailed(IOException e);
         void connectionClosed();
+        void servicesStopped();
     }
 }

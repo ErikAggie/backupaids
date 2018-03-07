@@ -11,6 +11,7 @@ import android.support.annotation.UiThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private SoundPassthrough soundPassthrough;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
+    private boolean fullyStopped = true;
+    private Runnable todoOnServiceStopped;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +75,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void connectionClosed() { }
+
+            @Override
+            public void servicesStopped() {
+                if ( todoOnServiceStopped != null) {
+                    runOnUiThread(todoOnServiceStopped);
+                    todoOnServiceStopped = null;
+                }
+            }
         });
 
         setContentView(R.layout.activity_main);
@@ -102,27 +113,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
+    protected void onDestroy() {
+        unregisterReceiver(BluetoothMonitor.getInstance());
+        stopServiceDiscovery(true);
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onStop() {
+        if ( fullyStopped == true) {
+            // We've already stopped everything
+            super.onStop();
+            return;
+        }
+        if ( Util.isScreenOn(this)) {
+            // The screen is still on, which means we've been replaced by something else
+            // Stop whatever we were doing
+            Log.i("MainActivity", "Stopping but screen still on");
+            stopActions();
+            fullyStopped = true;
+        } else {
+            // Screen turned off, so we should keep playing/allowing discovery
+            Log.i("MainActivity", "Stopping because screen turned off?");
+            fullyStopped = false;
+        }
+        super.onStop();
+    }
+
+    private void stopActions() {
         stopPlaying();
 
+        unregisterReceiver(connectionManager);
         Switch toggleButton = (Switch) findViewById(R.id.makeDiscoverable);
         toggleButton.setChecked(false);
         stopServiceDiscovery(true);
-
-        unregisterReceiver(connectionManager);
-        super.onPause();
+        connectionManager.unpublishService();
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-    }
+    protected void onStart() {
+        super.onStart();
 
-    @Override
-    protected void onDestroy() {
-        unregisterReceiver(BluetoothMonitor.getInstance());
-        super.onDestroy();
+        if ( fullyStopped) {
+            registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
+            connectionManager.publishService();
+        }
+        fullyStopped = false;
     }
 
     private void updateSpinner() {
@@ -157,7 +193,6 @@ public class MainActivity extends AppCompatActivity {
     {
         soundPassthrough = new SoundPassthrough(this);
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
     }
 
     public void playSound(View view) {
@@ -216,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
             }
             stopServiceDiscovery(true);
         }
-
     }
 
     private void stopServiceDiscovery(boolean stopConnectionsAlso) {
@@ -261,7 +295,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendToOtherPhone(View view) {
-        startActivity(new Intent(this, SendSoundActivity.class));
+        // Stop all this stuff now so that SendSoundActivity can start service discovery fresh
+        // (otherwise I think there's a race condition between us stopping and the other starting)
+        // Use the runnable to kick off the activity only when the service stuff is stopped
+        todoOnServiceStopped = new Runnable() {
+            @Override
+            public void run() {
+                startActivity(new Intent(MainActivity.this, SendSoundActivity.class));
+            }
+        };
+        stopActions();
+        fullyStopped = true;
     }
 
     @Override
