@@ -94,8 +94,6 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onSuccess() {
                 Log.i(TAG, "Created local service!");
-                // Command successful! Code isn't necessarily needed here,
-                // Unless you want to update the UI or add logging statements.
             }
 
             @Override
@@ -132,7 +130,7 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                // Nothing to do...
+                Log.i(TAG, "Discover peers successful");
             }
 
             @Override
@@ -147,7 +145,7 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.addServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                // Success!
+                Log.i(TAG,"Add service request successful");
             }
 
             @Override
@@ -159,7 +157,9 @@ public class ConnectionManager extends BroadcastReceiver
 
         wifiP2pManager.discoverServices(channel, new WifiP2pManager.ActionListener() {
             @Override
-            public void onSuccess() { }
+            public void onSuccess() {
+                Log.i(TAG, "Discover services succeeded.");
+            }
 
             @Override
             public void onFailure(int code) {
@@ -214,11 +214,12 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Log.i(TAG, "Connection successful!");
+                Log.i(TAG, "Connection initiated!");
             }
 
             @Override
             public void onFailure(int i) {
+                Log.e(TAG, "Connection failed: " + i);
                 connectionListener.connectionFailed(new IOException("WiFiP2pManager.connect failed: " + i));
             }
         });
@@ -226,7 +227,13 @@ public class ConnectionManager extends BroadcastReceiver
 
     public void listenForConnections() {
         if ( serverSocket != null) {
-            throw new RuntimeException("Cannot listen for connections twice!");
+            try {
+                serverSocket.close();
+            } catch ( IOException e) {
+                // Nothing we can do...
+            } finally {
+                serverSocket = null;
+            }
         }
         new Thread(new Runnable() {
             public void run() {
@@ -234,6 +241,7 @@ public class ConnectionManager extends BroadcastReceiver
                     serverSocket = new ServerSocket(CONNECTION_PORT);
                     // Do this until we're not listening for connections anymore
                     while ( serverSocket != null) {
+                        Log.i(TAG, "Listening for connections.");
                         Socket clientSocket = serverSocket.accept();
                         if ( serverSocket == null) {
                             // We're not listening anymore, so stop
@@ -318,8 +326,7 @@ public class ConnectionManager extends BroadcastReceiver
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Peers changed...");
-            buddiesWithOurService.clear();
-            connectionListener.supportedPeersChanged(buddiesWithOurService);
+            // Do not clear the buddy list as the screen shouldn't be up long enough for this to grow very stale
 
             // Request list of peers
             if ( wifiP2pManager != null) {
