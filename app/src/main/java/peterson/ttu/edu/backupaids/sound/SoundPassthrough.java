@@ -175,17 +175,10 @@ public class SoundPassthrough {
                 int amountRead = audioRecord.read(byteBuffer, 0, byteBuffer.length);
                 outputStream.write(byteBuffer, 0, amountRead);
                 outputStream.flush();
-                Log.d(TAG, "Sent " + amountRead + " bytes");
             }
 
         } finally {
             threadRunning = false;
-
-            try {
-                socket.close();
-            } catch ( Exception e) {
-                // Let it go
-            }
 
             // Clean up
             audioRecord.stop();
@@ -211,16 +204,19 @@ public class SoundPassthrough {
         try {
             while ( playing) {
                 int amountRead = inputStream.read(dataRead);
+                while ( inputStream.available() > dataRead.length * 2) {
+                    // We've fallen behind
+                    inputStream.read(dataRead);
+                }
                 if ( amountRead < 0) {
+                    Log.w(TAG, "Error reading data, amount read is " + amountRead);
                     playing = false;
                     break;
                 }
                 audioTrack.write(dataRead, 0, amountRead);
-                Log.d(TAG, "Played " + amountRead + " bytes");
             }
             // DO NOT CATCH IOExceptions. Allow them to bubble up so the connection is finished
         } finally {
-            socket.close();
             audioTrack.stop();
             audioTrack.release();
         }

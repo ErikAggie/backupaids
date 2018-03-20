@@ -119,27 +119,6 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    @Override
-    protected void onStop() {
-        if ( fullyStopped == true) {
-            // We've already stopped everything
-            super.onStop();
-            return;
-        }
-        if ( Util.isScreenOn(this)) {
-            // The screen is still on, which means we've been replaced by something else
-            // Stop whatever we were doing
-            Log.i("MainActivity", "Stopping but screen still on");
-            stopActions();
-            fullyStopped = true;
-        } else {
-            // Screen turned off, so we should keep playing/allowing discovery
-            Log.i("MainActivity", "Stopping because screen turned off?");
-            fullyStopped = false;
-        }
-        super.onStop();
-    }
-
     private void stopActions() {
         stopPlaying();
 

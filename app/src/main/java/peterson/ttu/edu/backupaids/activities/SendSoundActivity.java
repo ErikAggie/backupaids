@@ -91,7 +91,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         } else {
             // Start playing!
             Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
-            if ( sendSoundPeerSpinner.getAdapter().getCount() == 0) {
+            if ( sendSoundPeerSpinner == null ||
+                 sendSoundPeerSpinner.getAdapter() == null ||
+                 sendSoundPeerSpinner.getAdapter().getCount() == 0) {
                 Toast.makeText(this, "No targets found", Toast.LENGTH_SHORT).show();
                 return;
             }

@@ -85,7 +85,7 @@ public class ConnectionManager extends BroadcastReceiver
         // _protocol._transportlayer , and the map containing
         // information other devices will want once they connect to this one.
         serviceInfo =
-                WifiP2pDnsSdServiceInfo.newInstance(SERVICE_NAME, "_presence._tcp", record);
+                WifiP2pDnsSdServiceInfo.newInstance(SERVICE_NAME, "_presence._udp", record);
 
         // Add the local service, sending the service info, network channel,
         // and listener that will be used to indicate success or failure of
