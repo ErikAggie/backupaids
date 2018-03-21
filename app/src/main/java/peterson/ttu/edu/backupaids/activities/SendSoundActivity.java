@@ -153,6 +153,11 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     @Override
+    public void servicesStarted() {
+        // Nothing for us to do
+    }
+
+    @Override
     public void servicesStopped() {
         // Nothing for us to do
     }

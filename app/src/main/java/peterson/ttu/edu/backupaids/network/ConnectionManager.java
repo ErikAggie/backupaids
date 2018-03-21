@@ -40,8 +40,9 @@ public class ConnectionManager extends BroadcastReceiver
     private static final String TAG = "ConnectionManager";
     private static final String SERVICE_NAME = "ListenForExternalMic";
     private static final String BUDDY_NAME_STRING = "buddyname";
+    private static final String LISTEN_PORT_STRING = "listenport";
     // TODO: need to figure out how to make this adaptive (take a port that's free)
-    private static final int CONNECTION_PORT = 57364;
+    private int listenPortNumber;
 
     private final Context context;
     private final ConnectionListener connectionListener;
@@ -55,10 +56,12 @@ public class ConnectionManager extends BroadcastReceiver
 
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
+    private final Map<String, Integer> buddyNameToPortNumber = new HashMap<>();
     private final List<String> buddiesWithOurService = new ArrayList<>();
 
     private boolean tryingToConnect = false;
     private int connectionNumber = 1;
+    private int portToConnectTo;
 
     public ConnectionManager(final Context context,
                              ConnectionListener connectionListener) {
@@ -77,7 +80,7 @@ public class ConnectionManager extends BroadcastReceiver
         }
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map<String, String> record = new HashMap<>();
-        record.put("listenport", Integer.toString(CONNECTION_PORT));
+        record.put(LISTEN_PORT_STRING, Integer.toString(listenPortNumber));
         record.put(BUDDY_NAME_STRING, context.getString(R.string.app_name) + (int) (Math.random() * 1000));
         record.put("available", "visible");
 
@@ -130,6 +133,7 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
+                connectionListener.servicesStarted();
                 Log.i(TAG, "Discover peers successful");
             }
 
@@ -205,6 +209,7 @@ public class ConnectionManager extends BroadcastReceiver
     public void connect(String remoteAppInstanceName) {
         // Have to do a reverse lookup to get the
         final WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
+        portToConnectTo = buddyNameToPortNumber.get(remoteAppInstanceName);
 
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
@@ -235,10 +240,17 @@ public class ConnectionManager extends BroadcastReceiver
                 serverSocket = null;
             }
         }
+        try {
+            serverSocket = new ServerSocket(0);
+            listenPortNumber = serverSocket.getLocalPort();
+        } catch ( IOException e) {
+            Log.e(TAG, "Error creating server socket: " + e.getMessage(), e);
+            connectionListener.connectionFailed(e);
+            return;
+        }
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    serverSocket = new ServerSocket(CONNECTION_PORT);
                     // Do this until we're not listening for connections anymore
                     while ( serverSocket != null) {
                         Log.i(TAG, "Listening for connections.");
@@ -368,6 +380,7 @@ public class ConnectionManager extends BroadcastReceiver
               record.get(BUDDY_NAME_STRING).startsWith(context.getString(R.string.app_name))) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
             fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(BUDDY_NAME_STRING));
+            buddyNameToPortNumber.put(record.get(BUDDY_NAME_STRING), Integer.valueOf(record.get(LISTEN_PORT_STRING)));
             for ( String key : record.keySet()) {
                 Log.d(TAG, key + ":" + record.get(key));
             }
@@ -399,10 +412,11 @@ public class ConnectionManager extends BroadcastReceiver
         // We're ready to send data!
         final InetAddress connectionAddress = wifiP2pInfo.groupOwnerAddress;
 
+
         // Do this on a separate thread so we don't block the main thread
         new Thread(new Runnable() {
             public void run() {
-                try (Socket client = new Socket(connectionAddress, CONNECTION_PORT)){
+                try (Socket client = new Socket(connectionAddress, portToConnectTo)){
                     Log.i(TAG, "Connection " + thisConnection + " connected!");
                     connectionListener.connectionReady(client);
                 } catch ( IOException e) {
@@ -423,6 +437,7 @@ public class ConnectionManager extends BroadcastReceiver
         void incomingConnection(Socket socket) throws IOException;
         void connectionFailed(IOException e);
         void connectionClosed();
+        void servicesStarted();
         void servicesStopped();
     }
 }

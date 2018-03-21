@@ -15,11 +15,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.Spinner;
-import android.widget.Switch;
-import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -46,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private Timer discoverableCountdown = null;
     private boolean fullyStopped = true;
     private Runnable todoOnServiceStopped;
+    private boolean isDiscoverable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,25 +61,74 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void incomingConnection(Socket socket) throws IOException {
+                // We don't need to stop discovery (and, by extension, change the button back to gray)
+                // since we made a connection
+                if ( discoverableCountdown != null) {
+                    discoverableCountdown.cancel();
+                    discoverableCountdown = null;
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+                    }
+                });
                 soundPassthrough.playRemoteConnection(socket, getCurrentSoundPreset());
             }
 
             @Override
-            public void connectionFailed(IOException e) { }
+            public void connectionFailed(IOException e) {
+                connectionManager.stopListeningForConnections();
+                connectionManager.stopServiceDiscovery();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopServiceDiscovery(true);
+                    }
+                });
+            }
 
             // We don't do this, so it won't be called
             @Override
             public void servicePublishingFailed() { }
 
             @Override
-            public void connectionClosed() { }
+            public void connectionClosed() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopServiceDiscovery(true);
+                    }
+                });
+            }
+
+            @Override
+            public void servicesStarted() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+                        isDiscoverable = true;
+                    }
+                });
+            }
 
             @Override
             public void servicesStopped() {
-                if ( todoOnServiceStopped != null) {
-                    runOnUiThread(todoOnServiceStopped);
-                    todoOnServiceStopped = null;
-                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                        isDiscoverable = false;
+                        if ( todoOnServiceStopped != null) {
+                            todoOnServiceStopped.run();
+                            todoOnServiceStopped = null;
+                        }
+                    }
+                });
             }
         });
 
@@ -114,7 +161,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(BluetoothMonitor.getInstance());
         stopServiceDiscovery(true);
         super.onDestroy();
     }
@@ -122,11 +168,11 @@ public class MainActivity extends AppCompatActivity {
     private void stopActions() {
         stopPlaying();
 
-        unregisterReceiver(connectionManager);
-        Switch toggleButton = (Switch) findViewById(R.id.makeDiscoverable);
-        toggleButton.setChecked(false);
+        ImageButton toggleButton = (ImageButton) findViewById(R.id.makeDiscoverable);
+        toggleButton.setImageResource(R.drawable.phone_in_gray);
         stopServiceDiscovery(true);
         connectionManager.unpublishService();
+        unregisterReceiver(connectionManager);
     }
 
     @Override
@@ -135,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
 
         if ( fullyStopped) {
             registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-            connectionManager.publishService();
         }
         fullyStopped = false;
     }
@@ -203,10 +248,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void discoverableToggled(View view) {
-        final Switch makeDiscoverableButton = (Switch) view;
-        if ( makeDiscoverableButton.isChecked()) {
+    public void makeDiscoverable(View view) {
+        if ( isDiscoverable) {
+            stopServiceDiscovery(true);
+            // Stop everything
+        } else {
             connectionManager.listenForConnections();
+            connectionManager.publishService();
             connectionManager.beginServiceDiscovery();
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
@@ -217,18 +265,11 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            makeDiscoverableButton.setChecked(false);
                             stopServiceDiscovery(false);
                         }
                     });
                 }
             }, 30000); // 30 seconds
-        } else {
-            if ( discoverableCountdown != null) {
-                discoverableCountdown.cancel();
-                discoverableCountdown = null;
-            }
-            stopServiceDiscovery(true);
         }
     }
 
@@ -238,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
             discoverableCountdown = null;
         }
         connectionManager.stopServiceDiscovery();
+        connectionManager.unpublishService();
         if ( stopConnectionsAlso) {
             connectionManager.stopListeningForConnections();
         }
