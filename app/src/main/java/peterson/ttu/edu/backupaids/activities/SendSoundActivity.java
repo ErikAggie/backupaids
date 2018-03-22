@@ -1,13 +1,10 @@
 package peterson.ttu.edu.backupaids.activities;
 
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
-import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
@@ -22,16 +19,15 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.network.MakeConnection;
+import peterson.ttu.edu.backupaids.network.MakeConnectionListener;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
-public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.ConnectionListener {
+public class SendSoundActivity extends AppCompatActivity implements MakeConnectionListener {
 
-    private boolean sending = false;
     private BluetoothMonitor bluetoothMonitor;
-    private ConnectionManager connectionManager;
+    private MakeConnection makeConnection;
     private SoundPassthrough soundPassthrough;
-
-    private boolean fullyStopped = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,40 +44,17 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
         soundPassthrough = new SoundPassthrough(this);
 
-        connectionManager = new ConnectionManager(this, this);
+        makeConnection = new MakeConnection(this, this);
     }
 
     @Override
     protected void onDestroy() {
         unregisterReceiver(bluetoothMonitor);
+        if ( makeConnection != null) {
+            makeConnection.close();
+            makeConnection = null;
+        }
         super.onDestroy();
-    }
-
-    @Override
-    protected void onStop() {
-        if ( Util.isScreenOn(this)) {
-            // App closed or else we've switched activities. Stop what we're doing
-            stopPlaying();
-            unregisterReceiver(connectionManager);
-            connectionManager.stopServiceDiscovery();
-            connectionManager.unpublishService();
-            fullyStopped = true;
-        } else {
-            // Screen turned off; we should keep going
-            fullyStopped = false;
-        }
-        super.onStop();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if ( fullyStopped) {
-            registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-            connectionManager.publishService();
-            connectionManager.beginServiceDiscovery();
-        }
-        fullyStopped = false;
     }
 
     public void sendSound(View view) {
@@ -98,7 +71,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 return;
             }
 
-            connectionManager.connect((String)sendSoundPeerSpinner.getSelectedItem());
+            makeConnection.connect((String)sendSoundPeerSpinner.getSelectedItem());
             playButton.setImageResource(R.drawable.power_button_green2);
         }
     }
@@ -121,14 +94,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void connectionReady(Socket socket) throws IOException {
-        sending = true;
         soundPassthrough.stream(socket);
-    }
-
-    @Override
-    public void incomingConnection(Socket socket) throws IOException {
-        // Shouldn't happen. Stop it
-        throw new IOException("Shouldn't be a remote connection to this activity...");
     }
 
     @Override

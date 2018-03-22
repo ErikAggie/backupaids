@@ -7,11 +7,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -20,26 +18,25 @@ import android.widget.Spinner;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.network.AcceptConnection;
+import peterson.ttu.edu.backupaids.network.AcceptConnectionListener;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AcceptConnectionListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
-    private ConnectionManager connectionManager;
+    private AcceptConnection acceptConnection;
     private Timer discoverableCountdown = null;
     private boolean fullyStopped = true;
     private Runnable todoOnServiceStopped;
@@ -51,86 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Request audio recording permission. The app is useless without it, so ask up-front
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
-
-        connectionManager = new ConnectionManager(this, new ConnectionManager.ConnectionListener() {
-            @Override
-            public void supportedPeersChanged(List<String> supportedPeers) { }
-
-            @Override
-            public void connectionReady(Socket socket) throws IOException { }
-
-            @Override
-            public void incomingConnection(Socket socket) throws IOException {
-                // We don't need to stop discovery (and, by extension, change the button back to gray)
-                // since we made a connection
-                if ( discoverableCountdown != null) {
-                    discoverableCountdown.cancel();
-                    discoverableCountdown = null;
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
-                    }
-                });
-                soundPassthrough.playRemoteConnection(socket, getCurrentSoundPreset());
-            }
-
-            @Override
-            public void connectionFailed(IOException e) {
-                connectionManager.stopListeningForConnections();
-                connectionManager.stopServiceDiscovery();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        stopServiceDiscovery(true);
-                    }
-                });
-            }
-
-            // We don't do this, so it won't be called
-            @Override
-            public void servicePublishingFailed() { }
-
-            @Override
-            public void connectionClosed() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        stopServiceDiscovery(true);
-                    }
-                });
-            }
-
-            @Override
-            public void servicesStarted() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
-                        isDiscoverable = true;
-                    }
-                });
-            }
-
-            @Override
-            public void servicesStopped() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                        makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
-                        isDiscoverable = false;
-                        if ( todoOnServiceStopped != null) {
-                            todoOnServiceStopped.run();
-                            todoOnServiceStopped = null;
-                        }
-                    }
-                });
-            }
-        });
 
         setContentView(R.layout.activity_main);
 
@@ -161,28 +78,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        stopServiceDiscovery(true);
-        super.onDestroy();
-    }
-
-    private void stopActions() {
+        stopListening();
         stopPlaying();
-
-        ImageButton toggleButton = (ImageButton) findViewById(R.id.makeDiscoverable);
-        toggleButton.setImageResource(R.drawable.phone_in_gray);
-        stopServiceDiscovery(true);
-        connectionManager.unpublishService();
-        unregisterReceiver(connectionManager);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        if ( fullyStopped) {
-            registerReceiver(connectionManager, Util.WIFI_P2P_INTENT_FILTER);
-        }
-        fullyStopped = false;
+        super.onDestroy();
     }
 
     private void updateSpinner() {
@@ -249,13 +147,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void makeDiscoverable(View view) {
-        if ( isDiscoverable) {
-            stopServiceDiscovery(true);
+        if ( acceptConnection != null) {
+            stopListening();
             // Stop everything
         } else {
-            connectionManager.listenForConnections();
-            connectionManager.publishService();
-            connectionManager.beginServiceDiscovery();
+            acceptConnection = new AcceptConnection(this, this);
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
             discoverableCountdown = new Timer();
@@ -265,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            stopServiceDiscovery(false);
+                            stopListening();
                         }
                     });
                 }
@@ -273,15 +169,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void stopServiceDiscovery(boolean stopConnectionsAlso) {
+    private void stopListening() {
         if ( discoverableCountdown != null) {
             discoverableCountdown.cancel();
             discoverableCountdown = null;
         }
-        connectionManager.stopServiceDiscovery();
-        connectionManager.unpublishService();
-        if ( stopConnectionsAlso) {
-            connectionManager.stopListeningForConnections();
+        if ( acceptConnection != null) {
+            acceptConnection.close();
+            acceptConnection = null;
         }
     }
 
@@ -319,14 +214,17 @@ public class MainActivity extends AppCompatActivity {
         // Stop all this stuff now so that SendSoundActivity can start service discovery fresh
         // (otherwise I think there's a race condition between us stopping and the other starting)
         // Use the runnable to kick off the activity only when the service stuff is stopped
-        todoOnServiceStopped = new Runnable() {
-            @Override
-            public void run() {
-                startActivity(new Intent(MainActivity.this, SendSoundActivity.class));
-            }
-        };
-        stopActions();
-        fullyStopped = true;
+        if ( acceptConnection != null) {
+            todoOnServiceStopped = new Runnable() {
+                @Override
+                public void run() {
+                    startActivity(new Intent(MainActivity.this, SendSoundActivity.class));
+                }
+            };
+            stopListening();
+        } else {
+            startActivity(new Intent(MainActivity.this, SendSoundActivity.class));
+        }
     }
 
     @Override
@@ -334,4 +232,74 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         updateSpinner();
     }
+
+    @Override
+    public void servicesStarted() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+            }
+        });
+    }
+
+    @Override
+    public void servicesStopped() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                isDiscoverable = false;
+                if ( todoOnServiceStopped != null) {
+                    todoOnServiceStopped.run();
+                    todoOnServiceStopped = null;
+                }
+            }
+        });
+    }
+
+    @Override
+    public void servicePublishingFailed() {
+
+    }
+
+    @Override
+    public void connectionFailed(IOException e) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopListening();
+            }
+        });
+    }
+
+    @Override
+    public void incomingConnection(Socket clientSocket) throws IOException {
+        if ( discoverableCountdown != null) {
+            discoverableCountdown.cancel();
+            discoverableCountdown = null;
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+            }
+        });
+        soundPassthrough.playRemoteConnection(clientSocket, getCurrentSoundPreset());
+
+    }
+
+    @Override
+    public void connectionClosed() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopListening();
+            }
+        });
+    }
+
 }

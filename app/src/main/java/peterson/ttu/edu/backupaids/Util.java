@@ -14,6 +14,11 @@ import android.view.Display;
 
 public class Util {
 
+    public static final String SERVICE_NAME = "ListenForExternalMic";
+    public static final String BUDDY_NAME_STRING = "buddyname";
+    public static final String LISTEN_PORT_STRING = "listenport";
+
+
     public static final int SAMPLE_RATE = 44100;
 
     public static final String SELECTED_PRESET_ITEM = "SelectedPreset";
