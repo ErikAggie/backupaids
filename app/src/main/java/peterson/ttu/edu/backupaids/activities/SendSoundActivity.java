@@ -13,21 +13,21 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.network.MakeConnection;
-import peterson.ttu.edu.backupaids.network.MakeConnectionListener;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
-public class SendSoundActivity extends AppCompatActivity implements MakeConnectionListener {
+public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
 
     private BluetoothMonitor bluetoothMonitor;
-    private MakeConnection makeConnection;
+    private ConnectionManager connectionManager;
     private SoundPassthrough soundPassthrough;
+    private List<String> peers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +35,6 @@ public class SendSoundActivity extends AppCompatActivity implements MakeConnecti
         setContentView(R.layout.activity_send_sound);
 
         // Listen for Bluetooth connections (for recording)
-        bluetoothMonitor = BluetoothMonitor.createIfNeeded(this);
         IntentFilter connectFilter = new IntentFilter();
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
@@ -44,15 +43,14 @@ public class SendSoundActivity extends AppCompatActivity implements MakeConnecti
 
         soundPassthrough = new SoundPassthrough(this);
 
-        makeConnection = new MakeConnection(this, this);
+        connectionManager = new ConnectionManager(this, this);
     }
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(bluetoothMonitor);
-        if ( makeConnection != null) {
-            makeConnection.close();
-            makeConnection = null;
+        if ( connectionManager != null) {
+            connectionManager.close();
+            connectionManager = null;
         }
         super.onDestroy();
     }
@@ -71,7 +69,7 @@ public class SendSoundActivity extends AppCompatActivity implements MakeConnecti
                 return;
             }
 
-            makeConnection.connect((String)sendSoundPeerSpinner.getSelectedItem());
+            connectionManager.connect((String)sendSoundPeerSpinner.getSelectedItem());
             playButton.setImageResource(R.drawable.power_button_green2);
         }
     }
@@ -88,8 +86,10 @@ public class SendSoundActivity extends AppCompatActivity implements MakeConnecti
         finish();
     }
 
-    public void supportedPeersChanged(List<String> supportedPeers) {
-        updateSpinner(supportedPeers);
+    @Override
+    public void foundAPeer(String newPeer) {
+        peers.add(newPeer);
+        updateSpinner();
     }
 
     @Override
@@ -128,9 +128,9 @@ public class SendSoundActivity extends AppCompatActivity implements MakeConnecti
         // Nothing for us to do
     }
 
-    private void updateSpinner(List<String> supportedPeers) {
+    private void updateSpinner() {
         Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, supportedPeers);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, peers);
         arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
         sendSoundPeerSpinner.setAdapter(arrayAdapter);
     }
