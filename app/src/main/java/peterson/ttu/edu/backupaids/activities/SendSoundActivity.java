@@ -56,7 +56,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
     }
 
     public void sendSound(View view) {
-        ImageButton playButton = findViewById(R.id.sendSoundStartButton);
         if ( soundPassthrough.isPlaying()) {
             stopPlaying();
         } else {
@@ -69,8 +68,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
                 return;
             }
 
-            connectionManager.connect((String)sendSoundPeerSpinner.getSelectedItem());
-            playButton.setImageResource(R.drawable.power_button_green2);
+            connectionManager.makeConnection((String)sendSoundPeerSpinner.getSelectedItem());
         }
     }
 
@@ -94,16 +92,25 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     @Override
     public void connectionReady(Socket socket) throws IOException {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+                playButton.setImageResource(R.drawable.power_button_green2);
+            }
+        });
         soundPassthrough.stream(socket);
     }
 
     @Override
     public void connectionFailed(final IOException e) {
+        stopPlaying();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG);
-                stopPlaying();
+                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+                playButton.setImageResource(R.drawable.power_button_blue2);
             }
         });
     }
@@ -114,6 +121,13 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
             @Override
             public void run() {
                 stopPlaying();
+            }
+        });
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+                playButton.setImageResource(R.drawable.power_button_blue2);
             }
         });
     }

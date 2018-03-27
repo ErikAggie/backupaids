@@ -156,9 +156,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     public void makeDiscoverable(View view) {
         if ( connectionManager != null) {
+            soundPassthrough.stop();
             stopListening();
             // Stop everything
         } else {
+            connectionList.clear();
             connectionManager = new ConnectionManager(this, this);
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
@@ -173,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                         }
                     });
                 }
-            }, 30000); // 30 seconds
+            }, 180000); // 2 minutes
         }
     }
 
@@ -278,6 +280,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     @Override
     public void connectionFailed(IOException e) {
+        // TODO: this should stop only the streaming part...
+        soundPassthrough.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -288,6 +292,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     @Override
     public void connectionClosed() {
+        // TODO: this should stop only the streaming part...
+        soundPassthrough.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -335,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     @Override
     public void connectionConfirmed(String connectionName) {
-        connectionManager.connect(connectionName);
+        connectionManager.makeConnection(connectionName);
         // TODO: fill in...
     }
 

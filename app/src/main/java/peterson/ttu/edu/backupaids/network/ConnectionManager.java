@@ -18,9 +18,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
@@ -56,8 +54,6 @@ public class ConnectionManager extends BroadcastReceiver
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
-    protected boolean tryingToConnect = false;
-
     /**
      * Set things up.
      * @param context Context (Activity) to use for registration
@@ -80,7 +76,6 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     public void close() {
-        tryingToConnect = false;
         stopServiceDiscovery();
         unpublishService();
         stopListeningForConnections();
@@ -223,10 +218,8 @@ public class ConnectionManager extends BroadcastReceiver
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                 Log.i(TAG, "Wifi P2P enabled!");
-                //activity.setIsWifiP2pEnabled(true);
             } else {
                 Log.i(TAG, "Wifi P2P disabled!");
-                //activity.setIsWifiP2pEnabled(false);
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Peers changed...");
@@ -273,7 +266,9 @@ public class ConnectionManager extends BroadcastReceiver
                 String remoteAppInstanceName = fullPeerBuddyMap.get(wifiP2pDevice.deviceAddress);
                 Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName);
                 buddyNameToDeviceMap.put(remoteAppInstanceName, wifiP2pDevice);
-                listener.foundAPeer(remoteAppInstanceName);
+
+                // Get the connection information so we can be sure we're ready to go
+                getConnectionInfo(remoteAppInstanceName);
             }
         }
     }
@@ -383,14 +378,14 @@ public class ConnectionManager extends BroadcastReceiver
      *
      * @param remoteAppInstanceName App instance to connect to
      */
-    public void connect(String remoteAppInstanceName) {
+    private void getConnectionInfo(String remoteAppInstanceName) {
         // Have to do a reverse lookup to get the
         final WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
         portToConnectTo = buddyNameToPortNumber.get(remoteAppInstanceName);
 
         if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
             // We already know the IP and can connect directly!
-            makeConnection(savedIPs.get(remoteAppInstanceName));
+            listener.foundAPeer(remoteAppInstanceName);
             return;
         }
 
@@ -400,7 +395,6 @@ public class ConnectionManager extends BroadcastReceiver
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
-        tryingToConnect = true;
 
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
@@ -421,23 +415,26 @@ public class ConnectionManager extends BroadcastReceiver
         // Called when we have connection info (in particular, the all-important IP address)
 
         // See if we're waiting on this information, then save it
-        for ( String buddyName : savedIPs.keySet()) {
-            if ( savedIPs.get(buddyName) == null) {
+        for (String buddyName : savedIPs.keySet()) {
+            if (savedIPs.get(buddyName) == null) {
                 savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
+
+                // We have all we need to connect at this point. NOW inform the activity
+                listener.foundAPeer(buddyName);
+                break;
             }
         }
 
-        if (!tryingToConnect) {
-            Log.e(TAG, "Not trying to connect to " + wifiP2pInfo.groupOwnerAddress.getHostAddress());
-            return;
-        }
-        tryingToConnect = false;
-
-        // We're ready to send data!
-        makeConnection(wifiP2pInfo.groupOwnerAddress);
     }
 
-    private void makeConnection(final InetAddress connectionAddress) {
+    public void makeConnection(String remoteAppInstanceName) {
+
+        final InetAddress connectionAddress = savedIPs.get(remoteAppInstanceName);
+        if ( connectionAddress == null) {
+            // Shouldn't happen since we won't pass connection info without having this...
+            throw new RuntimeException("Don't have connection info for " + remoteAppInstanceName);
+        }
+
         // Do this on a separate thread so we don't block the main thread
         new Thread(new Runnable() {
             public void run() {
