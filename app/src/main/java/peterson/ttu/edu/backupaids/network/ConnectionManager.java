@@ -4,8 +4,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
@@ -13,44 +14,90 @@ import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
 import android.net.wifi.p2p.nsd.WifiP2pServiceInfo;
 import android.util.Log;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 
 /**
- * Base class for connecting to another phone
+ * Handles connecting to another phone. This class is expected to be fairly transient: you should
+ * only construct it when you're ready to look for connections, and then call close() and
+ * drop your reference to it when you're done.
  */
 public class ConnectionManager extends BroadcastReceiver
-        implements WifiP2pManager.PeerListListener, WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
+        implements WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
 
     private static final String TAG = "ConnectionManager";
+
+    // Keep the same pin throughout this instance of the app so we can reconnect--Android doesn't
+    // seem to give us the connection info multiple times
+    // Make it a 6-digit number (100001-999999)
+    private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
+
     protected int listenPortNumber;
 
     protected final Context context;
-    private final ConnectionBaseListener listener;
+    protected final ConnectionListener listener;
     protected final WifiP2pManager wifiP2pManager;
-    protected final WifiP2pManager.Channel channel;
+    protected static WifiP2pManager.Channel channel;
+
+    // Stuff for making a connection (peer devices we find, etc.)
+    private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
+    private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
+    private final Map<String, Integer> buddyNameToPortNumber = new HashMap<>();
+    // Save IPs so we can re-connect
+    private static final Map<String, InetAddress> savedIPs = new HashMap<>();
+    private int portToConnectTo;
+
+    // Because of the way service discovery appears to work (only one of the two sides gets notified about a service),
+    // both sides have to listen for a connection
+    private ServerSocket serverSocket;
 
     private WifiP2pServiceInfo serviceInfo;
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
     /**
-     * Set things up. Protected because only a sub-class should instantiate this
-     * @param context
-     * @param listener
+     * Set things up and kick things off.
+     *
+     * @param context Context (Activity) to use for registration
+     * @param listener Where to send event notifications
      */
-    protected ConnectionManager(final Context context, final ConnectionBaseListener listener) {
+    public ConnectionManager(final Context context, final ConnectionListener listener) {
         this.context = context;
         this.listener = listener;
 
-        // Create the P2P manager
+        // Create the P2P manager. Only initialize it once
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = wifiP2pManager.initialize(context, context.getMainLooper(), null);
+        if ( channel == null) {
+            channel = wifiP2pManager.initialize(context, context.getMainLooper(), null);
+        }
+        context.registerReceiver(this, Util.WIFI_P2P_INTENT_FILTER);
+
+        listenForConnections();
+        publishService();
+        beginServiceDiscovery();
+    }
+
+    public void close() {
+        stopServiceDiscovery();
+        unpublishService();
+        stopListeningForConnections();
+        context.unregisterReceiver(this);
+    }
+
+    /**
+     * Get the pin number for this instance of the app
+     *
+     * @return Pin number (static throughout each running of the app)
+     */
+    public static int getPin() {
+        return OUR_PIN;
     }
 
     /**
@@ -63,7 +110,8 @@ public class ConnectionManager extends BroadcastReceiver
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map<String, String> record = new HashMap<>();
         record.put(Util.LISTEN_PORT_STRING, Integer.toString(listenPortNumber));
-        record.put(Util.BUDDY_NAME_STRING, context.getString(R.string.app_name) + (int) (Math.random() * 1000));
+        record.put(Util.BUDDY_NAME_STRING, context.getString(R.string.app_name));
+        record.put(Util.PIN_NUMBER_STRING, Integer.toString(OUR_PIN));
         record.put("available", "visible");
 
         // Service information.  Pass it an instance name, service type
@@ -115,19 +163,6 @@ public class ConnectionManager extends BroadcastReceiver
      * Call when you want to find peers
      */
     protected void beginServiceDiscovery() {
-        wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                listener.servicesStarted();
-                Log.i(TAG, "Discover peers successful");
-            }
-
-            @Override
-            public void onFailure(int i) {
-                // TODO: create better error handling
-                Log.e(TAG,"Peer discovery is not working!");
-            }
-        });
         wifiP2pManager.setDnsSdResponseListeners(channel, this, this);
 
         serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
@@ -148,6 +183,7 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onSuccess() {
                 Log.i(TAG, "Discover services succeeded.");
+                listener.servicesStarted();
             }
 
             @Override
@@ -167,6 +203,7 @@ public class ConnectionManager extends BroadcastReceiver
             wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
+                    listener.servicesStopped();
                     // Cool
                 }
 
@@ -180,12 +217,11 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onSuccess() {
                 listener.servicesStopped();
-                // Don't care...
             }
 
             @Override
             public void onFailure(int i) {
-                // Don't care...
+                // Don't care
             }
         });
     }
@@ -201,20 +237,11 @@ public class ConnectionManager extends BroadcastReceiver
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                 Log.i(TAG, "Wifi P2P enabled!");
-                //activity.setIsWifiP2pEnabled(true);
             } else {
                 Log.i(TAG, "Wifi P2P disabled!");
-                //activity.setIsWifiP2pEnabled(false);
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Peers changed...");
-            // Do not clear the buddy list as the screen shouldn't be up long enough for this to grow very stale
-
-            // Request list of peers
-            if ( wifiP2pManager != null) {
-                wifiP2pManager.requestPeers(channel, this);
-            }
-
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             Log.i(TAG, "Connection changed...");
 
@@ -235,52 +262,214 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     @Override
-    public void onPeersAvailable(WifiP2pDeviceList peerList) {
-        List<WifiP2pDevice> peers = new ArrayList<>();
-        peers.addAll(peerList.getDeviceList());
-        for ( WifiP2pDevice device : peers) {
-            Log.w(TAG, "Peer device: " + device.deviceName);
-        }
-    }
-
-    @Override
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
-        // TODO: the name can include a "security key" (i.e. the random number) that we could use to validate the connection
         if ( (record.get(Util.BUDDY_NAME_STRING) != null) &&
-              record.get(Util.BUDDY_NAME_STRING).startsWith(context.getString(R.string.app_name))) {
-            buddyAvailable(record, wifiP2pDevice);
+             (record.get(Util.PIN_NUMBER_STRING) != null) &&
+              record.get(Util.BUDDY_NAME_STRING).equals(context.getString(R.string.app_name))) {
+            Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
+            fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(Util.PIN_NUMBER_STRING));
+            buddyNameToPortNumber.put(record.get(Util.PIN_NUMBER_STRING), Integer.valueOf(record.get(Util.LISTEN_PORT_STRING)));
+            for ( String key : record.keySet()) {
+                Log.d(TAG, key + ":" + record.get(key));
+            }
+
         }
     }
-
-    /**
-     * Override if you want to know about "buddies"
-     * @param record Record sent from the other app
-     * @param device Device information
-     */
-    protected void buddyAvailable(Map<String, String> record, WifiP2pDevice device) {}
 
     @Override
     public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice wifiP2pDevice) {
         if ( instanceName.equals(Util.SERVICE_NAME)) {
             Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName + " at " + wifiP2pDevice.deviceAddress);
-            serviceAvailable(wifiP2pDevice);
+            if ( fullPeerBuddyMap.containsKey(wifiP2pDevice.deviceAddress)) {
+                String remoteAppInstanceName = fullPeerBuddyMap.get(wifiP2pDevice.deviceAddress);
+                Log.i(TAG, "Found a compatriot! " + wifiP2pDevice.deviceName);
+                buddyNameToDeviceMap.put(remoteAppInstanceName, wifiP2pDevice);
+
+                // Get the connection information so we can be sure we're ready to go
+                getConnectionInfo(remoteAppInstanceName);
+            }
         }
     }
 
+    //--------------------------------------------------------------------------------------------
+    // Methods for listening for connections
+    //--------------------------------------------------------------------------------------------
+
+    protected void listenForConnections() {
+        if ( serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch ( IOException e) {
+                // Nothing we can do...
+            } finally {
+                serverSocket = null;
+            }
+        }
+        try {
+            serverSocket = new ServerSocket(0);
+            listenPortNumber = serverSocket.getLocalPort();
+        } catch ( IOException e) {
+            Log.e(TAG, "Error creating server socket: " + e.getMessage(), e);
+            listener.connectionFailed(e);
+            return;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    // Do this until we're not listening for connections anymore
+                    while ( serverSocket != null) {
+                        Log.i(TAG, "Listening for connections.");
+                        Socket clientSocket = serverSocket.accept();
+                        if ( serverSocket == null) {
+                            // We're not listening anymore, so stop
+                            try {
+                                clientSocket.close();
+                            } catch ( Exception e) {
+
+                            }
+                            break;
+                        }
+                        handleSocket(clientSocket);
+                    }
+                } catch (IOException e) {
+                    Log.w(TAG, "Connection listening stopped: " + e.getMessage(), e);
+                    e.printStackTrace();
+                } finally {
+                    if ( serverSocket != null) {
+                        try {
+                            serverSocket.close();
+                        } catch (IOException e) {
+                            // Don't care
+                        } finally {
+                            serverSocket = null;
+                        }
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void handleSocket(final Socket clientSocket) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "Accepted connection from " + clientSocket.getInetAddress().getCanonicalHostName());
+                // TODO: do some sort of security verification (send a code phrase first, perhaps)
+                try {
+                    listener.connectionReady(clientSocket);
+                } catch ( IOException e) {
+                    // The connection might've been caught elsewhere. This is okay
+                    Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
+                } finally {
+                    if ( clientSocket != null) {
+                        try {
+                            clientSocket.close();
+                        } catch (Exception e) {
+                            // Do nothing
+                        }
+                    }
+                    listener.connectionClosed();
+                }
+            }
+        }).start();
+    }
+
+    protected void stopListeningForConnections() {
+        if ( serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                serverSocket = null;
+            }
+        }
+        Log.i(TAG, "Not listening for connections.");
+    }
+
+    //---------------------------------------------------------------------------------------------
+    // Methods for making a connection
+    //---------------------------------------------------------------------------------------------
+
     /**
-     * Override if you want to know when a service is available
-     * @param wifiP2pDevice Device that's ready to connect to
+     * Connect to the specified app instance
+     *
+     * @param remoteAppInstanceName App instance to connect to
      */
-    protected void serviceAvailable(WifiP2pDevice wifiP2pDevice) {}
+    private void getConnectionInfo(String remoteAppInstanceName) {
+        // Have to do a reverse lookup to get the
+        final WifiP2pDevice device = buddyNameToDeviceMap.get(remoteAppInstanceName);
+        portToConnectTo = buddyNameToPortNumber.get(remoteAppInstanceName);
+
+        if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
+            // We already know the IP and can connect directly!
+            listener.foundAPeer(remoteAppInstanceName);
+            return;
+        }
+
+        // We don't know the IP address of the peer, so get it...
+        savedIPs.put(remoteAppInstanceName, null);
+
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+
+        wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, "Connection initiated!");
+            }
+
+            @Override
+            public void onFailure(int i) {
+                Log.e(TAG, "Connection failed: " + i);
+                listener.connectionFailed(new IOException("WiFiP2pManager.connect failed: " + i));
+            }
+        });
+    }
 
     @Override
     public void onConnectionInfoAvailable(final WifiP2pInfo wifiP2pInfo) {
-        gotConnectionInfo(wifiP2pInfo);
+        // Called when we have connection info (in particular, the all-important IP address)
+
+        // See if we're waiting on this information, then save it
+        for (String buddyName : savedIPs.keySet()) {
+            if (savedIPs.get(buddyName) == null) {
+                savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
+
+                // We have all we need to connect at this point. NOW inform the activity
+                listener.foundAPeer(buddyName);
+                break;
+            }
+        }
+
     }
 
-    /**
-     * Override if you want to know when we have connection info (i.e. we're ready to connect)
-     * @param wifiP2pInfo Connection info
-     */
-    protected void gotConnectionInfo(WifiP2pInfo wifiP2pInfo) {}
+    public void makeConnection(String remoteAppInstanceName) {
+
+        final InetAddress connectionAddress = savedIPs.get(remoteAppInstanceName);
+        if ( connectionAddress == null) {
+            // Shouldn't happen since we won't pass connection info without having this...
+            throw new RuntimeException("Don't have connection info for " + remoteAppInstanceName);
+        }
+
+        // Do this on a separate thread so we don't block the main thread
+        new Thread(new Runnable() {
+            public void run() {
+                Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
+                try (Socket client = new Socket(connectionAddress, portToConnectTo)){
+                    Log.i(TAG, "Connected!");
+                    listener.connectionReady(client);
+                } catch ( IOException e) {
+                    Log.e(TAG, "Connection failure: ", e);
+                    listener.connectionFailed(e);
+                } finally {
+                    Log.i(TAG, "Connection closed");
+                    listener.connectionClosed();
+                }
+            }
+        }).start();
+    }
+
+
 }

@@ -2,22 +2,29 @@ package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,21 +33,23 @@ import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.AcceptConnection;
-import peterson.ttu.edu.backupaids.network.AcceptConnectionListener;
+import peterson.ttu.edu.backupaids.network.ConnectionListener;
+import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
 
-public class MainActivity extends AppCompatActivity implements AcceptConnectionListener {
+public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private SoundPassthrough soundPassthrough;
-    private AcceptConnection acceptConnection;
+    private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
-    private boolean fullyStopped = true;
     private Runnable todoOnServiceStopped;
-    private boolean isDiscoverable = false;
+
+    // For showing a popup with available connections
+    private ConnectionPopupFragment connectionPopup;
+    private ArrayList<String> connectionList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +59,9 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
         setContentView(R.layout.activity_main);
+
+        TextView ourPin = findViewById(R.id.ourPinTextView);
+        ourPin.setText("Our PIN: " + ConnectionManager.getPin());
 
         updateSpinner();
 
@@ -147,11 +159,13 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
     }
 
     public void makeDiscoverable(View view) {
-        if ( acceptConnection != null) {
+        if ( connectionManager != null) {
+            soundPassthrough.stop();
             stopListening();
             // Stop everything
         } else {
-            acceptConnection = new AcceptConnection(this, this);
+            connectionList.clear();
+            connectionManager = new ConnectionManager(this, this);
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
             discoverableCountdown = new Timer();
@@ -165,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
                         }
                     });
                 }
-            }, 30000); // 30 seconds
+            }, 180000); // 2 minutes
         }
     }
 
@@ -174,9 +188,9 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
             discoverableCountdown.cancel();
             discoverableCountdown = null;
         }
-        if ( acceptConnection != null) {
-            acceptConnection.close();
-            acceptConnection = null;
+        if ( connectionManager != null) {
+            connectionManager.close();
+            connectionManager = null;
         }
     }
 
@@ -214,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
         // Stop all this stuff now so that SendSoundActivity can start service discovery fresh
         // (otherwise I think there's a race condition between us stopping and the other starting)
         // Use the runnable to kick off the activity only when the service stuff is stopped
-        if ( acceptConnection != null) {
+        if ( connectionManager != null) {
             todoOnServiceStopped = new Runnable() {
                 @Override
                 public void run() {
@@ -249,9 +263,12 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if ( connectionPopup != null) {
+                    connectionPopup.dismiss();
+                    connectionPopup = null;
+                }
                 ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
-                isDiscoverable = false;
                 if ( todoOnServiceStopped != null) {
                     todoOnServiceStopped.run();
                     todoOnServiceStopped = null;
@@ -267,6 +284,8 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
 
     @Override
     public void connectionFailed(IOException e) {
+        // TODO: this should stop only the streaming part...
+        soundPassthrough.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -276,7 +295,39 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
     }
 
     @Override
-    public void incomingConnection(Socket clientSocket) throws IOException {
+    public void connectionClosed() {
+        // TODO: this should stop only the streaming part...
+        soundPassthrough.stop();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopListening();
+            }
+        });
+    }
+
+    @Override
+    public void foundAPeer(final String peerName) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ( discoverableCountdown != null) {
+                    discoverableCountdown.cancel();
+                    discoverableCountdown = null;
+                }
+                connectionList.add(peerName);
+                if ( connectionPopup != null) {
+                    connectionPopup.dismiss();
+                }
+                connectionPopup = new ConnectionPopupFragment();
+                connectionPopup.setConnectionList(connectionList);
+                connectionPopup.show(getSupportFragmentManager(), "Connections");
+            }
+        });
+    }
+
+    @Override
+    public void connectionReady(Socket socket) throws IOException {
         if ( discoverableCountdown != null) {
             discoverableCountdown.cancel();
             discoverableCountdown = null;
@@ -288,18 +339,22 @@ public class MainActivity extends AppCompatActivity implements AcceptConnectionL
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
             }
         });
-        soundPassthrough.playRemoteConnection(clientSocket, getCurrentSoundPreset());
+        soundPassthrough.playRemoteConnection(socket, getCurrentSoundPreset());
 
     }
 
     @Override
-    public void connectionClosed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                stopListening();
-            }
-        });
+    public void connectionConfirmed(String connectionName) {
+        connectionManager.makeConnection(connectionName);
+        // TODO: fill in...
     }
 
+    @Override
+    public void cancelled() {
+        if ( connectionPopup != null) {
+            connectionPopup.dismiss();
+            connectionPopup = null;
+        }
+        stopListening();
+    }
 }
