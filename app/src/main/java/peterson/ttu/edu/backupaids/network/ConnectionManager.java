@@ -36,7 +36,8 @@ public class ConnectionManager extends BroadcastReceiver
 
     // Keep the same pin throughout this instance of the app so we can reconnect--Android doesn't
     // seem to give us the connection info multiple times
-    private static final int OUR_PIN = (int)(Math.random() * 9000) + 1000;
+    // Make it a 6-digit number (100001-999999)
+    private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
 
     protected int listenPortNumber;
 
@@ -109,7 +110,8 @@ public class ConnectionManager extends BroadcastReceiver
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map<String, String> record = new HashMap<>();
         record.put(Util.LISTEN_PORT_STRING, Integer.toString(listenPortNumber));
-        record.put(Util.BUDDY_NAME_STRING, context.getString(R.string.app_name) + (int) (Math.random() * 1000));
+        record.put(Util.BUDDY_NAME_STRING, context.getString(R.string.app_name));
+        record.put(Util.PIN_NUMBER_STRING, Integer.toString(OUR_PIN));
         record.put("available", "visible");
 
         // Service information.  Pass it an instance name, service type
@@ -261,13 +263,12 @@ public class ConnectionManager extends BroadcastReceiver
 
     @Override
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
-        // We've found a service and we need to see if it's our app running on a different phone
-        // TODO: the name can include a "security key" (i.e. the random number) that we could use to validate the connection
         if ( (record.get(Util.BUDDY_NAME_STRING) != null) &&
-              record.get(Util.BUDDY_NAME_STRING).startsWith(context.getString(R.string.app_name))) {
+             (record.get(Util.PIN_NUMBER_STRING) != null) &&
+              record.get(Util.BUDDY_NAME_STRING).equals(context.getString(R.string.app_name))) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
-            fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(Util.BUDDY_NAME_STRING));
-            buddyNameToPortNumber.put(record.get(Util.BUDDY_NAME_STRING), Integer.valueOf(record.get(Util.LISTEN_PORT_STRING)));
+            fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(Util.PIN_NUMBER_STRING));
+            buddyNameToPortNumber.put(record.get(Util.PIN_NUMBER_STRING), Integer.valueOf(record.get(Util.LISTEN_PORT_STRING)));
             for ( String key : record.keySet()) {
                 Log.d(TAG, key + ":" + record.get(key));
             }
