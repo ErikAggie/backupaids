@@ -108,10 +108,10 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     @Override
     public void connectionFailed(final IOException e) {
-        stopPlaying();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                stopPlaying();
                 Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG);
                 ImageButton playButton = findViewById(R.id.sendSoundStartButton);
                 playButton.setImageResource(R.drawable.power_button_blue2);
