@@ -18,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -58,6 +59,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
         setContentView(R.layout.activity_main);
+
+        TextView ourPin = findViewById(R.id.ourPinTextView);
+        ourPin.setText("Our PIN: " + ConnectionManager.getPin());
 
         updateSpinner();
 

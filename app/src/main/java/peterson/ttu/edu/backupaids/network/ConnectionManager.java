@@ -25,12 +25,19 @@ import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 
 /**
- * Handles connecting to another phone
+ * Handles connecting to another phone. This class is expected to be fairly transient: you should
+ * only construct it when you're ready to look for connections, and then call close() and
+ * drop your reference to it when you're done.
  */
 public class ConnectionManager extends BroadcastReceiver
         implements WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
 
     private static final String TAG = "ConnectionManager";
+
+    // Keep the same pin throughout this instance of the app so we can reconnect--Android doesn't
+    // seem to give us the connection info multiple times
+    private static final int OUR_PIN = (int)(Math.random() * 9000) + 1000;
+
     protected int listenPortNumber;
 
     protected final Context context;
@@ -42,7 +49,7 @@ public class ConnectionManager extends BroadcastReceiver
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final Map<String, Integer> buddyNameToPortNumber = new HashMap<>();
-    // Save IPs so we can re-connect to an existing guy
+    // Save IPs so we can re-connect
     private static final Map<String, InetAddress> savedIPs = new HashMap<>();
     private int portToConnectTo;
 
@@ -55,7 +62,8 @@ public class ConnectionManager extends BroadcastReceiver
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
     /**
-     * Set things up.
+     * Set things up and kick things off.
+     *
      * @param context Context (Activity) to use for registration
      * @param listener Where to send event notifications
      */
@@ -80,6 +88,15 @@ public class ConnectionManager extends BroadcastReceiver
         unpublishService();
         stopListeningForConnections();
         context.unregisterReceiver(this);
+    }
+
+    /**
+     * Get the pin number for this instance of the app
+     *
+     * @return Pin number (static throughout each running of the app)
+     */
+    public static int getPin() {
+        return OUR_PIN;
     }
 
     /**

@@ -7,6 +7,21 @@
     tools:context="peterson.ttu.edu.backupaids.activities.MainActivity">
 
     <TextView
+        android:id="@+id/ourPinTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Our PIN: "
+        android:textSize="20sp"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/newPresetButton"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
         android:id="@+id/presetLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -46,7 +61,7 @@
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ourPinTextView"
         app:layout_constraintBottom_toTopOf="@id/playSound"
         app:layout_constraintLeft_toRightOf="@id/presetSpinner"
         app:layout_constraintRight_toRightOf="parent" />
@@ -146,7 +161,7 @@
         android:background="@android:color/transparent"
         android:onClick="sendToOtherPhone"
         android:scaleType="fitEnd"
-        android:src="@drawable/phone_to_phone"
+        android:src="@drawable/phone_out_blue"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="16dp"
         android:layout_marginStart="4dp"

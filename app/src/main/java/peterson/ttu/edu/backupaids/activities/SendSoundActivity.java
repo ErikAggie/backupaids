@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -33,6 +34,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_sound);
+
+        TextView ourPin = findViewById(R.id.sendSoundOurPinTextView);
+        ourPin.setText("Our PIN: " + ConnectionManager.getPin());
 
         // Listen for Bluetooth connections (for recording)
         IntentFilter connectFilter = new IntentFilter();
