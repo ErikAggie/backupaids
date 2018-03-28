@@ -35,14 +35,16 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
+import peterson.ttu.edu.backupaids.sound.PlayLocalSound;
+import peterson.ttu.edu.backupaids.sound.PlayRemoteSound;
 
 public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private SoundPassthrough soundPassthrough;
+    private PlayLocalSound playLocalSound;
+    private PlayRemoteSound playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
@@ -69,16 +71,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                if ( soundPassthrough == null) {
-                    // Still setting up
+                if ( playLocalSound == null && playRemoteSound == null) {
+                    // Not playing; nothing to do
                     return;
                 }
-                if ( soundPassthrough.isPlaying()) {
-                    // TODO: I guess we should re-connect in this case?
-                    // Restart playback so we use the new preset
-                    stopPlaying();
-                    playSound(view);
-                }
+                stopPlaying();
             }
 
             @Override
@@ -125,27 +122,26 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     private void setUpAudioRecordingAndPlayback()
     {
-        soundPassthrough = new SoundPassthrough(this);
-        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
-    public void playSound(View view) {
-        ImageButton playButton = findViewById(R.id.playSound);
-        if ( soundPassthrough.isPlaying()) {
+    public void playLocalSound(View view) throws IOException {
+        if ( playLocalSound != null) {
             stopPlaying();
         } else {
             // Start playing!
             try
             {
                 SoundPreset preset = getCurrentSoundPreset();
-                soundPassthrough.start(preset);
+                playLocalSound = new PlayLocalSound(preset);
+                ImageButton playButton = findViewById(R.id.playSound);
                 playButton.setImageResource(R.drawable.power_button_green2);
             }
             catch(IOException e)
             {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Error initializing app");
-                builder.setMessage("Unable to set up audio recording/playback.");
+                builder.setTitle("Unable to record/play sounds");
+                builder.setMessage("Unable to start audio recording/playback.");
                 builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -154,15 +150,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 });
                 builder.create().show();
             }
-
         }
     }
 
     public void makeDiscoverable(View view) {
         if ( connectionManager != null) {
-            soundPassthrough.stop();
             stopListening();
-            // Stop everything
         } else {
             connectionList.clear();
             connectionManager = new ConnectionManager(this, this);
@@ -204,13 +197,16 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     private void stopPlaying() {
-        if ( soundPassthrough == null) {
-            // Not initialized yet
-            return;
+        if ( playLocalSound != null) {
+            playLocalSound.stop();
+            playLocalSound = null;
+            ImageButton playButton = findViewById(R.id.playSound);
+            playButton.setImageResource(R.drawable.power_button_blue2);
         }
-        soundPassthrough.stop();
-        ImageButton playButton = findViewById(R.id.playSound);
-        playButton.setImageResource(R.drawable.power_button_blue2);
+        if ( playRemoteSound != null) {
+            playRemoteSound.stop();
+            playRemoteSound = null;
+        }
     }
 
     public void newPreset(View view) {
@@ -284,11 +280,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     @Override
     public void connectionFailed(IOException e) {
-        // TODO: this should stop only the streaming part...
-        soundPassthrough.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if ( playRemoteSound != null) {
+                    playRemoteSound.stop();
+                    playRemoteSound = null;
+                }
                 stopListening();
             }
         });
@@ -296,11 +294,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     @Override
     public void connectionClosed() {
-        // TODO: this should stop only the streaming part...
-        soundPassthrough.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if ( playRemoteSound != null) {
+                    playRemoteSound.stop();
+                    playRemoteSound = null;
+                }
                 stopListening();
             }
         });
@@ -339,14 +339,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
             }
         });
-        soundPassthrough.playRemoteConnection(socket, getCurrentSoundPreset());
+        playRemoteSound = new PlayRemoteSound(socket, getCurrentSoundPreset());
 
     }
 
     @Override
     public void connectionConfirmed(String connectionName) {
         connectionManager.makeConnection(connectionName);
-        // TODO: fill in...
     }
 
     @Override

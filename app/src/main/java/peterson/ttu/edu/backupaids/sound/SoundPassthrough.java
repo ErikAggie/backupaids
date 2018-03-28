@@ -30,18 +30,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
  * Created by Erik Peterson on 1/30/2018.
  */
 
-public class SoundPassthrough {
-
-    public enum RecordType {
-        /**
-         * Use the headset mics (in camcorder mode) to get near and far sounds
-         */
-        Ambient,
-        /**
-         * Use whatever mic is connected (bluetooth, earbuds, etc.)
-         */
-        Mic;
-    }
+/*public class SoundPassthrough {
 
     private static final String TAG = "SoundPassthrough";
 
@@ -52,28 +41,6 @@ public class SoundPassthrough {
     private boolean threadRunning = false;
     private Object notifyObject = new Object();
     private int bufferSize;
-
-
-    public SoundPassthrough(Context context)
-    {
-        this.context = context;
-        int inputMinBufferSize = AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-
-        int outputMinBufferSize = AudioTrack.getMinBufferSize(Util.SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-        if ( inputMinBufferSize <= 0 || outputMinBufferSize <= 0)
-        {
-            Log.e("Playback", "Buffer size not specified. In: " + inputMinBufferSize + ", Out: " + outputMinBufferSize);
-            bufferSize = Util.SAMPLE_RATE * 2;
-        }
-        else
-        {
-            bufferSize = inputMinBufferSize;
-        }
-    }
 
     public boolean isPlaying()
     {
@@ -89,68 +56,6 @@ public class SoundPassthrough {
 
         playing = true;
         new Thread(new RunSingleInput(createHeadsetAudioRecord(), createAudioTrack(preset))).start();
-    }
-
-    private AudioRecord createHeadsetAudioRecord() throws IOException {
-        AudioRecord audioRecord =
-                new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                        Util.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        bufferSize);
-        if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-            Log.e(TAG, "Audio Record won't initialize!");
-            throw new IOException("Audio Record won't initialize!");
-        }
-        return audioRecord;
-    }
-
-    private AudioRecord createBluetoothAudioRecord() throws IOException {
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        audioManager.startBluetoothSco();
-        AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                Util.SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize);
-        if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-            Log.e(TAG, "Audio Record won't initialize!");
-            throw new IOException("Audio Record won't initialize!");
-        }
-        return audioRecord;
-    }
-
-    private AudioTrack createAudioTrack(SoundPreset preset) throws IOException {
-        AudioTrack audioTrack;
-        if ( Build.VERSION.SDK_INT >= 26) {
-            // Android O contains a low-latency playback mode
-            audioTrack = new AudioTrack.Builder().setAudioAttributes(
-                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-                    .setBufferSizeInBytes(bufferSize)
-                    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .build();
-        } else {
-            audioTrack = new AudioTrack.Builder().setAudioAttributes(
-                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-                    .setBufferSizeInBytes(bufferSize)
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .build();
-        }
-
-        if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-            Log.e(TAG, "Audio playback won't initialize!");
-            throw new IOException("Audio Record won't initialize!");
-        }
-
-        // Set up the audio effects
-        if ( preset != null) {
-            applyEffects(preset, audioTrack.getAudioSessionId());
-        }
-
-        return audioTrack;
     }
 
     public void stream(Socket socket) throws IOException {
@@ -234,37 +139,6 @@ public class SoundPassthrough {
         }
     }
 
-    /**
-     * Apply effects to the audio session
-     * @param audioSessionID Session ID to apply to
-     */
-    private void applyEffects(SoundPreset preset, int audioSessionID)
-    {
-        final Equalizer equalizer = new Equalizer(1, audioSessionID);
-        Map<Integer, Short> frequencyMap = preset.getFrequencyAdjustments();
-
-        // Add the frequency adjustments one by one. Track which equalizer bands we're using
-        // so we make sure the highest adjustment goes to each band
-        Map<Short, Short> bandMap = new HashMap<>();
-
-        for ( int frequency : frequencyMap.keySet()) {
-            short adjustment = frequencyMap.get(frequency);
-            short band = equalizer.getBand(frequency*1000); // Millihertz to hertz
-            if ( bandMap.containsKey(band)) {
-                if ( bandMap.get(band) < frequency) {
-                    equalizer.setBandLevel(band, adjustment);
-                    bandMap.put(band, adjustment);
-                }
-            } else {
-                // First entry in this equalizer band
-                equalizer.setBandLevel(band, adjustment);
-                bandMap.put(band, adjustment);
-            }
-        }
-        equalizer.setEnabled(true);
-
-    }
-
     public void stop()
     {
         stopPlayingRemoteConnection();
@@ -332,4 +206,4 @@ public class SoundPassthrough {
         }
     }
 
-}
+}*/
