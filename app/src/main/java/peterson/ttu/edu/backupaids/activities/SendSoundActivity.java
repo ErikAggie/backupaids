@@ -21,13 +21,13 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.SoundPassthrough;
+import peterson.ttu.edu.backupaids.sound.StreamRecording;
 
 public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
-    private SoundPassthrough soundPassthrough;
+    private StreamRecording streamRecording;
     private List<String> peers = new ArrayList<>();
 
     @Override
@@ -45,8 +45,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         registerReceiver(bluetoothMonitor, connectFilter);
 
-        soundPassthrough = new SoundPassthrough(this);
-
         connectionManager = new ConnectionManager(this, this);
     }
 
@@ -60,7 +58,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
     }
 
     public void sendSound(View view) {
-        if ( soundPassthrough.isPlaying()) {
+        if ( streamRecording != null) {
             stopPlaying();
         } else {
             // Start playing!
@@ -77,9 +75,12 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
     }
 
     private void stopPlaying() {
-        soundPassthrough.stop();
-        ImageButton playButton = findViewById(R.id.sendSoundStartButton);
-        playButton.setImageResource(R.drawable.power_button_blue2);
+        if ( streamRecording != null) {
+            streamRecording.stop();
+            streamRecording = null;
+            ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+            playButton.setImageResource(R.drawable.power_button_blue2);
+        }
     }
 
     @Override
@@ -103,7 +104,8 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
                 playButton.setImageResource(R.drawable.power_button_green2);
             }
         });
-        soundPassthrough.stream(socket);
+        streamRecording = new StreamRecording(socket);
+        streamRecording.playAudio();
     }
 
     @Override
@@ -125,11 +127,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
             @Override
             public void run() {
                 stopPlaying();
-            }
-        });
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
                 ImageButton playButton = findViewById(R.id.sendSoundStartButton);
                 playButton.setImageResource(R.drawable.power_button_blue2);
             }
