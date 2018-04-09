@@ -210,6 +210,9 @@ public abstract class BaseSound {
             // Here's the playing loop!
             while (playing) {
                 int amountRead = soundSource.read(audioBuffer);
+                if ( amountRead < 0) {
+                    break;
+                }
                 soundDestination.write(audioBuffer, amountRead);
             }
         } finally {
