@@ -130,26 +130,47 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             stopPlaying();
         } else {
             // Start playing!
-            try
-            {
-                SoundPreset preset = getCurrentSoundPreset();
-                playLocalSound = new PlayLocalSound(preset);
-                ImageButton playButton = findViewById(R.id.playSound);
-                playButton.setImageResource(R.drawable.power_button_green2);
-            }
-            catch(IOException e)
-            {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Unable to record/play sounds");
-                builder.setMessage("Unable to start audio recording/playback.");
-                builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        finish();
+            SoundPreset preset = getCurrentSoundPreset();
+            playLocalSound = new PlayLocalSound(preset);
+            new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        playLocalSound.playAudio();
+                    } catch ( IOException e) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setTitle("Unable to record/play sounds");
+                                builder.setMessage("Unable to start audio recording/playback.");
+                                builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        finish();
+                                    }
+                                });
+                                builder.create().show();
+                           }
+                        });
+                    } finally {
+                        if ( playLocalSound != null) {
+                            playLocalSound.stop();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ImageButton playButton = findViewById(R.id.playSound);
+                                    playButton.setImageResource(R.drawable.power_button_blue2);
+                                }
+                            });
+                        }
                     }
-                });
-                builder.create().show();
-            }
+                }
+            }).start();
+
+            ImageButton playButton = findViewById(R.id.playSound);
+            playButton.setImageResource(R.drawable.power_button_green2);
         }
     }
 
@@ -198,8 +219,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     private void stopPlaying() {
         if ( playLocalSound != null) {
-            playLocalSound.stop();
+            // Use a temp variable so the other thread doesn't try to stop things also
+            PlayLocalSound temp = playLocalSound;
             playLocalSound = null;
+            temp.stop();
             ImageButton playButton = findViewById(R.id.playSound);
             playButton.setImageResource(R.drawable.power_button_blue2);
         }
@@ -340,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             }
         });
         playRemoteSound = new PlayRemoteSound(socket, getCurrentSoundPreset());
-
+        playRemoteSound.playAudio();
     }
 
     @Override

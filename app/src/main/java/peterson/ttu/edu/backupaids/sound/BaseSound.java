@@ -57,7 +57,6 @@ public abstract class BaseSound {
             throw new RuntimeException("Must set a source and destination!");
         }
         playing = true;
-        new Thread(new PlayAudio()).start();
     }
 
     /**
@@ -198,39 +197,33 @@ public abstract class BaseSound {
         equalizer.setEnabled(true);
     }
 
-    private class PlayAudio implements Runnable {
+    public void playAudio() throws IOException {
+        try {
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
-        @Override
-        public void run(){
+            // Short buffer would be half of the buffer size; byte buffer is the full size
+            byte[] audioBuffer = new byte[INPUT_MIN_BUFFER_SIZE];
+
+            soundSource.record();
+            soundDestination.play();
+
+            // Here's the playing loop!
+            while (playing) {
+                int amountRead = soundSource.read(audioBuffer);
+                soundDestination.write(audioBuffer, amountRead);
+            }
+        } finally {
+
+            // Clean up
             try {
-                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-
-                // Short buffer would be half of the buffer size; byte buffer is the full size
-                byte[] audioBuffer = new byte[INPUT_MIN_BUFFER_SIZE];
-
-                soundSource.record();
-                soundDestination.play();
-
-                // Here's the playing loop!
-                while (playing) {
-                    int amountRead = soundSource.read(audioBuffer);
-                    soundDestination.write(audioBuffer, amountRead);
-                }
+                soundSource.stop();
             } catch ( IOException e) {
-                Log.e(TAG, "Error playing audio: ", e);
-            } finally {
-
-                // Clean up
-                try {
-                    soundSource.stop();
-                } catch ( IOException e) {
-                    // Nothing to do
-                }
-                try {
-                    soundDestination.stop();
-                } catch ( IOException e) {
-                    // Nothing to do
-                }
+                // Nothing to do
+            }
+            try {
+                soundDestination.stop();
+            } catch ( IOException e) {
+                // Nothing to do
             }
         }
     }

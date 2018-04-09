@@ -105,6 +105,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
             }
         });
         streamRecording = new StreamRecording(socket);
+        streamRecording.playAudio();
     }
 
     @Override
