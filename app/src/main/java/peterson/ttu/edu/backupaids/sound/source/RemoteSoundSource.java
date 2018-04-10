@@ -27,6 +27,7 @@ public class RemoteSoundSource implements SoundSource {
     public int read(byte[] buffer) throws IOException {
         while ( inputStream.available() > buffer.length * 2) {
             // We've fallen behind
+            //noinspection ResultOfMethodCallIgnored
             inputStream.read(buffer);
         }
 

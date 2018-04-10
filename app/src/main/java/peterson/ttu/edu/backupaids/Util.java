@@ -43,18 +43,4 @@ public class Util {
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
-
-    // Taken from https://stackoverflow.com/questions/13307565/screen-on-off-detection
-    public static boolean isScreenOn(Context context) {
-        DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-        boolean screenOn = false;
-        for (Display display : dm.getDisplays()) {
-            if (display.getState() != Display.STATE_OFF) {
-                Log.i("Util", "Screen " + display.getName() + " is " + display.getState());
-                screenOn = true;
-            }
-        }
-        return screenOn;
-    }
-
 }

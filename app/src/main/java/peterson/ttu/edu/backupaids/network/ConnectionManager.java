@@ -75,6 +75,7 @@ public class ConnectionManager extends BroadcastReceiver
         // Create the P2P manager. Only initialize it once
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         if ( channel == null) {
+            //noinspection ConstantConditions
             channel = wifiP2pManager.initialize(context, context.getMainLooper(), null);
         }
         context.registerReceiver(this, Util.WIFI_P2P_INTENT_FILTER);
@@ -115,7 +116,7 @@ public class ConnectionManager extends BroadcastReceiver
         record.put("available", "visible");
 
         // Service information.  Pass it an instance name, service type
-        // _protocol._transportlayer , and the map containing
+        // _protocol._transport layer , and the map containing
         // information other devices will want once they connect to this one.
         serviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(Util.SERVICE_NAME, "_presence._tcp", record);
@@ -361,12 +362,10 @@ public class ConnectionManager extends BroadcastReceiver
                     // The connection might've been caught elsewhere. This is okay
                     Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
                 } finally {
-                    if ( clientSocket != null) {
-                        try {
-                            clientSocket.close();
-                        } catch (Exception e) {
-                            // Do nothing
-                        }
+                    try {
+                        clientSocket.close();
+                    } catch (Exception e) {
+                        // Do nothing
                     }
                     listener.connectionClosed();
                 }

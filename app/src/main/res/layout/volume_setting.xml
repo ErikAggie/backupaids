@@ -36,7 +36,8 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/stepInfo"
-        app:layout_constraintWidth_default="wrap" />
+        app:layout_constraintWidth_default="wrap"
+        android:contentDescription="Play/stop playing the sounds" />
 
     <TextView
         android:id="@+id/volumeLabelWithAmount"
@@ -66,7 +67,8 @@
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintLeft_toRightOf="@+id/volumeLabelWithAmount"
         app:layout_constraintRight_toLeftOf="@id/volumeSettingsVolumeDown"
-        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep" />
+        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep"
+        android:contentDescription="Increase volume" />
 
     <ImageButton
         android:id="@+id/volumeSettingsVolumeDown"
@@ -82,7 +84,8 @@
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintRight_toLeftOf="@id/volumeSettingNextStep"
         app:layout_constraintLeft_toRightOf="@id/volumeSettingsVolumeUp"
-        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep" />
+        app:layout_constraintTop_toTopOf="@+id/volumeSettingNextStep"
+        android:contentDescription="Decrease volume" />
 
     <Button
         android:id="@+id/volumeSettingNextStep"

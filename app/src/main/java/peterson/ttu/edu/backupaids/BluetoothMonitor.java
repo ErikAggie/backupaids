@@ -53,6 +53,9 @@ public class BluetoothMonitor extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        if ( action == null) {
+            return;
+        }
         switch (action) {
             case BluetoothDevice.ACTION_ACL_CONNECTED:
                 mConnectedDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);

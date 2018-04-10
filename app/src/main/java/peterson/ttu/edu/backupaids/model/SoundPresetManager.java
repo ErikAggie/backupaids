@@ -127,7 +127,7 @@ public class SoundPresetManager {
         List<String> list = new ArrayList<>(mPresets.keySet());
         Collections.sort(list);
         if ( list.size() <= position) {
-            throw new RuntimeException("Non-existant preset position: " + position);
+            throw new RuntimeException("Non-existent preset position: " + position);
         }
         return getPreset(list.get(position));
     }

@@ -90,6 +90,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         return view;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         updateVolumePercentage(true);
@@ -119,6 +120,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
     /**
      * Update the volume (percentage)
      */
+    @SuppressWarnings("ConstantConditions")
     private void updateVolumePercentage(boolean reset)
     {
         AudioManager audio = (AudioManager) this.getContext().getSystemService(AUDIO_SERVICE);

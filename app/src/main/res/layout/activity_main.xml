@@ -84,24 +84,8 @@
         app:layout_constraintTop_toBottomOf="@id/presetSpinner"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintVertical_bias="0.6" />
-
-    <!--<Switch
-        android:id="@+id/makeDiscoverable"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="16dp"
-        android:text="Allow Remote Mic: "
-        android:textSize="20sp"
-        android:textAlignment="textEnd"
-        android:onClimakeDiscoverablegled"
-        app:layout_constraintBottom_toTopOf="@id/sendToOtherPhoneButton"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="playLocalSoundound" />-->
-
+        app:layout_constraintVertical_bias="0.6"
+        android:contentDescription="Play/stop playing what the phone hears" />
 
     <TextView
         android:id="@+id/textForMakeDiscoverableButton"
@@ -135,7 +119,8 @@
         app:layout_constraintTop_toBottomOf="@id/playSound"
         app:layout_constraintBottom_toTopOf="@id/sendToOtherPhoneButton"
         app:layout_constraintLeft_toRightOf="@id/textForMakeDiscoverableButton"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintRight_toRightOf="parent"
+        android:contentDescription="Make this phone discoverable by other phones" />
 
     <TextView
         android:id="@+id/textForSendToOtherPhoneButton"
@@ -169,6 +154,7 @@
         app:layout_constraintLeft_toRightOf="@id/textForSendToOtherPhoneButton"
         app:layout_constraintTop_toBottomOf="@id/makeDiscoverable"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
+        app:layout_constraintRight_toRightOf="parent"
+        android:contentDescription="Start sending audio to another phones" />
 
 </android.support.constraint.ConstraintLayout>

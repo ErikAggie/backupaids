@@ -197,6 +197,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         mEqualizer.setBandLevel(band, mBandAdjustment);
         mEqualizer.setEnabled(true);
 
+        //noinspection ConstantConditions
         ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
         playSoundsButton.setImageResource(R.drawable.power_button_green2);
     }
@@ -212,6 +213,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
             mAudioTrack = null;
         }
 
+        //noinspection ConstantConditions
         ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
         playSoundsButton.setImageResource(R.drawable.power_button_blue2);
     }

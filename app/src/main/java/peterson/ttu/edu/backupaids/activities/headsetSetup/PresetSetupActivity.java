@@ -37,10 +37,10 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
 
         public int getFrequency() { return mFrequencyIfAny;}
 
-        private static SetupSteps[] vals = values();
+        private static SetupSteps[] values = values();
         public SetupSteps next()
         {
-            return vals[(this.ordinal()+1) % vals.length];
+            return values[(this.ordinal()+1) % values.length];
         }
     }
 
