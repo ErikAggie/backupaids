@@ -12,7 +12,7 @@
         android:id="@+id/sendSoundOurPinTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Our PIN: "
+        android:text="@string/our_pin"
         android:textSize="20sp"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:layout_marginTop="16dp"
@@ -27,7 +27,7 @@
         android:id="@+id/sendSoundLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send to:"
+        android:text="@string/send_to"
         android:textSize="20sp"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:layout_marginTop="16dp"
@@ -70,6 +70,6 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintVertical_bias="0.6"
-        android:contentDescription="Start/stop sending audio" />
+        android:contentDescription="@string/start_stop_sending_audio" />
 
 </android.support.constraint.ConstraintLayout>

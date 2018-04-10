@@ -6,14 +6,23 @@
     <string name="volume_with_value">Volume: %1$d</string>
 
     <string name="preset_file_name">Presetv1.txt</string>
-
-    <string-array name="HzOrKHz">
-        <item>Hz</item>
-        <item>kHz</item>
-    </string-array>
     <string name="title_activity_send_sound">Send Sound (FM style)</string>
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="our_pin">Our PIN: %1$d</string>
+    <string name="preset">Preset:</string>
+    <string name="new_preset">New Preset</string>
+    <string name="play_stop_playing_what_the_phone_hears">Play/stop playing what the phone hears</string>
+    <string name="allow_another_phone_to_send_audio">Allow another phone to send audio:</string>
+    <string name="make_this_phone_discoverable_by_other_phones">Make this phone discoverable by other phones</string>
+    <string name="send_audio_to_another_phone">Send audio to another phone:</string>
+    <string name="start_sending_audio_to_another_phones">Start sending audio to another phones</string>
+    <string name="send_to">Send to:</string>
+    <string name="start_stop_sending_audio">Start/stop sending audio</string>
+    <string name="adjust_the_volume_until_you_can_hear_tone_s_comfortably">Adjust the volume until you can hear tone(s) comfortably.</string>
+    <string name="play_stop_playing_the_sounds">Play/stop playing the sounds</string>
+    <string name="increase_volume">Increase volume</string>
+    <string name="decrease_volume">Decrease volume</string>
+    <string name="play_stop_playing_the_tone">Play/stop playing the tone</string>
 
 </resources>

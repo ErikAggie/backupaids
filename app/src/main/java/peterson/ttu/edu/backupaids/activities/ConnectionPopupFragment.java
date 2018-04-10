@@ -19,12 +19,7 @@ import java.util.List;
 import peterson.ttu.edu.backupaids.R;
 
 /**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link ConnectionPopupFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link ConnectionPopupFragment#newInstance} factory method to
- * create an instance of this fragment.
+ * Fragment for showing available connections
  */
 public class ConnectionPopupFragment extends DialogFragment {
 

@@ -29,16 +29,16 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
         Hz8000(8000),
         End(-1); // Another non-value to note that we're at the end
 
-        private int mFrequencyIfAny;
+        private final int mFrequencyIfAny;
 
         SetupSteps(int frequency) {
             mFrequencyIfAny = frequency;
         }
 
-        public int getFrequency() { return mFrequencyIfAny;}
+        private int getFrequency() { return mFrequencyIfAny;}
 
-        private static SetupSteps[] values = values();
-        public SetupSteps next()
+        private final static SetupSteps[] values = values();
+        private SetupSteps next()
         {
             return values[(this.ordinal()+1) % values.length];
         }
@@ -46,7 +46,6 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
 
     private static final String TAG = "PresetSetupActivity";
 
-    private boolean mEditingAPreset = false;
     private SoundPreset mSoundPreset = new SoundPreset();
     private SetupSteps currentStep = SetupSteps.Start;
     private Fragment mCurrentFragment;
@@ -105,13 +104,13 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
      * Called when the setup is finished so we can save off the preset
      */
     private void setupComplete() {
-        // TODO: ignore this when we have
-        if ( mEditingAPreset) {
+        // TODO: add something here when we're editing a preset...
+        /*if ( mEditingAPreset) {
             savePreset();
             finish();
-        } else {
+        } else {*/
             requestName();
-        }
+        //}
     }
 
     private void requestName() {
@@ -149,7 +148,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     private void savePreset() {
-        SoundPresetManager.getInstance(this).addOrReplacePreset(mSoundPreset).savePresets();
+        SoundPresetManager.getInstance(this).addOrReplacePreset(this, mSoundPreset);
     }
 
     private void showVolumeFragment() {

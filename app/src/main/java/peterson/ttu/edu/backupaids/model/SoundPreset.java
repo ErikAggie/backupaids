@@ -1,5 +1,6 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.annotation.SuppressLint;
 import android.util.JsonReader;
 import android.util.JsonWriter;
 
@@ -34,8 +35,8 @@ public class SoundPreset {
         HZ4000("Hz4000", 4000),
         HZ8000("Hz8000", 8000);
 
-        String name;
-        int frequency;
+        final String name;
+        final int frequency;
 
         Frequency(String name, int frequency) {
             this.name = name;
@@ -43,6 +44,7 @@ public class SoundPreset {
         }
     }
 
+    @SuppressLint("UseSparseArrays")
     private final Map<Integer, Short> mFrequencyValues = new HashMap<>();
 
     private String mName;
@@ -104,7 +106,7 @@ public class SoundPreset {
     /**
      * Save this preset. Package-private since only SoundPresetManager
      * should call it
-     * @param jsonWriter
+     * @param jsonWriter How to write the object
      */
     void savePreset(JsonWriter jsonWriter) throws IOException {
         jsonWriter.beginObject();
@@ -149,8 +151,7 @@ public class SoundPreset {
     }
 
     public Map<Integer, Short> getFrequencyAdjustments() {
-        Map newMap = new HashMap<Integer, Short>();
-        newMap.putAll(mFrequencyValues);
+        @SuppressLint("UseSparseArrays") Map<Integer, Short> newMap = new HashMap<>(mFrequencyValues);
         return newMap;
     }
 

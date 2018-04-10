@@ -28,7 +28,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
     private StreamRecording streamRecording;
-    private List<String> peers = new ArrayList<>();
+    private final List<String> peers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +36,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
         setContentView(R.layout.activity_send_sound);
 
         TextView ourPin = findViewById(R.id.sendSoundOurPinTextView);
-        ourPin.setText("Our PIN: " + ConnectionManager.getPin());
+        ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
 
         // Listen for Bluetooth connections (for recording)
         IntentFilter connectFilter = new IntentFilter();
@@ -85,7 +85,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     @Override
     public void servicePublishingFailed() {
-        Toast.makeText(this, "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG);
+        Toast.makeText(this, "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG).show();
         finish();
     }
 
@@ -114,7 +114,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
             @Override
             public void run() {
                 stopPlaying();
-                Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG);
+                Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 ImageButton playButton = findViewById(R.id.sendSoundStartButton);
                 playButton.setImageResource(R.drawable.power_button_blue2);
             }

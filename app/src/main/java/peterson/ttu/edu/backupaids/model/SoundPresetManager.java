@@ -29,7 +29,7 @@ public class SoundPresetManager {
 
     private static SoundPresetManager smInstance;
 
-    private Map<String, SoundPreset> mPresets = new HashMap<>();
+    private final Map<String, SoundPreset> mPresets = new HashMap<>();
 
     public static SoundPresetManager getInstance(Context context) {
         if ( smInstance == null) {
@@ -42,10 +42,7 @@ public class SoundPresetManager {
         return smInstance;
     }
 
-    private final Context mContext;
-
     private SoundPresetManager(Context context) {
-        mContext = context;
         JsonReader jsonReader = null;
         try {
             InputStream inputStream = new FileInputStream(new File(context.getFilesDir(), context.getString(R.string.preset_file_name)));
@@ -80,22 +77,21 @@ public class SoundPresetManager {
         jsonReader.endArray();
     }
 
-    public SoundPresetManager addOrReplacePreset(SoundPreset preset) {
+    public void addOrReplacePreset(Context context, SoundPreset preset) {
         mPresets.put(preset.getName(), preset);
-        savePresets();
-        return this;
+        savePresets(context);
     }
 
     /**
      * Call this when you're ready to save changes to 1+ presets
      */
-    public SoundPresetManager savePresets() {
+    private void savePresets(Context context) {
         JsonWriter jsonWriter = null;
         try {
             jsonWriter = new JsonWriter(
                             new PrintWriter(
-                               new File(mContext.getFilesDir(),
-                                        mContext.getString(R.string.preset_file_name))));
+                               new File(context.getFilesDir(),
+                                        context.getString(R.string.preset_file_name))));
             jsonWriter.beginArray();
             for ( String presetName : mPresets.keySet()) {
                 mPresets.get(presetName).savePreset(jsonWriter);
@@ -113,7 +109,6 @@ public class SoundPresetManager {
                 }
             }
         }
-        return this;
     }
 
     public String[] getSortedPresetNames() {

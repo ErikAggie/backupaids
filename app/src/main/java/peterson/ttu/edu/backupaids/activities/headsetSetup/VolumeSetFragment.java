@@ -196,12 +196,14 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         }
 
         byte[] tone = new byte[100000];
+        int amountRead = 0;
         try
         {
             BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(R.raw.all_freqs));
-            inputStream.read(tone, 0, tone.length);
+            amountRead = inputStream.read(tone, 0, tone.length);
         } catch (IOException e) {
             e.printStackTrace();
+            return;
         }
 
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
@@ -211,11 +213,11 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();
 
-        mAudioTrack.write(tone, 0, tone.length);
+        mAudioTrack.write(tone, 0, amountRead);
         mAudioTrack.setPlaybackHeadPosition(100); // To avoid a click
 
         // Play this forever
-        mAudioTrack.setLoopPoints(100, tone.length / 2, -1);
+        mAudioTrack.setLoopPoints(100, amountRead / 2, -1);
         mAudioTrack.play();
 
         mPlaying = true;
@@ -234,11 +236,13 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         mPlaying = false;
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void volumeUp() {
         AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void volumeDown() {
         AudioManager audioManager = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, 0);

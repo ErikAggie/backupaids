@@ -39,12 +39,12 @@ public class ConnectionManager extends BroadcastReceiver
     // Make it a 6-digit number (100001-999999)
     private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
 
-    protected int listenPortNumber;
+    private int listenPortNumber;
 
-    protected final Context context;
-    protected final ConnectionListener listener;
-    protected final WifiP2pManager wifiP2pManager;
-    protected static WifiP2pManager.Channel channel;
+    private final Context context;
+    private final ConnectionListener listener;
+    private final WifiP2pManager wifiP2pManager;
+    private static WifiP2pManager.Channel channel;
 
     // Stuff for making a connection (peer devices we find, etc.)
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
@@ -104,7 +104,7 @@ public class ConnectionManager extends BroadcastReceiver
     /**
      * Publish our service
      */
-    protected void publishService() {
+    private void publishService() {
         if ( serviceInfo != null) {
             throw new RuntimeException("Cannot publish a service twice!");
         }
@@ -141,7 +141,7 @@ public class ConnectionManager extends BroadcastReceiver
     /**
      * Unpublish our service
      */
-    protected void unpublishService() {
+    private void unpublishService() {
         if ( serviceInfo == null) {
             // Nothing to unpublish
             return;
@@ -163,7 +163,7 @@ public class ConnectionManager extends BroadcastReceiver
     /**
      * Call when you want to find peers
      */
-    protected void beginServiceDiscovery() {
+    private void beginServiceDiscovery() {
         wifiP2pManager.setDnsSdResponseListeners(channel, this, this);
 
         serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
@@ -198,7 +198,7 @@ public class ConnectionManager extends BroadcastReceiver
     /**
      * Call when you want to stop finding peers (i.e. when an activity is paused)
      */
-    protected void stopServiceDiscovery() {
+    private void stopServiceDiscovery() {
         Log.i(TAG, "Stopping service discovery");
         if ( serviceRequest != null) {
             wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
@@ -296,7 +296,7 @@ public class ConnectionManager extends BroadcastReceiver
     // Methods for listening for connections
     //--------------------------------------------------------------------------------------------
 
-    protected void listenForConnections() {
+    private void listenForConnections() {
         if ( serverSocket != null) {
             try {
                 serverSocket.close();
@@ -373,7 +373,7 @@ public class ConnectionManager extends BroadcastReceiver
         }).start();
     }
 
-    protected void stopListeningForConnections() {
+    private void stopListeningForConnections() {
         if ( serverSocket != null) {
             try {
                 serverSocket.close();
@@ -444,6 +444,11 @@ public class ConnectionManager extends BroadcastReceiver
 
     }
 
+    /**
+     * Create a connection
+     *
+     * @param remoteAppInstanceName Remote instance to connect to (PIN number)
+     */
     public void makeConnection(String remoteAppInstanceName) {
 
         final InetAddress connectionAddress = savedIPs.get(remoteAppInstanceName);

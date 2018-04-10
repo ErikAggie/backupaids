@@ -148,9 +148,9 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
     /**
      * SeekBar has changed something
-     * @param seekBar
-     * @param i
-     * @param b
+     * @param seekBar Seekbar
+     * @param i New value
+     * @param b Not used
      */
     @Override
     public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -170,12 +170,14 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         }
 
         byte[] tone = new byte[100000];
+        int amountRead = 0;
         try
         {
             BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(Util.FREQUENCIES_TO_SOUND_IDS.get(mBandFrequency)));
-            inputStream.read(tone, 0, tone.length);
+            amountRead = inputStream.read(tone, 0, tone.length);
         } catch (IOException e) {
             e.printStackTrace();
+            return;
         }
 
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
@@ -185,11 +187,11 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();
 
-        mAudioTrack.write(tone, 0, tone.length);
+        mAudioTrack.write(tone, 0, amountRead);
         mAudioTrack.setPlaybackHeadPosition(100); // To avoid a click
 
         // Play this forever
-        mAudioTrack.setLoopPoints(100, tone.length / 2, -1);
+        mAudioTrack.setLoopPoints(100, amountRead / 2, -1);
         mAudioTrack.play();
 
         mEqualizer = new Equalizer(1, mAudioTrack.getAudioSessionId());

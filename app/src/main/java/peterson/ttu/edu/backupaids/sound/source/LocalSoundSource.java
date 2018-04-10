@@ -16,17 +16,17 @@ public class LocalSoundSource implements SoundSource {
     }
 
     @Override
-    public void record() throws IOException {
+    public void record() {
         audioRecord.startRecording();
     }
 
     @Override
-    public int read(byte[] buffer) throws IOException {
+    public int read(byte[] buffer) {
         return audioRecord.read(buffer, 0, buffer.length);
     }
 
     @Override
-    public void stop() throws IOException {
+    public void stop() {
         audioRecord.stop();
         audioRecord.release();
     }

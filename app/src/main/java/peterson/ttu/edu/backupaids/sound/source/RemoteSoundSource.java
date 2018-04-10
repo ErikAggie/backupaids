@@ -19,7 +19,7 @@ public class RemoteSoundSource implements SoundSource {
     }
 
     @Override
-    public void record() throws IOException {
+    public void record() {
         // Nothing to do
     }
 

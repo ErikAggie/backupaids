@@ -7,7 +7,7 @@ import java.io.IOException;
  */
 
 public interface SoundDestination {
-    void play() throws IOException;
+    void play();
     void write(byte[] data, int amount) throws IOException ;
     void stop() throws IOException;
 }

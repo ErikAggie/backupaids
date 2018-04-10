@@ -7,19 +7,13 @@ import android.os.Handler;
  * Adapted from https://stackoverflow.com/questions/6896746/is-there-a-broadcast-action-for-volume-changes
  */
 
-public class AudioSettingObserver extends ContentObserver {
-    private IListenToVolumeChange mVolumeChangeListener;
+class AudioSettingObserver extends ContentObserver {
+    private final IListenToVolumeChange mVolumeChangeListener;
 
     public AudioSettingObserver(Handler handler, IListenToVolumeChange volumeChangeListener) {
         super(handler);
         mVolumeChangeListener = volumeChangeListener;
     }
-
-    @Override
-    public boolean deliverSelfNotifications() {
-        return super.deliverSelfNotifications();
-    }
-
 
     @Override
     public void onChange(boolean selfChange) {

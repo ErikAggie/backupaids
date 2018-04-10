@@ -23,9 +23,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
     private static BluetoothMonitor smInstance;
     private BluetoothDevice mConnectedDevice;
 
-    private boolean headsetConnected;
-
-
     /**
      * This is public so the system can create it. It should not be called directly!
      */

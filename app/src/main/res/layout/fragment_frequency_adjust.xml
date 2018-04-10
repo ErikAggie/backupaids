@@ -54,7 +54,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintWidth_default="wrap"
-        android:contentDescription="Play/stop playing the tone" />
+        android:contentDescription="@string/play_stop_playing_the_tone" />
 
     <SeekBar
         android:id="@+id/frequencyAdjustSlider"

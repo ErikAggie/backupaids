@@ -10,7 +10,7 @@
         android:id="@+id/ourPinTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Our PIN: "
+        android:text="@string/our_pin"
         android:textSize="20sp"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:layout_marginTop="16dp"
@@ -25,7 +25,7 @@
         android:id="@+id/presetLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Preset:"
+        android:text="@string/preset"
         android:textSize="20sp"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:layout_marginTop="16dp"
@@ -56,7 +56,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="newPreset"
-        android:text="New Preset"
+        android:text="@string/new_preset"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
@@ -85,7 +85,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintVertical_bias="0.6"
-        android:contentDescription="Play/stop playing what the phone hears" />
+        android:contentDescription="@string/play_stop_playing_what_the_phone_hears" />
 
     <TextView
         android:id="@+id/textForMakeDiscoverableButton"
@@ -93,7 +93,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
-        android:text="Allow another phone to send audio:"
+        android:text="@string/allow_another_phone_to_send_audio"
         android:textSize="20sp"
         android:textAlignment="viewEnd"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -120,7 +120,7 @@
         app:layout_constraintBottom_toTopOf="@id/sendToOtherPhoneButton"
         app:layout_constraintLeft_toRightOf="@id/textForMakeDiscoverableButton"
         app:layout_constraintRight_toRightOf="parent"
-        android:contentDescription="Make this phone discoverable by other phones" />
+        android:contentDescription="@string/make_this_phone_discoverable_by_other_phones" />
 
     <TextView
         android:id="@+id/textForSendToOtherPhoneButton"
@@ -128,7 +128,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:layout_marginTop="8dp"
-        android:text="Send audio to another phone:"
+        android:text="@string/send_audio_to_another_phone"
         android:textSize="20sp"
         android:textAlignment="viewEnd"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -155,6 +155,6 @@
         app:layout_constraintTop_toBottomOf="@id/makeDiscoverable"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:contentDescription="Start sending audio to another phones" />
+        android:contentDescription="@string/start_sending_audio_to_another_phones" />
 
 </android.support.constraint.ConstraintLayout>

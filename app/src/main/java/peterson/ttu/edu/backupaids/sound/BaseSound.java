@@ -1,6 +1,5 @@
 package peterson.ttu.edu.backupaids.sound;
 
-import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -32,7 +31,7 @@ public abstract class BaseSound {
 
     private static final String TAG = "BaseSound";
 
-    protected static final int INPUT_MIN_BUFFER_SIZE =
+    private static final int INPUT_MIN_BUFFER_SIZE =
             AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
                                          AudioFormat.CHANNEL_IN_MONO,
                                          AudioFormat.ENCODING_PCM_16BIT);
@@ -45,11 +44,10 @@ public abstract class BaseSound {
 
     /**
      * Constructor
-     *
-     * @param soundSource
-     * @param soundDestination
+     *  @param soundSource Sound source
+     * @param soundDestination Where sound is going
      */
-    public BaseSound(SoundSource soundSource, SoundDestination soundDestination) {
+    protected BaseSound(SoundSource soundSource, SoundDestination soundDestination) {
         this.soundSource = soundSource;
         this.soundDestination = soundDestination;
 
@@ -73,7 +71,7 @@ public abstract class BaseSound {
     /**
      * Create a recorder for the camcorder (phone mics)
      *
-     * @throws IOException
+     * @throws IOException If we can't initialize recording
      */
     protected static SoundSource createCamcorderAudioRecord() throws IOException {
         AudioRecord audioRecord =
@@ -92,11 +90,9 @@ public abstract class BaseSound {
     /**
      * Create a recorder for the mic (i.e. whatever headset is plugged in/paired)
      *
-     * @throws IOException
+     * @throws IOException If se can't initialize the recording
      */
     protected static SoundSource createMicAudioRecord() throws IOException {
-//        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-//        audioManager.startBluetoothSco();
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.MIC,
                                 Util.SAMPLE_RATE,
@@ -161,7 +157,7 @@ public abstract class BaseSound {
 
     /**
      * For sending sound to a remote headset
-     * @param socket
+     * @param socket Socket to write to
      */
     protected static SoundDestination createRemoteSoundDestination(Socket socket) throws IOException {
         return new RemoteSoundDestination(socket);

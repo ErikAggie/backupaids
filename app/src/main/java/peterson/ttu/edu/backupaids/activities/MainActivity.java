@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
-    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
+    private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private PlayLocalSound playLocalSound;
     private PlayRemoteSound playRemoteSound;
     private ConnectionManager connectionManager;
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     // For showing a popup with available connections
     private ConnectionPopupFragment connectionPopup;
-    private ArrayList<String> connectionList = new ArrayList<>();
+    private final ArrayList<String> connectionList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         setContentView(R.layout.activity_main);
 
         TextView ourPin = findViewById(R.id.ourPinTextView);
-        ourPin.setText("Our PIN: " + ConnectionManager.getPin());
+        ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
 
         updateSpinner();
 

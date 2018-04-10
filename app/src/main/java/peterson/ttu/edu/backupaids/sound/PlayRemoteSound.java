@@ -1,7 +1,5 @@
 package peterson.ttu.edu.backupaids.sound;
 
-import android.content.Context;
-
 import java.io.IOException;
 import java.net.Socket;
 
