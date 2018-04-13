@@ -33,6 +33,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity android:name=".activities.MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -42,10 +43,13 @@
         </activity>
         <activity android:name=".activities.headsetSetup.PresetSetupActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
+
         <activity
             android:name=".activities.SendSoundActivity"
             android:label="@string/title_activity_send_sound"
             android:theme="@style/AppTheme.NoActionBar"/>
+
+        <service android:name=".sound.SoundService"/>
     </application>
 
 </manifest>

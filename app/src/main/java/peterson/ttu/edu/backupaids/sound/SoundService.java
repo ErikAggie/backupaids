@@ -1,10 +1,13 @@
 package peterson.ttu.edu.backupaids.sound;
 
+import android.app.IntentService;
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.Process;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -15,51 +18,62 @@ import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 /**
  * Base class for sounds. When created, it will automatically begin recording/playing/streaming
  */
-public class BaseSound extends Service {
+public class SoundService extends IntentService {
+
+    private static final String TAG = "SoundService";
 
     private boolean playing;
 
-    private final SoundSource soundSource;
-    private final SoundDestination soundDestination;
+    private SoundSource soundSource;
+    private SoundDestination soundDestination;
+    private Notification notification;
 
-    /**
-     * Constructor
-     *  @param soundSource Sound source
-     * @param soundDestination Where sound is going
-     */
-    public BaseSound(SoundSource soundSource, SoundDestination soundDestination) {
+    public SoundService() {
+        super("SoundService");
+
+    }
+
+    public void setSoundSource(SoundSource soundSource) {
         this.soundSource = soundSource;
-        this.soundDestination = soundDestination;
+    }
 
-        if ( soundSource == null || soundDestination == null) {
-            throw new RuntimeException("Must set a source and destination!");
-        }
-        playing = true;
+    public void setSoundDestination(SoundDestination soundDestination) {
+        this.soundDestination = soundDestination;
+    }
+
+    public void setNotification(Notification notification) {
+        this.notification = notification;
     }
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        if ( soundSource == null) {
+            throw new NullPointerException("Cannot start a sound service without a source.");
+        }
+        if ( soundDestination == null) {
+            throw new NullPointerException("Cannot start a sound service without a destination");
+        }
+        if ( notification == null) {
+            throw new NullPointerException("Cannot start a sound service without a notification");
+        }
+        startForeground(1, notification);
 
+        return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         playing = false;
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+        super.onDestroy();
     }
 
     /**
-     * Do the work!
-     * @throws IOException
+     * Do the playback/stream (read from the source and play at the destination)
+     * @param intent Intent that started us
      */
-    public void playAudio() throws IOException {
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
         try {
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
@@ -72,11 +86,13 @@ public class BaseSound extends Service {
             // Here's the playing loop!
             while (playing) {
                 int amountRead = soundSource.read(audioBuffer);
-                if ( amountRead < 0) {
+                if (amountRead < 0) {
                     break;
                 }
                 soundDestination.write(audioBuffer, amountRead);
             }
+        } catch ( Exception e) {
+            Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
 
             // Clean up
@@ -97,6 +113,7 @@ public class BaseSound extends Service {
      * Stop what we're doing
      */
     public void stop() {
+        stopSelf();
         playing = false;
     }
 }

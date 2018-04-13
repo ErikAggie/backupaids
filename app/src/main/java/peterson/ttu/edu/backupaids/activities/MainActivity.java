@@ -2,29 +2,27 @@ package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.app.Dialog;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.DialogFragment;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,17 +33,18 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.BaseSound;
+import peterson.ttu.edu.backupaids.sound.SoundService;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
 public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    private static final String PLAY_LOCAL_SERVICE_STRING = "PlayLocalRecording";
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private BaseSound playLocalSound;
-    private BaseSound playRemoteSound;
+    private SoundService playLocalSound;
+    private SoundService playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
@@ -132,14 +131,27 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         } else {
             // Start playing!
             SoundPreset preset = getCurrentSoundPreset();
-            playLocalSound = new BaseSound(SourceFactory.createCamcorderAudioRecord(),
-                                           DestinationFactory.createLocalAudioDestination(preset));
-            new Thread(new Runnable() {
+            playLocalSound = new SoundService();
+            playLocalSound.setSoundSource(SourceFactory.createCamcorderAudioRecord());
+            playLocalSound.setSoundDestination(DestinationFactory.createLocalAudioDestination(preset));
+
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "playback")
+                    .setSmallIcon(R.drawable.power_button_green2)
+                    .setContentTitle("Playing mic audio")
+                    .setContentText("Playing audio from the phone's microphones")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setContentIntent(pendingIntent);
+
+            startService(new Intent(this, SoundService.class));
+            /*new Thread(new Runnable() {
 
                 @Override
                 public void run() {
                     try {
-                        playLocalSound.playAudio();
+                        playLocalSound.();
                     } catch ( IOException e) {
                         runOnUiThread(new Runnable() {
                             @Override
@@ -169,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                         }
                     }
                 }
-            }).start();
+            }).start();*/
 
             ImageButton playButton = findViewById(R.id.playSound);
             playButton.setImageResource(R.drawable.power_button_green2);
@@ -226,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     private void stopPlaying() {
         if ( playLocalSound != null) {
             // Use a temp variable so the other thread doesn't try to stop things also
-            BaseSound temp = playLocalSound;
+            SoundService temp = playLocalSound;
             playLocalSound = null;
             temp.stop();
             ImageButton playButton = findViewById(R.id.playSound);
@@ -368,9 +380,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
             }
         });
-        playRemoteSound = new BaseSound(SourceFactory.createStreamSource(socket),
+        // TODO: re-enable later
+        /*playRemoteSound = new SoundService(SourceFactory.createStreamSource(socket),
                                         DestinationFactory.createLocalAudioDestination(getCurrentSoundPreset()));
-        playRemoteSound.playAudio();
+        playRemoteSound.playAudio();*/
     }
 
     @Override
