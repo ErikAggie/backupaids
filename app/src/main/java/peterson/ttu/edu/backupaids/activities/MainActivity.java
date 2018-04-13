@@ -35,16 +35,17 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.PlayLocalSound;
-import peterson.ttu.edu.backupaids.sound.PlayRemoteSound;
+import peterson.ttu.edu.backupaids.sound.BaseSound;
+import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
+import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
 public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private PlayLocalSound playLocalSound;
-    private PlayRemoteSound playRemoteSound;
+    private BaseSound playLocalSound;
+    private BaseSound playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
@@ -131,7 +132,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         } else {
             // Start playing!
             SoundPreset preset = getCurrentSoundPreset();
-            playLocalSound = new PlayLocalSound(preset);
+            playLocalSound = new BaseSound(SourceFactory.createCamcorderAudioRecord(),
+                                           DestinationFactory.createLocalAudioDestination(preset));
             new Thread(new Runnable() {
 
                 @Override
@@ -177,6 +179,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     public void makeDiscoverable(View view) {
         if ( connectionManager != null) {
             stopListening();
+            if ( playRemoteSound != null) {
+                playRemoteSound.stop();
+                playRemoteSound = null;
+            }
         } else {
             connectionList.clear();
             connectionManager = new ConnectionManager(this, this);
@@ -220,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     private void stopPlaying() {
         if ( playLocalSound != null) {
             // Use a temp variable so the other thread doesn't try to stop things also
-            PlayLocalSound temp = playLocalSound;
+            BaseSound temp = playLocalSound;
             playLocalSound = null;
             temp.stop();
             ImageButton playButton = findViewById(R.id.playSound);
@@ -362,7 +368,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
             }
         });
-        playRemoteSound = new PlayRemoteSound(socket, getCurrentSoundPreset());
+        playRemoteSound = new BaseSound(SourceFactory.createStreamSource(socket),
+                                        DestinationFactory.createLocalAudioDestination(getCurrentSoundPreset()));
         playRemoteSound.playAudio();
     }
 

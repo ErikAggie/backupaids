@@ -3,6 +3,8 @@ package peterson.ttu.edu.backupaids;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.hardware.display.DisplayManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 import android.util.SparseIntArray;
@@ -20,6 +22,12 @@ public class Util {
     public static final String PIN_NUMBER_STRING = "PinNumber";
 
     public static final int SAMPLE_RATE = 44100;
+
+    public static final int INPUT_MIN_BUFFER_SIZE =
+            AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT);
+
 
     public static final String SELECTED_PRESET_ITEM = "SelectedPreset";
 

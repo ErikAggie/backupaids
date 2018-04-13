@@ -21,13 +21,15 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.StreamRecording;
+import peterson.ttu.edu.backupaids.sound.BaseSound;
+import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
+import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
 public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
-    private StreamRecording streamRecording;
+    private BaseSound streamRecording;
     private final List<String> peers = new ArrayList<>();
 
     @Override
@@ -104,7 +106,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
                 playButton.setImageResource(R.drawable.power_button_green2);
             }
         });
-        streamRecording = new StreamRecording(socket);
+        streamRecording = new BaseSound(SourceFactory.createMicAudioRecord(), DestinationFactory.createRemoteSoundDestination(socket));
         streamRecording.playAudio();
     }
 
