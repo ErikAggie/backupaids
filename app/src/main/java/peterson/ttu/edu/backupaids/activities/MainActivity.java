@@ -1,13 +1,13 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
-import android.app.AlertDialog;
-import android.app.Notification;
 import android.app.PendingIntent;
-import android.content.DialogInterface;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
@@ -33,7 +33,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.SoundService;
+import peterson.ttu.edu.backupaids.service.SoundService;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     private static final String PLAY_LOCAL_SERVICE_STRING = "PlayLocalRecording";
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private SoundService playLocalSound;
     private SoundService playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
@@ -52,6 +51,31 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     // For showing a popup with available connections
     private ConnectionPopupFragment connectionPopup;
     private final ArrayList<String> connectionList = new ArrayList<>();
+
+    /**
+     * Listener for local sound events
+     */
+    private final SoundService.Listener listener = new SoundService.Listener() {
+        @Override
+        public void serviceStarted() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updatePlayButton();
+                }
+            });
+        }
+
+        @Override
+        public void serviceStopped() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updatePlayButton();
+                }
+            });
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,10 +95,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                if ( playLocalSound == null && playRemoteSound == null) {
-                    // Not playing; nothing to do
-                    return;
-                }
                 stopPlaying();
             }
 
@@ -90,6 +110,18 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         stopListening();
         stopPlaying();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        SoundService.registerListener(listener);
+    }
+
+    @Override
+    protected void onStop() {
+        SoundService.unregisterListener(listener);
+        super.onStop();
     }
 
     private void updateSpinner() {
@@ -119,6 +151,14 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         setUpAudioRecordingAndPlayback();
     }
 
+    private void updatePlayButton() {
+        ImageButton playButton = findViewById(R.id.playSound);
+        if ( SoundService.isRunning()) {
+            playButton.setImageResource(R.drawable.power_button_green2);
+        } else {
+            playButton.setImageResource(R.drawable.power_button_blue2);
+        }
+    }
 
     private void setUpAudioRecordingAndPlayback()
     {
@@ -126,65 +166,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     public void playLocalSound(View view) throws IOException {
-        if ( playLocalSound != null) {
+        if ( SoundService.isRunning()) {
             stopPlaying();
         } else {
             // Start playing!
-            SoundPreset preset = getCurrentSoundPreset();
-            playLocalSound = new SoundService();
-            playLocalSound.setSoundSource(SourceFactory.createCamcorderAudioRecord());
-            playLocalSound.setSoundDestination(DestinationFactory.createLocalAudioDestination(preset));
-
-            Intent notificationIntent = new Intent(this, MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "playback")
-                    .setSmallIcon(R.drawable.power_button_green2)
-                    .setContentTitle("Playing mic audio")
-                    .setContentText("Playing audio from the phone's microphones")
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setContentIntent(pendingIntent);
-
             startService(new Intent(this, SoundService.class));
-            /*new Thread(new Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        playLocalSound.();
-                    } catch ( IOException e) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                                builder.setTitle("Unable to record/play sounds");
-                                builder.setMessage("Unable to start audio recording/playback.");
-                                builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        finish();
-                                    }
-                                });
-                                builder.create().show();
-                           }
-                        });
-                    } finally {
-                        if ( playLocalSound != null) {
-                            playLocalSound.stop();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageButton playButton = findViewById(R.id.playSound);
-                                    playButton.setImageResource(R.drawable.power_button_blue2);
-                                }
-                            });
-                        }
-                    }
-                }
-            }).start();*/
-
-            ImageButton playButton = findViewById(R.id.playSound);
-            playButton.setImageResource(R.drawable.power_button_green2);
+            updatePlayButton();
         }
     }
 
@@ -192,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         if ( connectionManager != null) {
             stopListening();
             if ( playRemoteSound != null) {
-                playRemoteSound.stop();
+//                playRemoteSound.stop();
                 playRemoteSound = null;
             }
         } else {
@@ -236,16 +224,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     private void stopPlaying() {
-        if ( playLocalSound != null) {
-            // Use a temp variable so the other thread doesn't try to stop things also
-            SoundService temp = playLocalSound;
-            playLocalSound = null;
-            temp.stop();
-            ImageButton playButton = findViewById(R.id.playSound);
-            playButton.setImageResource(R.drawable.power_button_blue2);
+        if ( SoundService.isRunning()) {
+            stopService(new Intent(this, SoundService.class));
         }
         if ( playRemoteSound != null) {
-            playRemoteSound.stop();
+//            playRemoteSound.stop();
             playRemoteSound = null;
         }
     }
@@ -325,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             @Override
             public void run() {
                 if ( playRemoteSound != null) {
-                    playRemoteSound.stop();
+//                    playRemoteSound.stop();
                     playRemoteSound = null;
                 }
                 stopListening();
@@ -339,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             @Override
             public void run() {
                 if ( playRemoteSound != null) {
-                    playRemoteSound.stop();
+//                    playRemoteSound.stop();
                     playRemoteSound = null;
                 }
                 stopListening();
@@ -399,4 +382,5 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         }
         stopListening();
     }
+
 }

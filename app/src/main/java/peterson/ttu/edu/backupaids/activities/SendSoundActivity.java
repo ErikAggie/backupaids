@@ -21,9 +21,7 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.SoundService;
-import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
-import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
+import peterson.ttu.edu.backupaids.service.SoundService;
 
 public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
 
@@ -78,7 +76,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     private void stopPlaying() {
         if ( streamRecording != null) {
-            streamRecording.stop();
+//            streamRecording.stop();
             streamRecording = null;
             ImageButton playButton = findViewById(R.id.sendSoundStartButton);
             playButton.setImageResource(R.drawable.power_button_blue2);
