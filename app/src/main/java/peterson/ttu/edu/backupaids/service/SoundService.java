@@ -2,9 +2,13 @@ package peterson.ttu.edu.backupaids.service;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.Process;
 import android.support.annotation.Nullable;
@@ -31,6 +35,7 @@ public class SoundService extends IntentService {
 
     private static final String TAG = "SoundService";
     private static final int FOREGROUND_ID = 1234;
+    private static final String PLAYBACK_CHANNEL_NAME = "Playback";
 
     private static boolean running;
     private static String preset;
@@ -80,7 +85,14 @@ public class SoundService extends IntentService {
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "playback")
+        if ( Build.VERSION.SDK_INT >= 26) {
+            // Create the notification channel needed to show this notification...
+            NotificationChannel channel = new NotificationChannel(PLAYBACK_CHANNEL_NAME, PLAYBACK_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, PLAYBACK_CHANNEL_NAME)
                 .setOngoing(true)
                 .setSmallIcon(R.drawable.power_button_green2)
                 .setContentTitle("Playing mic audio")
