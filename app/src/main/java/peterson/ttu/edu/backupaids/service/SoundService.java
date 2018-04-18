@@ -17,6 +17,8 @@ import java.util.List;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.model.SoundPreset;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -28,8 +30,10 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 public class SoundService extends IntentService {
 
     private static final String TAG = "SoundService";
+    private static final int FOREGROUND_ID = 1234;
 
     private static boolean running;
+    private static String preset;
 
     private boolean playing = true;
 
@@ -51,11 +55,8 @@ public class SoundService extends IntentService {
         listeners.remove(listener);
     }
 
-    @Override
-    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        super.onStartCommand(intent, flags, startId);
-
-        return START_STICKY;
+    public static void setCurrentPreset(String newPreset) {
+        preset = newPreset;
     }
 
     @Override
@@ -72,6 +73,11 @@ public class SoundService extends IntentService {
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
 
+        SoundPreset soundPreset = null;
+        if ( preset != null && !preset.isEmpty()) {
+            soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
+        }
+
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "playback")
@@ -79,10 +85,9 @@ public class SoundService extends IntentService {
                 .setSmallIcon(R.drawable.power_button_green2)
                 .setContentTitle("Playing mic audio")
                 .setContentText("Playing audio from the phone's microphones")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent);
 
-        startForeground(1234, notificationBuilder.build());
+        startForeground(FOREGROUND_ID, notificationBuilder.build());
 
         for ( Listener listener : listeners) {
             listener.serviceStarted();
@@ -95,7 +100,7 @@ public class SoundService extends IntentService {
         try {
             soundSource = SourceFactory.createCamcorderAudioRecord();
             // TODO: find current sound source (key/value store)
-            soundDestination = DestinationFactory.createLocalAudioDestination(null);
+            soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset);
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size

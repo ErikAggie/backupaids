@@ -1,16 +1,11 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
-import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -34,8 +29,6 @@ import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.service.SoundService;
-import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
-import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
 public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
@@ -95,6 +88,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                SoundPreset newPreset = getCurrentSoundPreset();
+                if ( newPreset != null) {
+                    SoundService.setCurrentPreset(newPreset.getName());
+                }
                 stopPlaying();
             }
 

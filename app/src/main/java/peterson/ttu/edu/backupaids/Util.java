@@ -21,6 +21,8 @@ public class Util {
     public static final String LISTEN_PORT_STRING = "ListenPort";
     public static final String PIN_NUMBER_STRING = "PinNumber";
 
+    public static final String CURRENTLY_SELECTED_PRESET = "SelectedPreset";
+
     public static final int SAMPLE_RATE = 44100;
 
     public static final int INPUT_MIN_BUFFER_SIZE =
