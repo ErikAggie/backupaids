@@ -21,13 +21,13 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.service.SoundService;
+import peterson.ttu.edu.backupaids.service.LocalSoundService;
 
 public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
-    private SoundService streamRecording;
+    private LocalSoundService streamRecording;
     private final List<String> peers = new ArrayList<>();
 
     @Override
@@ -105,7 +105,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
             }
         });
         // TODO: reenable later
-        /*streamRecording = new SoundService(SourceFactory.createMicAudioRecord(), DestinationFactory.createRemoteSoundDestination(socket));
+        /*streamRecording = new LocalSoundService(SourceFactory.createMicAudioRecord(), DestinationFactory.createRemoteSoundDestination(socket));
         streamRecording.playAudio();*/
     }
 

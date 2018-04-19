@@ -1,15 +1,12 @@
 package peterson.ttu.edu.backupaids.service;
 
 import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.Process;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -21,6 +18,7 @@ import java.util.List;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.activities.MainActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
@@ -31,9 +29,9 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 /**
  * Service for playing local sound.
  */
-public class SoundService extends IntentService {
+public class LocalSoundService extends IntentService {
 
-    private static final String TAG = "SoundService";
+    private static final String TAG = "LocalSoundService";
     private static final int FOREGROUND_ID = 1234;
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
 
@@ -44,8 +42,8 @@ public class SoundService extends IntentService {
 
     private final static List<Listener> listeners = new ArrayList<>();
 
-    public SoundService() {
-        super("SoundService");
+    public LocalSoundService() {
+        super("LocalSoundService");
     }
 
     public static boolean isRunning() {
@@ -60,6 +58,10 @@ public class SoundService extends IntentService {
         listeners.remove(listener);
     }
 
+    public static String getCurrentPreset() {
+        return preset;
+    }
+
     public static void setCurrentPreset(String newPreset) {
         preset = newPreset;
     }
@@ -68,8 +70,15 @@ public class SoundService extends IntentService {
     public void onDestroy() {
         // This will tell the thread to stop
         playing = false;
+
+
+        for ( Listener listener : listeners) {
+            listener.serviceStopped();
+        }
+
         super.onDestroy();
     }
+
 
     /**
      * Do the playback/stream (read from the source and play at the destination)
@@ -77,13 +86,12 @@ public class SoundService extends IntentService {
      */
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-
         SoundPreset soundPreset = null;
         if ( preset != null && !preset.isEmpty()) {
             soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
         }
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
 
         if ( Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...
@@ -94,7 +102,7 @@ public class SoundService extends IntentService {
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, PLAYBACK_CHANNEL_NAME)
                 .setOngoing(true)
-                .setSmallIcon(R.drawable.power_button_green2)
+                .setSmallIcon(R.drawable.ic_play)
                 .setContentTitle("Playing mic audio")
                 .setContentText("Playing audio from the phone's microphones")
                 .setContentIntent(pendingIntent);

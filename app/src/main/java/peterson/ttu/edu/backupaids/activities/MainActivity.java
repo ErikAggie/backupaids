@@ -28,7 +28,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.service.SoundService;
+import peterson.ttu.edu.backupaids.service.LocalSoundService;
 
 public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     private static final String PLAY_LOCAL_SERVICE_STRING = "PlayLocalRecording";
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private SoundService playRemoteSound;
+    private LocalSoundService playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     /**
      * Listener for local sound events
      */
-    private final SoundService.Listener listener = new SoundService.Listener() {
+    private final LocalSoundService.Listener listener = new LocalSoundService.Listener() {
         @Override
         public void serviceStarted() {
             runOnUiThread(new Runnable() {
@@ -90,9 +90,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 SoundPreset newPreset = getCurrentSoundPreset();
                 if ( newPreset != null) {
-                    SoundService.setCurrentPreset(newPreset.getName());
+                    LocalSoundService.setCurrentPreset(newPreset.getName());
                 }
-                stopPlaying();
+                // TODO: we're making the user restart playback; it'd be nice if we could do
+                // it for them, but the problem is this gets called as the Activity is being
+                // created, so cases where we're arriving while we're already playing
+                // (e.g. if a service kicks us off) then stopping playback would be bad
             }
 
             @Override
@@ -100,6 +103,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 // Shouldn't happen
             }
         });
+
+        // We could already be playing, so check on that...
+        updatePlayButton();
     }
 
     @Override
@@ -112,12 +118,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     @Override
     protected void onStart() {
         super.onStart();
-        SoundService.registerListener(listener);
+        LocalSoundService.registerListener(listener);
     }
 
     @Override
     protected void onStop() {
-        SoundService.unregisterListener(listener);
+        LocalSoundService.unregisterListener(listener);
         super.onStop();
     }
 
@@ -150,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
 
     private void updatePlayButton() {
         ImageButton playButton = findViewById(R.id.playSound);
-        if ( SoundService.isRunning()) {
+        if ( LocalSoundService.isRunning()) {
             playButton.setImageResource(R.drawable.power_button_green2);
         } else {
             playButton.setImageResource(R.drawable.power_button_blue2);
@@ -163,11 +169,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     public void playLocalSound(View view) throws IOException {
-        if ( SoundService.isRunning()) {
+        if ( LocalSoundService.isRunning()) {
             stopPlaying();
         } else {
             // Start playing!
-            startService(new Intent(this, SoundService.class));
+            startService(new Intent(this, LocalSoundService.class));
 
             updatePlayButton();
         }
@@ -221,8 +227,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     private void stopPlaying() {
-        if ( SoundService.isRunning()) {
-            stopService(new Intent(this, SoundService.class));
+        if ( LocalSoundService.isRunning()) {
+            stopService(new Intent(this, LocalSoundService.class));
         }
         if ( playRemoteSound != null) {
 //            playRemoteSound.stop();
@@ -361,7 +367,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             }
         });
         // TODO: re-enable later
-        /*playRemoteSound = new SoundService(SourceFactory.createStreamSource(socket),
+        /*playRemoteSound = new LocalSoundService(SourceFactory.createStreamSource(socket),
                                         DestinationFactory.createLocalAudioDestination(getCurrentSoundPreset()));
         playRemoteSound.playAudio();*/
     }
