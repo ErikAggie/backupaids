@@ -28,7 +28,7 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 /**
  * Service for streaming sound to another device
  */
-public class StreamSoundService extends IntentService implements ConnectionManager.ConnectionListener {
+public class StreamSoundService extends BaseStreamService {
 
     private static final String TAG = "StreamSoundService";
 
@@ -36,23 +36,19 @@ public class StreamSoundService extends IntentService implements ConnectionManag
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
 
     private static boolean currentlyStreaming = false;
-    private static final List<Listener> listeners = new ArrayList<>();
-
-    private ConnectionManager connectionManager;
+    private static final List<BaseStreamService.Listener> listeners = new ArrayList<>();
 
     public static boolean isCurrentlyStreaming() {
         return currentlyStreaming;
     }
 
-
-    public static void registerListener(Listener listener) {
+    public static void registerListener(BaseStreamService.Listener listener) {
         listeners.add(listener);
     }
 
-    public static void unregisterListener(Listener listener) {
+    public static void unregisterListener(BaseStreamService.Listener listener) {
         listeners.remove(listener);
     }
-
 
     public StreamSoundService() {
         super("StreamSoundService");
@@ -61,10 +57,6 @@ public class StreamSoundService extends IntentService implements ConnectionManag
     @Override
     public void onDestroy() {
         currentlyStreaming = false; // This will stop the thread
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
-        }
 
         super.onDestroy();
     }
@@ -75,122 +67,31 @@ public class StreamSoundService extends IntentService implements ConnectionManag
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-
-        if ( intent == null) {
-            return;
-        }
-
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, SendSoundActivity.class), 0);
-
-        if ( Build.VERSION.SDK_INT >= 26) {
-            // Create the notification channel needed to show this notification...
-            NotificationChannel channel = new NotificationChannel(STREAM_CHANNEL_NAME, STREAM_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, STREAM_CHANNEL_NAME)
-                .setOngoing(true)
-                .setSmallIcon(R.drawable.ic_stream_out)
-                .setContentTitle("Streaming mic audio")
-                .setContentText("Sending audio to another device")
-                .setContentIntent(pendingIntent);
-
-        startForeground(FOREGROUND_ID, notificationBuilder.build());
-
-        ConnectionManager connectionManager = ConnectionManager.getInstance();
-        if ( connectionManager == null) {
-            throw new RuntimeException("Can't get Connection Manager (shouldn't be null)!");
-        }
-        connectionManager.setConnectionListener(this);
-
-        final String connectionName = intent.getStringExtra("ConnectionName");
-        if ( connectionName == null) {
-            // Connection is waiting. This will call connectionReady() immediately
-            connectionManager.readyForConnection();
-        } else {
-            // We need to initiate the connection
-            connectionManager.makeConnection(connectionName);
-        }
-
-        // Now we wait until ConnectionManager makes the connection
+        setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
     }
 
     @Override
-    public void connectionReady(Socket socket) throws IOException {
+    protected void streamingStarted() {
         currentlyStreaming = true;
-        for ( Listener listener : listeners) {
-            listener.connectionMade();
-        }
-
-        SoundSource soundSource = null;
-        SoundDestination soundDestination = null;
-
-        try {
-            soundSource = SourceFactory.createMicAudioRecord();
-            soundDestination = DestinationFactory.createRemoteSoundDestination(socket);
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-
-            // Short buffer would be half of the buffer size; byte buffer is the full size
-            byte[] audioBuffer = new byte[Util.INPUT_MIN_BUFFER_SIZE];
-
-            Log.i(TAG, "Ready to send!");
-
-            soundSource.record();
-            soundDestination.play();
-
-            // Here's the playing loop!
-            while (currentlyStreaming) {
-                int amountRead = soundSource.read(audioBuffer);
-                if (amountRead < 0) {
-                    break;
-                }
-                soundDestination.write(audioBuffer, amountRead);
-            }
-        } catch ( Exception e) {
-            Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
-        } finally {
-            currentlyStreaming = false;
-
-            // Clean up
-            try {
-                if ( soundSource != null) {
-                    soundSource.stop();
-                }
-            } catch ( IOException e) {
-                // Nothing to do
-            }
-            try {
-                if ( soundDestination != null) {
-                    soundDestination.stop();
-                }
-            } catch ( IOException e) {
-                // Nothing to do
-            }
-        }
     }
 
     @Override
-    public void connectionFailed(IOException e) {
-        Log.w(TAG, "Connection failed: " + e.getMessage(), e);
+    protected void streamingStopped() {
         currentlyStreaming = false;
-        for ( Listener listener : listeners) {
-            listener.connectionFailed();
-        }
     }
 
     @Override
-    public void connectionClosed() {
-        Log.i(TAG, "Streaming (out) connection closed.");
-        currentlyStreaming = false;
-        for ( Listener listener : listeners) {
-            listener.connectionClosed();
-        }
+    protected List<Listener> getListeners() {
+        return listeners;
     }
 
-    public interface Listener {
-        void connectionMade();
-        void connectionFailed();
-        void connectionClosed();
+    @Override
+    protected SoundSource createSource(Socket socket) throws IOException{
+        return SourceFactory.createMicAudioRecord();
+    }
+
+    @Override
+    protected SoundDestination createDestination(Socket socket) throws IOException{
+        return DestinationFactory.createRemoteSoundDestination(socket);
     }
 }

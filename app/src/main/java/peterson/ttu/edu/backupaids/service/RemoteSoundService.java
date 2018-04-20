@@ -4,6 +4,19 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+import peterson.ttu.edu.backupaids.model.SoundPreset;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
+import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
+import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
+import peterson.ttu.edu.backupaids.sound.source.SoundSource;
+import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
+
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
  * a service on a separate handler thread.
@@ -11,7 +24,39 @@ import android.content.Context;
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
  */
-public class RemoteSoundService extends IntentService {
+public class RemoteSoundService extends BaseStreamService {
+
+    private static final String TAG = "RemoteSoundService";
+
+    private static final int FOREGROUND_ID = 1236;
+    private static final String STREAM_CHANNEL_NAME = "Stream In";
+
+    private static boolean currentlyStreaming = false;
+    private static final List<StreamSoundService.Listener> listeners = new ArrayList<>();
+    private static String preset;
+
+    public static String getCurrentPreset() {
+        return preset;
+    }
+
+    public static void setCurrentPreset(String newPreset) {
+        preset = newPreset;
+    }
+
+
+    public static boolean isCurrentlyStreaming() {
+        return currentlyStreaming;
+    }
+
+    public static void registerListener(StreamSoundService.Listener listener) {
+        listeners.add(listener);
+    }
+
+    public static void unregisterListener(StreamSoundService.Listener listener) {
+        listeners.remove(listener);
+    }
+
+
 
     public RemoteSoundService() {
         super("RemoteSoundService");
@@ -19,33 +64,36 @@ public class RemoteSoundService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
-        if ( intent == null) {
-            return;
-        }
-
-        final String connectionName = intent.getStringExtra("ConnectionName");
-
-        if ( connectionName == null || connectionName.isEmpty()) {
-            throw new RuntimeException("Cannot start RemoteSoundService without a connection name!");
-        }
+        setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1, String param2) {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
+    @Override
+    protected void streamingStarted() {
+        currentlyStreaming = true;
     }
 
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionBaz(String param1, String param2) {
-        // TODO: Handle action Baz
-        throw new UnsupportedOperationException("Not yet implemented");
+    @Override
+    protected void streamingStopped() {
+        currentlyStreaming = false;
+    }
+
+    @Override
+    protected List<Listener> getListeners() {
+        return listeners;
+    }
+
+    @Override
+    protected SoundSource createSource(Socket socket) throws IOException {
+        return SourceFactory.createStreamSource(socket);
+    }
+
+    @Override
+    protected SoundDestination createDestination(Socket socket) throws IOException {
+        SoundPreset soundPreset = null;
+        if ( preset != null && !preset.isEmpty()) {
+            soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
+        }
+
+        return DestinationFactory.createLocalAudioDestination(soundPreset);
     }
 }
