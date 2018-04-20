@@ -52,10 +52,13 @@
 
         <service
             android:name=".service.LocalSoundService"
-            android:exported="false"/>
+            android:exported="false" />
         <service
             android:name=".service.StreamSoundService"
-            android:exported="false"/>
+            android:exported="false" />
+        <service
+            android:name=".service.RemoteSoundService"
+            android:exported="false"></service>
     </application>
 
 </manifest>

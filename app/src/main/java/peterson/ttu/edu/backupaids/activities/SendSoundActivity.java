@@ -1,6 +1,7 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -13,17 +14,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.network.ConnectionListener;
+import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
+import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SendSoundActivity extends AppCompatActivity implements ConnectionListener {
+public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.PeerListener, StreamSoundService.Listener {
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
@@ -45,7 +48,26 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         registerReceiver(bluetoothMonitor, connectFilter);
 
-        connectionManager = new ConnectionManager(this, this);
+        // If we're already streaming (i.e. we've been woken up), find the existing connection manager
+        if ( StreamSoundService.isCurrentlyStreaming()) {
+            connectionManager = ConnectionManager.getInstance();
+        } else {
+            connectionManager = new ConnectionManager(this, this);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        connectionManager.setPeerListener(this);
+        StreamSoundService.registerListener(this);
+    }
+
+    @Override
+    protected void onStop() {
+        connectionManager.removePeerListener(this);
+        StreamSoundService.unregisterListener(this);
+        super.onStop();
     }
 
     @Override
@@ -59,28 +81,37 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     public void sendSound(View view) {
         if ( streamRecording != null) {
-            stopPlaying();
+            stopService(new Intent(this, LocalSoundService.class));
         } else {
             // Start playing!
             Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
             if ( sendSoundPeerSpinner == null ||
                  sendSoundPeerSpinner.getAdapter() == null ||
                  sendSoundPeerSpinner.getAdapter().getCount() == 0) {
-                Toast.makeText(this, "No targets found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No peers found", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            Intent intent = new Intent(this, LocalSoundService.class);
+            intent.putExtra(Util.CONNECTION_NAME_EXTRA, ((String)sendSoundPeerSpinner.getSelectedItem()));
+            startService(intent);
 
             connectionManager.makeConnection((String)sendSoundPeerSpinner.getSelectedItem());
         }
     }
 
-    private void stopPlaying() {
-        if ( streamRecording != null) {
-//            streamRecording.stop();
-            streamRecording = null;
-            ImageButton playButton = findViewById(R.id.sendSoundStartButton);
-            playButton.setImageResource(R.drawable.power_button_blue2);
-        }
+    private void updatePlayButton() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+                if (StreamSoundService.isCurrentlyStreaming()) {
+                    playButton.setImageResource(R.drawable.power_button_green2);
+                } else {
+                    playButton.setImageResource(R.drawable.power_button_blue2);
+                }
+            }
+        });
     }
 
     @Override
@@ -91,47 +122,14 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
 
     @Override
     public void foundAPeer(String newPeer) {
+        // TODO: probably better as a notification a la MainActivity
         peers.add(newPeer);
         updateSpinner();
     }
 
     @Override
-    public void connectionReady(Socket socket) throws IOException {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
-                playButton.setImageResource(R.drawable.power_button_green2);
-            }
-        });
-        // TODO: reenable later
-        /*streamRecording = new LocalSoundService(SourceFactory.createMicAudioRecord(), DestinationFactory.createRemoteSoundDestination(socket));
-        streamRecording.playAudio();*/
-    }
-
-    @Override
-    public void connectionFailed(final IOException e) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                stopPlaying();
-                Toast.makeText(SendSoundActivity.this, "Connection failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
-                playButton.setImageResource(R.drawable.power_button_blue2);
-            }
-        });
-    }
-
-    @Override
-    public void connectionClosed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                stopPlaying();
-                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
-                playButton.setImageResource(R.drawable.power_button_blue2);
-            }
-        });
+    public void findingPeerFailed(IOException e) {
+        // TODO: Show something...
     }
 
     @Override
@@ -151,4 +149,20 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionLi
         sendSoundPeerSpinner.setAdapter(arrayAdapter);
     }
 
+    @Override
+    public void connectionMade() {
+        updatePlayButton();
+    }
+
+    @Override
+    public void connectionFailed() {
+        // TODO: should say something here...
+        updatePlayButton();
+    }
+
+    @Override
+    public void connectionClosed() {
+        // TODO: should say something here...
+        updatePlayButton();
+    }
 }

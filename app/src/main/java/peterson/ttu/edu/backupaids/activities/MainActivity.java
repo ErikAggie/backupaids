@@ -26,11 +26,10 @@ import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.ConnectionListener;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 
-public class MainActivity extends AppCompatActivity implements ConnectionListener, ConnectionPopupFragment.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String PLAY_LOCAL_SERVICE_STRING = "PlayLocalRecording";
@@ -50,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
      */
     private final LocalSoundService.Listener listener = new LocalSoundService.Listener() {
         @Override
-        public void serviceStarted() {
+        public void playbackStarted() {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -60,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         }
 
         @Override
-        public void serviceStopped() {
+        public void playbackStopped() {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -174,8 +173,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
         } else {
             // Start playing!
             startService(new Intent(this, LocalSoundService.class));
-
-            updatePlayButton();
         }
     }
 
@@ -304,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     public void servicePublishingFailed() {
 
     }
-
+/*
     @Override
     public void connectionFailed(IOException e) {
         runOnUiThread(new Runnable() {
@@ -331,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
                 stopListening();
             }
         });
-    }
+    }*/
 
     @Override
     public void foundAPeer(final String peerName) {
@@ -354,6 +351,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
     }
 
     @Override
+    public void findingPeerFailed(IOException e) {
+
+    }
+
+    /*@Override
     public void connectionReady(Socket socket) throws IOException {
         if ( discoverableCountdown != null) {
             discoverableCountdown.cancel();
@@ -367,14 +369,15 @@ public class MainActivity extends AppCompatActivity implements ConnectionListene
             }
         });
         // TODO: re-enable later
-        /*playRemoteSound = new LocalSoundService(SourceFactory.createStreamSource(socket),
+        playRemoteSound = new LocalSoundService(SourceFactory.createStreamSource(socket),
                                         DestinationFactory.createLocalAudioDestination(getCurrentSoundPreset()));
-        playRemoteSound.playAudio();*/
-    }
+        playRemoteSound.playAudio();
+    }*/
 
     @Override
     public void connectionConfirmed(String connectionName) {
-        connectionManager.makeConnection(connectionName);
+        // TODO: start service here...
+        //connectionManager.makeConnection(connectionName);
     }
 
     @Override

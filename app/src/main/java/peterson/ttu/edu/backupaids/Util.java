@@ -21,7 +21,7 @@ public class Util {
     public static final String LISTEN_PORT_STRING = "ListenPort";
     public static final String PIN_NUMBER_STRING = "PinNumber";
 
-    public static final String PEER_FOUND_CHANNEL_NAME = "PeerFound";
+    public static final String CONNECTION_NAME_EXTRA = "ConnectionName";
 
     public static final int SAMPLE_RATE = 44100;
 

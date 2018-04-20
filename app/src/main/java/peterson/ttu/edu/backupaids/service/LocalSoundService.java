@@ -73,7 +73,7 @@ public class LocalSoundService extends IntentService {
 
 
         for ( Listener listener : listeners) {
-            listener.serviceStopped();
+            listener.playbackStopped();
         }
 
         super.onDestroy();
@@ -109,11 +109,12 @@ public class LocalSoundService extends IntentService {
 
         startForeground(FOREGROUND_ID, notificationBuilder.build());
 
+        running = true;
+
         for ( Listener listener : listeners) {
-            listener.serviceStarted();
+            listener.playbackStarted();
         }
 
-        running = true;
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
 
@@ -143,7 +144,7 @@ public class LocalSoundService extends IntentService {
             running = false;
 
             for ( Listener listener : listeners) {
-                listener.serviceStarted();
+                listener.playbackStopped();
             }
 
             // Clean up
@@ -165,7 +166,7 @@ public class LocalSoundService extends IntentService {
     }
 
     public interface Listener {
-        void serviceStarted();
-        void serviceStopped();
+        void playbackStarted();
+        void playbackStopped();
     }
 }

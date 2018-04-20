@@ -39,10 +39,15 @@ public class ConnectionManager extends BroadcastReceiver
     // Make it a 6-digit number (100001-999999)
     private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
 
+    /**
+     * We only allow one instance of this to be working at a time so a service can easily look it up
+     * (i.e. we don't have to try to pass it to a service)
+     */
+    private static ConnectionManager instance;
+
     private int listenPortNumber;
 
     private final Context context;
-    private final ConnectionListener listener;
     private final WifiP2pManager wifiP2pManager;
     private static WifiP2pManager.Channel channel;
 
@@ -51,6 +56,7 @@ public class ConnectionManager extends BroadcastReceiver
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final Map<String, Integer> buddyNameToPortNumber = new HashMap<>();
     // Save IPs so we can re-connect
+    // TODO: not working...
     private static final Map<String, InetAddress> savedIPs = new HashMap<>();
     private int portToConnectTo;
 
@@ -62,15 +68,26 @@ public class ConnectionManager extends BroadcastReceiver
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
+    // We have two listeners because this is split between peer discovery (in an Activity) and
+    // the actual connection (in a service)
+    private PeerListener peerListener;
+
+    private ConnectionListener connectionListener;
+
     /**
      * Set things up and kick things off.
      *
      * @param context Context (Activity) to use for registration
-     * @param listener Where to send event notifications
+     * @param peerListener Where to communicate peer discovery events
      */
-    public ConnectionManager(final Context context, final ConnectionListener listener) {
+    public ConnectionManager(final Context context, final PeerListener peerListener) {
+
+        if ( instance != null) {
+            throw new RuntimeException("Cannot have two connection managers at the same time!");
+        }
+
         this.context = context;
-        this.listener = listener;
+        this.peerListener = peerListener;
 
         // Create the P2P manager. Only initialize it once
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
@@ -83,6 +100,41 @@ public class ConnectionManager extends BroadcastReceiver
         listenForConnections();
         publishService();
         beginServiceDiscovery();
+
+        instance = this;
+    }
+
+    /**
+     * Get the current instance
+     * @return The current instance
+     */
+    public static ConnectionManager getInstance() {
+        return instance;
+    }
+
+    public void setPeerListener(PeerListener peerListener) {
+        if ( peerListener != null) {
+            throw new RuntimeException("Cannot have two peer listeners!");
+        }
+        this.peerListener = peerListener;
+    }
+
+    public void removePeerListener(PeerListener peerListener) {
+        if ( this.peerListener == null) {
+            return;
+        }
+
+        if ( this.peerListener != peerListener) {
+            throw new RuntimeException("Cannot remove someone else as a peer listener!");
+        }
+        this.peerListener = null;
+    }
+
+    public void setConnectionListener(ConnectionListener connectionListener) {
+        if ( connectionListener != null) {
+            throw new RuntimeException("Cannot have two connection listeners!");
+        }
+        this.connectionListener = connectionListener;
     }
 
     public void close() {
@@ -90,6 +142,10 @@ public class ConnectionManager extends BroadcastReceiver
         unpublishService();
         stopListeningForConnections();
         context.unregisterReceiver(this);
+
+        peerListener = null;
+        connectionListener = null;
+        instance = null;
     }
 
     /**
@@ -133,7 +189,7 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onFailure(int arg0) {
                 Log.e(TAG, "Failed to set up listener: " + arg0);
-                listener.servicePublishingFailed();
+                peerListener.servicePublishingFailed();
             }
         });
     }
@@ -184,7 +240,7 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onSuccess() {
                 Log.i(TAG, "Discover services succeeded.");
-                listener.servicesStarted();
+                peerListener.servicesStarted();
             }
 
             @Override
@@ -204,7 +260,7 @@ public class ConnectionManager extends BroadcastReceiver
             wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    listener.servicesStopped();
+                    peerListener.servicesStopped();
                     // Cool
                 }
 
@@ -217,7 +273,7 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                listener.servicesStopped();
+                peerListener.servicesStopped();
             }
 
             @Override
@@ -311,7 +367,7 @@ public class ConnectionManager extends BroadcastReceiver
             listenPortNumber = serverSocket.getLocalPort();
         } catch ( IOException e) {
             Log.e(TAG, "Error creating server socket: " + e.getMessage(), e);
-            listener.connectionFailed(e);
+            connectionListener.connectionFailed(e);
             return;
         }
         new Thread(new Runnable() {
@@ -357,7 +413,7 @@ public class ConnectionManager extends BroadcastReceiver
                 Log.i(TAG, "Accepted connection from " + clientSocket.getInetAddress().getCanonicalHostName());
                 // TODO: do some sort of security verification (send a code phrase first, perhaps)
                 try {
-                    listener.connectionReady(clientSocket);
+                    connectionListener.connectionReady(clientSocket);
                 } catch ( IOException e) {
                     // The connection might've been caught elsewhere. This is okay
                     Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
@@ -367,7 +423,7 @@ public class ConnectionManager extends BroadcastReceiver
                     } catch (Exception e) {
                         // Do nothing
                     }
-                    listener.connectionClosed();
+                    connectionListener.connectionClosed();
                 }
             }
         }).start();
@@ -402,7 +458,7 @@ public class ConnectionManager extends BroadcastReceiver
 
         if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
             // We already know the IP and can connect directly!
-            listener.foundAPeer(remoteAppInstanceName);
+            peerListener.foundAPeer(remoteAppInstanceName);
             return;
         }
 
@@ -421,8 +477,8 @@ public class ConnectionManager extends BroadcastReceiver
 
             @Override
             public void onFailure(int i) {
-                Log.e(TAG, "Connection failed: " + i);
-                listener.connectionFailed(new IOException("WiFiP2pManager.connect failed: " + i));
+                Log.e(TAG, "Connection setup failed: " + i);
+                peerListener.findingPeerFailed(new IOException("WiFiP2pManager.connect failed: " + i));
             }
         });
     }
@@ -437,7 +493,7 @@ public class ConnectionManager extends BroadcastReceiver
                 savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
 
                 // We have all we need to connect at this point. NOW inform the activity
-                listener.foundAPeer(buddyName);
+                peerListener.foundAPeer(buddyName);
                 break;
             }
         }
@@ -463,17 +519,29 @@ public class ConnectionManager extends BroadcastReceiver
                 Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
                 try (Socket client = new Socket(connectionAddress, portToConnectTo)){
                     Log.i(TAG, "Connected!");
-                    listener.connectionReady(client);
+                    connectionListener.connectionReady(client);
                 } catch ( IOException e) {
                     Log.e(TAG, "Connection failure: ", e);
-                    listener.connectionFailed(e);
+                    connectionListener.connectionFailed(e);
                 } finally {
                     Log.i(TAG, "Connection closed");
-                    listener.connectionClosed();
+                    connectionListener.connectionClosed();
                 }
             }
         }).start();
     }
 
+    public interface PeerListener {
+        void servicesStarted();
+        void servicesStopped();
+        void servicePublishingFailed();
+        void foundAPeer(String peerName);
+        void findingPeerFailed(IOException e);
+    }
 
+    public interface ConnectionListener {
+        void connectionFailed(IOException e);
+        void connectionClosed();
+        void connectionReady(Socket socket) throws IOException;
+    }
 }
