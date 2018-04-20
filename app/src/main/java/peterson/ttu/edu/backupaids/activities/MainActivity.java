@@ -185,7 +185,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
             }
         } else {
             connectionList.clear();
-            connectionManager = new ConnectionManager(this, this);
+            connectionManager = new ConnectionManager(this);
+            connectionManager.setPeerListener(this);
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
             discoverableCountdown = new Timer();
@@ -353,6 +354,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     @Override
     public void findingPeerFailed(IOException e) {
 
+    }
+
+    @Override
+    public void connectionWaiting() {
+        // TODO: start the receive service...
     }
 
     /*@Override

@@ -30,7 +30,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
-    private LocalSoundService streamRecording;
     private final List<String> peers = new ArrayList<>();
 
     @Override
@@ -52,7 +51,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         if ( StreamSoundService.isCurrentlyStreaming()) {
             connectionManager = ConnectionManager.getInstance();
         } else {
-            connectionManager = new ConnectionManager(this, this);
+            connectionManager = new ConnectionManager(this);
         }
     }
 
@@ -80,8 +79,8 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     public void sendSound(View view) {
-        if ( streamRecording != null) {
-            stopService(new Intent(this, LocalSoundService.class));
+        if ( StreamSoundService.isCurrentlyStreaming()) {
+            stopService(new Intent(this, StreamSoundService.class));
         } else {
             // Start playing!
             Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
@@ -92,7 +91,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 return;
             }
 
-            Intent intent = new Intent(this, LocalSoundService.class);
+            Intent intent = new Intent(this, StreamSoundService.class);
             intent.putExtra(Util.CONNECTION_NAME_EXTRA, ((String)sendSoundPeerSpinner.getSelectedItem()));
             startService(intent);
 
@@ -130,6 +129,13 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     @Override
     public void findingPeerFailed(IOException e) {
         // TODO: Show something...
+    }
+
+    @Override
+    public void connectionWaiting() {
+        // Someone else is trying to connect (they got the popup). Start the service
+        startService(new Intent(this, StreamSoundService.class));
+
     }
 
     @Override

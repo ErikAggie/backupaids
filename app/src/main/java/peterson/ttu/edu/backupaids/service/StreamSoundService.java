@@ -61,8 +61,10 @@ public class StreamSoundService extends IntentService implements ConnectionManag
     @Override
     public void onDestroy() {
         currentlyStreaming = false; // This will stop the thread
-        connectionManager.close();
-        connectionManager = null;
+        if ( connectionManager != null) {
+            connectionManager.close();
+            connectionManager = null;
+        }
 
         super.onDestroy();
     }
@@ -78,11 +80,6 @@ public class StreamSoundService extends IntentService implements ConnectionManag
             return;
         }
 
-        final String connectionName = intent.getStringExtra("ConnectionName");
-
-        if ( connectionName == null || connectionName.isEmpty()) {
-            throw new RuntimeException("Cannot start StreamSoundService without a connection name!");
-        }
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, SendSoundActivity.class), 0);
 
         if ( Build.VERSION.SDK_INT >= 26) {
@@ -107,17 +104,24 @@ public class StreamSoundService extends IntentService implements ConnectionManag
         }
         connectionManager.setConnectionListener(this);
 
-        connectionManager.makeConnection(connectionName);
+        final String connectionName = intent.getStringExtra("ConnectionName");
+        if ( connectionName == null) {
+            // Connection is waiting. This will call connectionReady() immediately
+            connectionManager.readyForConnection();
+        } else {
+            // We need to initiate the connection
+            connectionManager.makeConnection(connectionName);
+        }
 
         // Now we wait until ConnectionManager makes the connection
     }
 
     @Override
     public void connectionReady(Socket socket) throws IOException {
+        currentlyStreaming = true;
         for ( Listener listener : listeners) {
             listener.connectionMade();
         }
-
 
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
@@ -129,6 +133,8 @@ public class StreamSoundService extends IntentService implements ConnectionManag
 
             // Short buffer would be half of the buffer size; byte buffer is the full size
             byte[] audioBuffer = new byte[Util.INPUT_MIN_BUFFER_SIZE];
+
+            Log.i(TAG, "Ready to send!");
 
             soundSource.record();
             soundDestination.play();
