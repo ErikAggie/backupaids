@@ -56,8 +56,6 @@ public class RemoteSoundService extends BaseStreamService {
         listeners.remove(listener);
     }
 
-
-
     public RemoteSoundService() {
         super("RemoteSoundService");
     }

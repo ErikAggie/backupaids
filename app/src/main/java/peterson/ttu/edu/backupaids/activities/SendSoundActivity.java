@@ -91,10 +91,6 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 return;
             }
 
-            Intent intent = new Intent(this, StreamSoundService.class);
-            intent.putExtra(Util.CONNECTION_NAME_EXTRA, ((String)sendSoundPeerSpinner.getSelectedItem()));
-            startService(intent);
-
             connectionManager.makeConnection((String)sendSoundPeerSpinner.getSelectedItem());
         }
     }
@@ -134,8 +130,10 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     @Override
     public void connectionWaiting() {
         // Someone else is trying to connect (they got the popup). Start the service
+        connectionManager.removePeerListener(this);
         startService(new Intent(this, StreamSoundService.class));
-
+        // Service takes control of ConnectionManager instance
+        connectionManager = null;
     }
 
     @Override

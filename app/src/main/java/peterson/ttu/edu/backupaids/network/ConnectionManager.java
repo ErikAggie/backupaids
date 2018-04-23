@@ -160,6 +160,11 @@ public class ConnectionManager extends BroadcastReceiver
         instance = null;
     }
 
+    public boolean isClosed() {
+        // Last action of "close" is to release the instance variable
+        return (instance == null);
+    }
+
     /**
      * Get the pin number for this instance of the app
      *

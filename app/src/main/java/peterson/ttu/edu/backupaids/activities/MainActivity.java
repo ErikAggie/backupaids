@@ -27,15 +27,17 @@ import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
+import peterson.ttu.edu.backupaids.service.RemoteSoundService;
+import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class MainActivity extends AppCompatActivity implements ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener {
+public class MainActivity extends AppCompatActivity implements ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String PLAY_LOCAL_SERVICE_STRING = "PlayLocalRecording";
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
-    private LocalSoundService playRemoteSound;
     private ConnectionManager connectionManager;
     private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
@@ -162,6 +164,17 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         }
     }
 
+    private void updateMakeDiscoverableButton() {
+        ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
+        if ( RemoteSoundService.isCurrentlyStreaming()) {
+            makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+        } else if ( connectionManager != null) {
+            makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+        } else {
+            makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+        }
+    }
+
     private void setUpAudioRecordingAndPlayback()
     {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -179,10 +192,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     public void makeDiscoverable(View view) {
         if ( connectionManager != null) {
             stopListening();
-            if ( playRemoteSound != null) {
-//                playRemoteSound.stop();
-                playRemoteSound = null;
-            }
         } else {
             connectionList.clear();
             connectionManager = new ConnectionManager(this);
@@ -228,9 +237,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         if ( LocalSoundService.isRunning()) {
             stopService(new Intent(this, LocalSoundService.class));
         }
-        if ( playRemoteSound != null) {
-//            playRemoteSound.stop();
-            playRemoteSound = null;
+        if ( RemoteSoundService.isCurrentlyStreaming()) {
+            stopService(new Intent(this, RemoteSoundService.class));
+        }
+        if ( connectionManager != null) {
+            connectionManager.close();
+            connectionManager = null;
         }
     }
 
@@ -273,8 +285,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+                updateMakeDiscoverableButton();
             }
         });
     }
@@ -288,8 +299,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
                     connectionPopup.dismiss();
                     connectionPopup = null;
                 }
-                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                connectionManager = null;
+                updateMakeDiscoverableButton();
                 if ( todoOnServiceStopped != null) {
                     todoOnServiceStopped.run();
                     todoOnServiceStopped = null;
@@ -300,36 +311,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void servicePublishingFailed() {
-
+        // TODO: should do something here...
+        connectionManager = null;
+        updateMakeDiscoverableButton();
     }
-/*
-    @Override
-    public void connectionFailed(IOException e) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( playRemoteSound != null) {
-//                    playRemoteSound.stop();
-                    playRemoteSound = null;
-                }
-                stopListening();
-            }
-        });
-    }
-
-    @Override
-    public void connectionClosed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( playRemoteSound != null) {
-//                    playRemoteSound.stop();
-                    playRemoteSound = null;
-                }
-                stopListening();
-            }
-        });
-    }*/
 
     @Override
     public void foundAPeer(final String peerName) {
@@ -353,37 +338,21 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void findingPeerFailed(IOException e) {
-
+        // TODO: do something here...
     }
 
     @Override
     public void connectionWaiting() {
-        // TODO: start the receive service...
+        RemoteSoundService.setCurrentPreset(getCurrentSoundPreset().getName());
+        connectionManager.removePeerListener(this);
+        startService(new Intent(this, RemoteSoundService.class));
+        // Service takes over this connection manager
+        connectionManager = null;
     }
-
-    /*@Override
-    public void connectionReady(Socket socket) throws IOException {
-        if ( discoverableCountdown != null) {
-            discoverableCountdown.cancel();
-            discoverableCountdown = null;
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ImageButton makeDiscoverableButton = findViewById(R.id.makeDiscoverable);
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
-            }
-        });
-        // TODO: re-enable later
-        playRemoteSound = new LocalSoundService(SourceFactory.createStreamSource(socket),
-                                        DestinationFactory.createLocalAudioDestination(getCurrentSoundPreset()));
-        playRemoteSound.playAudio();
-    }*/
 
     @Override
     public void connectionConfirmed(String connectionName) {
-        // TODO: start service here...
-        //connectionManager.makeConnection(connectionName);
+        connectionManager.makeConnection(connectionName);
     }
 
     @Override
@@ -395,4 +364,33 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         stopListening();
     }
 
+    @Override
+    public void connectionMade() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updateMakeDiscoverableButton();
+            }
+        });
+    }
+
+    @Override
+    public void connectionFailed() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updateMakeDiscoverableButton();
+            }
+        });
+    }
+
+    @Override
+    public void connectionClosed() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updateMakeDiscoverableButton();
+            }
+        });
+    }
 }
