@@ -38,6 +38,7 @@ public abstract class BaseStreamService extends IntentService implements Connect
 
     @Override
     public void onDestroy() {
+        stopStreaming();
         if ( connectionManager != null) {
             connectionManager.close();
             connectionManager = null;
@@ -121,8 +122,7 @@ public abstract class BaseStreamService extends IntentService implements Connect
         } catch ( Exception e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
-            thisServiceIsStreaming = false;
-            streamingStopped();
+            stopStreaming();
 
             // Clean up
             try {
@@ -139,6 +139,19 @@ public abstract class BaseStreamService extends IntentService implements Connect
             } catch ( IOException e) {
                 // Nothing to do
             }
+        }
+    }
+
+    private void stopStreaming() {
+        if ( !thisServiceIsStreaming) {
+            // Already stopped
+            return;
+        }
+
+        thisServiceIsStreaming = false;
+        streamingStopped();
+        for ( BaseStreamService.Listener listener : getListeners()) {
+            listener.connectionClosed();
         }
     }
 
