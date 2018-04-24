@@ -344,6 +344,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     @Override
     public void connectionWaiting() {
         RemoteSoundService.setCurrentPreset(getCurrentSoundPreset().getName());
+        RemoteSoundService.registerListener(this);
         connectionManager.removePeerListener(this);
         startService(new Intent(this, RemoteSoundService.class));
         // Service takes over this connection manager
@@ -352,7 +353,15 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void connectionConfirmed(String connectionName) {
-        connectionManager.makeConnection(connectionName);
+        RemoteSoundService.setCurrentPreset(getCurrentSoundPreset().getName());
+        RemoteSoundService.registerListener(this);
+        Intent intent = new Intent(this, RemoteSoundService.class);
+        intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
+        startService(intent);
+
+        // Service takes over this connection manager
+        connectionManager.removePeerListener(this);
+        connectionManager = null;
     }
 
     @Override

@@ -91,7 +91,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 return;
             }
 
-            connectionManager.makeConnection((String)sendSoundPeerSpinner.getSelectedItem());
+            Intent intent = new Intent(this, StreamSoundService.class);
+            intent.putExtra(Util.CONNECTION_NAME_EXTRA, (String)sendSoundPeerSpinner.getSelectedItem());
+            startService(intent);
         }
     }
 

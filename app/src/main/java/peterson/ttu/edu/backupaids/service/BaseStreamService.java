@@ -76,7 +76,7 @@ public abstract class BaseStreamService extends IntentService implements Connect
         }
         connectionManager.setConnectionListener(this);
 
-        final String connectionName = intent.getStringExtra("ConnectionName");
+        final String connectionName = intent.getStringExtra(Util.CONNECTION_NAME_EXTRA);
         if ( connectionName == null) {
             // Connection is waiting. This will call connectionReady() immediately
             connectionManager.readyForConnection();

@@ -150,6 +150,10 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     public void close() {
+        if ( instance == null) {
+            // Already closed
+            return;
+        }
         stopServiceDiscovery();
         unpublishService();
         stopListeningForConnections();
@@ -552,7 +556,6 @@ public class ConnectionManager extends BroadcastReceiver
                 break;
             }
         }
-
     }
 
     /**
@@ -567,29 +570,24 @@ public class ConnectionManager extends BroadcastReceiver
             // Shouldn't happen since we won't pass connection info without having this...
             throw new RuntimeException("Don't have connection info for " + remoteAppInstanceName);
         }
+        Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
 
-        // Do this on a separate thread so we don't block the main thread
-        new Thread(new Runnable() {
-            public void run() {
-                Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
-                try (Socket client = new Socket(connectionAddress, portToConnectTo)){
-                    Log.i(TAG, "Connected!");
-                    if ( connectionListener != null) {
-                        connectionListener.connectionReady(client);
-                    }
-                } catch ( IOException e) {
-                    Log.e(TAG, "Connection failure: ", e);
-                    if ( connectionListener != null) {
-                        connectionListener.connectionFailed(e);
-                    }
-                } finally {
-                    Log.i(TAG, "Connection closed");
-                    if ( connectionListener != null) {
-                        connectionListener.connectionClosed();
-                    }
-                }
+        try (Socket client = new Socket(connectionAddress, portToConnectTo)){
+            Log.i(TAG, "Connected!");
+            if ( connectionListener != null) {
+                connectionListener.connectionReady(client);
             }
-        }).start();
+        } catch ( IOException e) {
+            Log.e(TAG, "Connection failure: ", e);
+            if ( connectionListener != null) {
+                connectionListener.connectionFailed(e);
+            }
+        } finally {
+            Log.i(TAG, "Connection closed");
+            if ( connectionListener != null) {
+                connectionListener.connectionClosed();
+            }
+        }
     }
 
     public interface PeerListener {
