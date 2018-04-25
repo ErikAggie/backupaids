@@ -51,7 +51,10 @@ public class StreamSoundService extends BaseStreamService {
     }
 
     public StreamSoundService() {
-        super("StreamSoundService");
+        super("StreamSoundService",
+               R.drawable.ic_stream_out,
+              "Streaming audio",
+              "Streaming audio to another device (FM style)");
     }
 
     @Override

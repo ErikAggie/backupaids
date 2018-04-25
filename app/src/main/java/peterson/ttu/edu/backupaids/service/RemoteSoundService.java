@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
@@ -57,7 +58,10 @@ public class RemoteSoundService extends BaseStreamService {
     }
 
     public RemoteSoundService() {
-        super("RemoteSoundService");
+        super("RemoteSoundService",
+               R.drawable.ic_stream_in,
+              "Streaming audio",
+              "Streaming audio from another device (FM style)");
     }
 
     @Override

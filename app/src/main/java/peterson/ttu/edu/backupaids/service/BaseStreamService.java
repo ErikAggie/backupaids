@@ -19,10 +19,8 @@ import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.SendSoundActivity;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
-import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 
 public abstract class BaseStreamService extends IntentService implements ConnectionManager.ConnectionListener {
 
@@ -32,8 +30,18 @@ public abstract class BaseStreamService extends IntentService implements Connect
 
     private boolean thisServiceIsStreaming;
 
-    public BaseStreamService(String name) {
+    private final int notificationIcon;
+    private final String notificationTitle;
+    private final String notificationContent;
+
+    public BaseStreamService(String name,
+                             int icon,
+                             String notificationTitle,
+                             String notificationContent) {
         super(name);
+        this.notificationIcon = icon;
+        this.notificationTitle = notificationTitle;
+        this.notificationContent = notificationContent;
     }
 
     @Override
@@ -46,7 +54,9 @@ public abstract class BaseStreamService extends IntentService implements Connect
         super.onDestroy();
     }
 
-    protected void setUpService(Intent intent, String channelName, int foregroundId) {
+    protected void setUpService(Intent intent,
+                                String channelName,
+                                int foregroundId) {
 
         if ( intent == null) {
             return;
@@ -63,9 +73,9 @@ public abstract class BaseStreamService extends IntentService implements Connect
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelName)
                 .setOngoing(true)
-                .setSmallIcon(R.drawable.ic_stream_out)
-                .setContentTitle("Streaming mic audio")
-                .setContentText("Sending audio to another device")
+                .setSmallIcon(notificationIcon)
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationContent)
                 .setContentIntent(pendingIntent);
 
         startForeground(foregroundId, notificationBuilder.build());

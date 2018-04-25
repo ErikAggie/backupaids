@@ -46,7 +46,7 @@
                                           <PersistentState>
                                             <option name="values">
                                               <map>
-                                                <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio/plugins/android/lib/android.jar!/images/material_design_icons/navigation/ic_arrow_upward_black_24dp.xml" />
+                                                <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio/plugins/android/lib/android.jar!/images/material_design_icons/navigation/ic_arrow_downward_black_24dp.xml" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -57,7 +57,7 @@
                                   <option name="values">
                                     <map>
                                       <entry key="imageAsset" value="C:\Repos\HearingPhone\app\src\main\res\drawable\power_button_green2.png" />
-                                      <entry key="outputName" value="ic_stream_out" />
+                                      <entry key="outputName" value="ic_stream_in" />
                                     </map>
                                   </option>
                                 </PersistentState>

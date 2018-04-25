@@ -60,11 +60,14 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         super.onStart();
         connectionManager.setPeerListener(this);
         StreamSoundService.registerListener(this);
+        updatePlayButton();
     }
 
     @Override
     protected void onStop() {
-        connectionManager.removePeerListener(this);
+        if ( connectionManager != null) {
+            connectionManager.removePeerListener(this);
+        }
         StreamSoundService.unregisterListener(this);
         super.onStop();
     }
@@ -81,7 +84,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     public void sendSound(View view) {
         if ( StreamSoundService.isCurrentlyStreaming()) {
             stopService(new Intent(this, StreamSoundService.class));
-        } else {
+        } else if ( connectionManager != null) {
             // Start playing!
             Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
             if ( sendSoundPeerSpinner == null ||
@@ -94,6 +97,8 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
             Intent intent = new Intent(this, StreamSoundService.class);
             intent.putExtra(Util.CONNECTION_NAME_EXTRA, (String)sendSoundPeerSpinner.getSelectedItem());
             startService(intent);
+        } else {
+            // We're dead. Stop
         }
     }
 
@@ -104,8 +109,11 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 ImageButton playButton = findViewById(R.id.sendSoundStartButton);
                 if (StreamSoundService.isCurrentlyStreaming()) {
                     playButton.setImageResource(R.drawable.power_button_green2);
-                } else {
+                } else if ( connectionManager != null ){
                     playButton.setImageResource(R.drawable.power_button_blue2);
+                } else {
+                    // We're dead. Show gray
+                    playButton.setImageResource(R.drawable.power_button_red2);
                 }
             }
         });
