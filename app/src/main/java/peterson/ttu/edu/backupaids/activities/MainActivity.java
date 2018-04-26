@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     }
 
     public void makeDiscoverable(View view) {
-        if ( connectionManager != null) {
+        if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
             stopListening();
         } else {
             connectionList.clear();

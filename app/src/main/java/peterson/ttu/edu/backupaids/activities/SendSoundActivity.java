@@ -28,7 +28,6 @@ import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.PeerListener, StreamSoundService.Listener {
 
-    private BluetoothMonitor bluetoothMonitor;
     private ConnectionManager connectionManager;
     private final List<String> peers = new ArrayList<>();
 
@@ -45,7 +44,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-        registerReceiver(bluetoothMonitor, connectFilter);
+        registerReceiver(BluetoothMonitor.createIfNeeded(this), connectFilter);
 
         // If we're already streaming (i.e. we've been woken up), find the existing connection manager
         if ( StreamSoundService.isCurrentlyStreaming()) {
