@@ -73,6 +73,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(BluetoothMonitor.createIfNeeded(this));
         if ( connectionManager != null) {
             connectionManager.close();
             connectionManager = null;

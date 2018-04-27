@@ -51,6 +51,13 @@ public class ConnectionManager extends BroadcastReceiver
     private final WifiP2pManager wifiP2pManager;
     private static WifiP2pManager.Channel channel;
 
+    private static final WifiP2pManager.ActionListener noOpActionListener = new WifiP2pManager.ActionListener() {
+        @Override
+        public void onSuccess() {}
+        @Override
+        public void onFailure(int i) {}
+    };
+
     // Stuff for making a connection (peer devices we find, etc.)
     private final Map<String, String> fullPeerBuddyMap = new HashMap<>();
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
@@ -158,6 +165,13 @@ public class ConnectionManager extends BroadcastReceiver
         unpublishService();
         stopListeningForConnections();
         context.unregisterReceiver(this);
+
+        wifiP2pManager.stopPeerDiscovery(channel, noOpActionListener);
+
+        wifiP2pManager.clearLocalServices(channel, noOpActionListener);
+
+        wifiP2pManager.clearLocalServices(channel, noOpActionListener);
+        wifiP2pManager.removeGroup(channel, noOpActionListener);
 
         peerListener = null;
         connectionListener = null;

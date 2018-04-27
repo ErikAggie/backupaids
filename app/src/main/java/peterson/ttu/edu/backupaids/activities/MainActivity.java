@@ -214,6 +214,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     }
 
     private void stopListening() {
+        stopService(new Intent(this, RemoteSoundService.class));
+        stopService(new Intent(this, LocalSoundService.class));
         if ( discoverableCountdown != null) {
             discoverableCountdown.cancel();
             discoverableCountdown = null;
@@ -222,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
             connectionManager.close();
             connectionManager = null;
         }
+        updateMakeDiscoverableButton();
     }
 
     private SoundPreset getCurrentSoundPreset() {
