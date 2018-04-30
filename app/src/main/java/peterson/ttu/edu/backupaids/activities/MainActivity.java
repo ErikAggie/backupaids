@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
                 SoundPreset newPreset = getCurrentSoundPreset();
                 if ( newPreset != null) {
                     LocalSoundService.setCurrentPreset(newPreset.getName());
+                    RemoteSoundService.setCurrentPreset(newPreset.getName());
                 }
                 // TODO: we're making the user restart playback; it'd be nice if we could do
                 // it for them, but the problem is this gets called as the Activity is being
@@ -104,6 +105,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
                 // Shouldn't happen
             }
         });
+
+        SoundPreset initialPreset = getCurrentSoundPreset();
+        if ( initialPreset != null) {
+            LocalSoundService.setCurrentPreset(initialPreset.getName());
+            RemoteSoundService.setCurrentPreset(initialPreset.getName());
+        }
 
         // We could already be playing, so check on that...
         updatePlayButton();
@@ -346,7 +353,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void connectionWaiting() {
-        RemoteSoundService.setCurrentPreset(getCurrentSoundPreset().getName());
         RemoteSoundService.registerListener(this);
         connectionManager.removePeerListener(this);
         startService(new Intent(this, RemoteSoundService.class));
@@ -356,7 +362,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void connectionConfirmed(String connectionName) {
-        RemoteSoundService.setCurrentPreset(getCurrentSoundPreset().getName());
         RemoteSoundService.registerListener(this);
         Intent intent = new Intent(this, RemoteSoundService.class);
         intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);

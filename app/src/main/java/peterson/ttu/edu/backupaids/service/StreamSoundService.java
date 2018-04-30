@@ -63,11 +63,11 @@ public class StreamSoundService extends BaseStreamService {
     public void onDestroy() {
         currentlyStreaming = false; // This will stop the thread
 
-//        if ( usedBluetooth) {
+        if ( usedBluetooth) {
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
             audioManager.stopBluetoothSco();
             usedBluetooth = false;
-//        }
+        }
 
         super.onDestroy();
     }
@@ -78,11 +78,11 @@ public class StreamSoundService extends BaseStreamService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-//        if (BluetoothMonitor.createIfNeeded(this).isHeadsetConnected()) {
+        if (BluetoothMonitor.createIfNeeded(this).isHeadsetConnected()) {
             usedBluetooth = true;
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
             audioManager.startBluetoothSco();
-//        }
+        }
         setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
     }
 
