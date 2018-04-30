@@ -15,6 +15,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
@@ -35,7 +36,7 @@ public class LocalSoundService extends IntentService {
     private static final int FOREGROUND_ID = 1234;
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
 
-    private static boolean running;
+    private static final AtomicBoolean running = new AtomicBoolean(false);
     private static String preset;
 
     private boolean playing = true;
@@ -47,7 +48,7 @@ public class LocalSoundService extends IntentService {
     }
 
     public static boolean isRunning() {
-        return running;
+        return running.get();
     }
 
     public static void registerListener(Listener listener) {
@@ -109,7 +110,7 @@ public class LocalSoundService extends IntentService {
 
         startForeground(FOREGROUND_ID, notificationBuilder.build());
 
-        running = true;
+        running.set(true);
 
         for ( Listener listener : listeners) {
             listener.playbackStarted();
@@ -141,7 +142,7 @@ public class LocalSoundService extends IntentService {
         } catch ( Exception e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
-            running = false;
+            running.set(false);
 
             for ( Listener listener : listeners) {
                 listener.playbackStopped();
