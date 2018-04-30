@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -35,13 +36,13 @@ public class StreamSoundService extends BaseStreamService {
     private static final int FOREGROUND_ID = 1235;
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
 
-    private static boolean currentlyStreaming = false;
+    private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
     private static final List<BaseStreamService.Listener> listeners = new ArrayList<>();
 
     private boolean usedBluetooth = false;
 
     public static boolean isCurrentlyStreaming() {
-        return currentlyStreaming;
+        return currentlyStreaming.get();
     }
 
     public static void registerListener(BaseStreamService.Listener listener) {
@@ -56,12 +57,14 @@ public class StreamSoundService extends BaseStreamService {
         super("StreamSoundService",
                R.drawable.ic_stream_out,
               "Streaming audio",
-              "Streaming audio to another device (FM style)");
+              "Streaming audio to another device (FM style)",
+               // TODO: this should be set from the outside...
+               SendSoundActivity.class);
     }
 
     @Override
     public void onDestroy() {
-        currentlyStreaming = false; // This will stop the thread
+        currentlyStreaming.set(false); // This will stop the thread
 
         if ( usedBluetooth) {
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -88,12 +91,12 @@ public class StreamSoundService extends BaseStreamService {
 
     @Override
     protected void streamingStarted() {
-        currentlyStreaming = true;
+        currentlyStreaming.set(true);
     }
 
     @Override
     protected void streamingStopped() {
-        currentlyStreaming = false;
+        currentlyStreaming.set(false);
     }
 
     @Override

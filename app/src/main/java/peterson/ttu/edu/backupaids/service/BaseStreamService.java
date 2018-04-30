@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 
-import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.activities.SendSoundActivity;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -33,15 +31,18 @@ public abstract class BaseStreamService extends IntentService implements Connect
     private final int notificationIcon;
     private final String notificationTitle;
     private final String notificationContent;
+    private final Class activityToInvoke;
 
     public BaseStreamService(String name,
                              int icon,
                              String notificationTitle,
-                             String notificationContent) {
+                             String notificationContent,
+                             Class activityToInvoke) {
         super(name);
         this.notificationIcon = icon;
         this.notificationTitle = notificationTitle;
         this.notificationContent = notificationContent;
+        this.activityToInvoke = activityToInvoke;
     }
 
     @Override
@@ -62,7 +63,7 @@ public abstract class BaseStreamService extends IntentService implements Connect
             return;
         }
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, SendSoundActivity.class), 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
 
         if ( Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...

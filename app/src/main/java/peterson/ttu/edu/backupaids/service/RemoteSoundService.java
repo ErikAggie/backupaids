@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.activities.MainActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
@@ -32,7 +34,7 @@ public class RemoteSoundService extends BaseStreamService {
     private static final int FOREGROUND_ID = 1236;
     private static final String STREAM_CHANNEL_NAME = "Stream In";
 
-    private static boolean currentlyStreaming = false;
+    private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
     private static final List<StreamSoundService.Listener> listeners = new ArrayList<>();
     private static String preset;
 
@@ -46,7 +48,7 @@ public class RemoteSoundService extends BaseStreamService {
 
 
     public static boolean isCurrentlyStreaming() {
-        return currentlyStreaming;
+        return currentlyStreaming.get();
     }
 
     public static void registerListener(StreamSoundService.Listener listener) {
@@ -61,7 +63,9 @@ public class RemoteSoundService extends BaseStreamService {
         super("RemoteSoundService",
                R.drawable.ic_stream_in,
               "Streaming audio",
-              "Streaming audio from another device (FM style)");
+              "Streaming audio from another device (FM style)",
+               // TODO: this should be set from the outside...
+               MainActivity.class);
     }
 
     @Override
@@ -71,12 +75,12 @@ public class RemoteSoundService extends BaseStreamService {
 
     @Override
     protected void streamingStarted() {
-        currentlyStreaming = true;
+        currentlyStreaming.set(true);
     }
 
     @Override
     protected void streamingStopped() {
-        currentlyStreaming = false;
+        currentlyStreaming.set(false);
     }
 
     @Override

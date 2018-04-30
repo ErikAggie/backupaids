@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
         // We could already be playing, so check on that...
         updatePlayButton();
+        updateMakeDiscoverableButton();
     }
 
     @Override
