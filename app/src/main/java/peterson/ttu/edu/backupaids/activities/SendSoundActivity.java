@@ -58,7 +58,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     @Override
     protected void onStart() {
         super.onStart();
-        connectionManager.setPeerListener(this);
+        if ( connectionManager != null) {
+            connectionManager.setPeerListener(this);
+        }
         StreamSoundService.registerListener(this);
         updatePlayButton();
     }
