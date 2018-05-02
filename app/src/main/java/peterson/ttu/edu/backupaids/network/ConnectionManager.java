@@ -63,8 +63,7 @@ public class ConnectionManager extends BroadcastReceiver
     private final Map<String, WifiP2pDevice> buddyNameToDeviceMap = new HashMap<>();
     private final Map<String, Integer> buddyNameToPortNumber = new HashMap<>();
     // Save IPs so we can re-connect
-    // TODO: not working...
-    private static final Map<String, InetAddress> savedIPs = new HashMap<>();
+    private final Map<String, InetAddress> savedIPs = new HashMap<>();
     private int portToConnectTo;
 
     // Because of the way service discovery appears to work (only one of the two sides gets notified about a service),
@@ -166,11 +165,12 @@ public class ConnectionManager extends BroadcastReceiver
         stopListeningForConnections();
         context.unregisterReceiver(this);
 
+        // Due to trouble with connection info not being torn down completely (and thus not being
+        // able to re-connect), close out everything we can
         wifiP2pManager.stopPeerDiscovery(channel, noOpActionListener);
-
+        wifiP2pManager.cancelConnect(channel, noOpActionListener);
         wifiP2pManager.clearLocalServices(channel, noOpActionListener);
-
-        wifiP2pManager.clearLocalServices(channel, noOpActionListener);
+        wifiP2pManager.clearServiceRequests(channel, noOpActionListener);
         wifiP2pManager.removeGroup(channel, noOpActionListener);
 
         peerListener = null;
