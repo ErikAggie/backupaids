@@ -51,6 +51,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
             connectionManager = ConnectionManager.getInstance();
         } else {
             connectionManager = new ConnectionManager(this);
+            Toast.makeText(this, "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }
     }
 

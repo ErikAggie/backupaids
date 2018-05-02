@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -202,6 +203,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         } else {
             connectionManager = new ConnectionManager(this);
             connectionManager.setPeerListener(this);
+            Toast.makeText(this, "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
             discoverableCountdown = new Timer();
@@ -212,6 +214,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
                         @Override
                         public void run() {
                             stopListening();
+                            Toast.makeText(MainActivity.this, "Looking for other devices timed out.", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
