@@ -26,30 +26,26 @@ public class ConnectionPopupFragment extends DialogFragment {
     public static final String CONNECTIONS_ARGUMENT = "connections";
 
     private OnFragmentInteractionListener mListener;
-    private String[] connectionArray;
-
-    private String selectedConnection;
+    private String availableConnection;
 
     public ConnectionPopupFragment() {
         // Required empty public constructor
     }
 
-    public void setConnectionList(List<String> connectionList) {
-        connectionArray = new String[connectionList.size()];
-        for ( int i=0; i<connectionList.size(); i++) {
-            connectionArray[i] = connectionList.get(i);
-        }
+    public void setConnection(String connection) {
+        availableConnection = connection;
     }
 
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Available connections")
+        builder.setTitle("Connect?")
+                .setMessage("Connect to " + availableConnection + "?")
                 .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        mListener.connectionConfirmed(selectedConnection);
+                        mListener.connectionConfirmed(availableConnection);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -58,12 +54,6 @@ public class ConnectionPopupFragment extends DialogFragment {
                         mListener.cancelled();
                     }
                 });
-        builder.setSingleChoiceItems(connectionArray, -1, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
-                selectedConnection = connectionArray[which];
-            }
-        });
         return builder.create();
     }
 

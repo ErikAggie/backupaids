@@ -44,7 +44,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     // For showing a popup with available connections
     private ConnectionPopupFragment connectionPopup;
-    private final ArrayList<String> connectionList = new ArrayList<>();
 
     /**
      * Listener for local sound events
@@ -201,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
             stopListening();
         } else {
-            connectionList.clear();
             connectionManager = new ConnectionManager(this);
             connectionManager.setPeerListener(this);
 
@@ -336,12 +334,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
                     discoverableCountdown.cancel();
                     discoverableCountdown = null;
                 }
-                connectionList.add(peerName);
                 if ( connectionPopup != null) {
                     connectionPopup.dismiss();
                 }
                 connectionPopup = new ConnectionPopupFragment();
-                connectionPopup.setConnectionList(connectionList);
+                connectionPopup.setConnection(peerName);
                 connectionPopup.show(getSupportFragmentManager(), "Connections");
             }
         });
@@ -354,6 +351,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
 
     @Override
     public void connectionWaiting() {
+        if ( connectionPopup != null) {
+            connectionPopup.dismiss();
+            connectionPopup = null;
+        }
+
         RemoteSoundService.registerListener(this);
         connectionManager.removePeerListener(this);
         startService(new Intent(this, RemoteSoundService.class));
