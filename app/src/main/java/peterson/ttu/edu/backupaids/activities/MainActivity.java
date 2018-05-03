@@ -166,9 +166,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
     private void updatePlayButton() {
         ImageButton playButton = findViewById(R.id.playSound);
         if ( LocalSoundService.isRunning()) {
-            playButton.setImageResource(R.drawable.power_button_green2);
+            playButton.setImageResource(R.drawable.ic_power_button_green);
         } else {
-            playButton.setImageResource(R.drawable.power_button_blue2);
+            playButton.setImageResource(R.drawable.ic_power_button_blue);
         }
     }
 

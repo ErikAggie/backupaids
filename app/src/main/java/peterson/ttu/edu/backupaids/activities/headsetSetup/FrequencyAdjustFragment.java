@@ -201,7 +201,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
         //noinspection ConstantConditions
         ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
-        playSoundsButton.setImageResource(R.drawable.power_button_green2);
+        playSoundsButton.setImageResource(R.drawable.ic_power_button_green);
     }
 
     private void stopPlaying() {
@@ -217,7 +217,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
         //noinspection ConstantConditions
         ImageButton playSoundsButton = getView().findViewById(R.id.frequencyAdjustPlaySounds);
-        playSoundsButton.setImageResource(R.drawable.power_button_blue2);
+        playSoundsButton.setImageResource(R.drawable.ic_power_button_blue);
     }
 
     @Override

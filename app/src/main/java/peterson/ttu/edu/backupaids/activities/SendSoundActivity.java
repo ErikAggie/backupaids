@@ -102,9 +102,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
             public void run() {
                 ImageButton playButton = findViewById(R.id.sendSoundStartButton);
                 if (StreamSoundService.isCurrentlyStreaming()) {
-                    playButton.setImageResource(R.drawable.power_button_green2);
+                    playButton.setImageResource(R.drawable.ic_power_button_green);
                 } else if ( connectionManager != null ){
-                    playButton.setImageResource(R.drawable.power_button_blue2);
+                    playButton.setImageResource(R.drawable.ic_power_button_blue);
                 } else {
                     // We're dead. Show button for restart
                     playButton.setImageResource(R.drawable.ic_refresh_black);

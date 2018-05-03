@@ -221,7 +221,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         mAudioTrack.play();
 
         mPlaying = true;
-        playButton.setImageResource(R.drawable.power_button_green2);
+        playButton.setImageResource(R.drawable.ic_power_button_green);
 
     }
 
@@ -232,7 +232,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
             mAudioTrack = null;
         }
 
-        playButton.setImageResource(R.drawable.power_button_blue2);
+        playButton.setImageResource(R.drawable.ic_power_button_blue);
         mPlaying = false;
     }
 

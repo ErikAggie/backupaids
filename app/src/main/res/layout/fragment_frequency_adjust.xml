@@ -41,7 +41,7 @@
         android:layout_height="0dp"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
-        android:src="@drawable/power_button_blue2"
+        android:src="@drawable/ic_power_button_blue"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
