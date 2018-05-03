@@ -107,7 +107,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                     playButton.setImageResource(R.drawable.power_button_blue2);
                 } else {
                     // We're dead. Show button for restart
-                    playButton.setImageResource(R.drawable.ic_retry_connection);
+                    playButton.setImageResource(R.drawable.ic_refresh_black);
                 }
             }
         });
@@ -164,7 +164,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(SendSoundActivity.this, "Connection to the other device failed.", Toast.LENGTH_LONG);
+                Toast.makeText(SendSoundActivity.this, "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
                 updatePlayButton();
             }
         });
@@ -175,7 +175,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(SendSoundActivity.this, "Connection to the other device was closed.", Toast.LENGTH_LONG);
+                Toast.makeText(SendSoundActivity.this, "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
                 updatePlayButton();
             }
         });

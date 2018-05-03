@@ -401,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, "Connection to the other device failed.", Toast.LENGTH_LONG);
+                Toast.makeText(MainActivity.this, "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
                 updateMakeDiscoverableButton();
             }
         });
@@ -412,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, "Connection to the other device was closed.", Toast.LENGTH_LONG);
+                Toast.makeText(MainActivity.this, "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
                 updateMakeDiscoverableButton();
             }
         });
