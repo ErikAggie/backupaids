@@ -201,8 +201,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
             stopListening();
         } else {
-            connectionManager = new ConnectionManager(this);
-            connectionManager.setPeerListener(this);
+            connectionManager = new ConnectionManager(this, this);
             Toast.makeText(this, "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
@@ -402,6 +401,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                Toast.makeText(MainActivity.this, "Connection to the other device failed.", Toast.LENGTH_LONG);
                 updateMakeDiscoverableButton();
             }
         });
@@ -412,6 +412,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionPopupFr
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                Toast.makeText(MainActivity.this, "Connection to the other device was closed.", Toast.LENGTH_LONG);
                 updateMakeDiscoverableButton();
             }
         });

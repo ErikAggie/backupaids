@@ -7,9 +7,7 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,13 +21,13 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.PeerListener, StreamSoundService.Listener {
+public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private ConnectionManager connectionManager;
     private final List<String> peers = new ArrayList<>();
+    private ConnectionPopupFragment connectionPopup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +48,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         if ( StreamSoundService.isCurrentlyStreaming()) {
             connectionManager = ConnectionManager.getInstance();
         } else {
-            connectionManager = new ConnectionManager(this);
+            connectionManager = new ConnectionManager(this, this);
             Toast.makeText(this, "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }
     }
@@ -88,20 +86,13 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         if ( StreamSoundService.isCurrentlyStreaming()) {
             stopService(new Intent(this, StreamSoundService.class));
         } else if ( connectionManager != null) {
-            // Start playing!
-            Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
-            if ( sendSoundPeerSpinner == null ||
-                 sendSoundPeerSpinner.getAdapter() == null ||
-                 sendSoundPeerSpinner.getAdapter().getCount() == 0) {
-                Toast.makeText(this, "No peers found", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            Intent intent = new Intent(this, StreamSoundService.class);
-            intent.putExtra(Util.CONNECTION_NAME_EXTRA, (String)sendSoundPeerSpinner.getSelectedItem());
-            startService(intent);
+            // Ignore, we're still trying to connect
+            Toast.makeText(this, "Please be patient; I'll let you know when I've found a connection.", Toast.LENGTH_SHORT).show();
         } else {
-            // We're dead. Stop
+            // User wants to restart
+            connectionManager = new ConnectionManager(this, this);
+            StreamSoundService.registerListener(this);
+            updatePlayButton();
         }
     }
 
@@ -115,8 +106,8 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
                 } else if ( connectionManager != null ){
                     playButton.setImageResource(R.drawable.power_button_blue2);
                 } else {
-                    // We're dead. Show gray
-                    playButton.setImageResource(R.drawable.power_button_red2);
+                    // We're dead. Show button for restart
+                    playButton.setImageResource(R.drawable.ic_retry_connection);
                 }
             }
         });
@@ -130,9 +121,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void foundAPeer(String newPeer) {
-        // TODO: probably better as a notification a la MainActivity
-        peers.add(newPeer);
-        updateSpinner();
+        connectionPopup = new ConnectionPopupFragment();
+        connectionPopup.setConnection(newPeer);
+        connectionPopup.show(getSupportFragmentManager(), "Connections");
     }
 
     @Override
@@ -143,6 +134,10 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     @Override
     public void connectionWaiting() {
         // Someone else is trying to connect (they got the popup). Start the service
+        if ( connectionPopup != null) {
+            connectionPopup.dismiss();
+            connectionPopup = null;
+        }
         connectionManager.removePeerListener(this);
         startService(new Intent(this, StreamSoundService.class));
         // Service takes control of ConnectionManager instance
@@ -156,14 +151,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void servicesStopped() {
-        // Nothing for us to do
-    }
-
-    private void updateSpinner() {
-        Spinner sendSoundPeerSpinner = findViewById(R.id.sendSoundPeerSpinner);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, peers);
-        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
-        sendSoundPeerSpinner.setAdapter(arrayAdapter);
+        updatePlayButton();
     }
 
     @Override
@@ -173,13 +161,47 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void connectionFailed() {
-        // TODO: should say something here...
-        updatePlayButton();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(SendSoundActivity.this, "Connection to the other device failed.", Toast.LENGTH_LONG);
+                updatePlayButton();
+            }
+        });
     }
 
     @Override
     public void connectionClosed() {
-        // TODO: should say something here...
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(SendSoundActivity.this, "Connection to the other device was closed.", Toast.LENGTH_LONG);
+                updatePlayButton();
+            }
+        });
+    }
+
+    /**
+     * Callback for the connection confirmation dialog
+     * @param connectionName
+     */
+    @Override
+    public void connectionConfirmed(String connectionName) {
+        // Let's get started!
+        connectionManager.removePeerListener(this);
+        Intent intent = new Intent(this, StreamSoundService.class);
+        intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
+        startService(intent);
+        // Service takes control of the connection manager
+        connectionManager = null;
+    }
+
+    /**
+     * Callback for the connection confirmation dialog
+     */
+    @Override
+    public void cancelled() {
+        connectionManager.close();
         updatePlayButton();
     }
 }

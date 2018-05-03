@@ -88,13 +88,17 @@ public class ConnectionManager extends BroadcastReceiver
      *
      * @param context Context (Activity) to use for registration
      */
-    public ConnectionManager(final Context context) {
+    public ConnectionManager(final Context context, PeerListener peerListener) {
 
         if ( instance != null) {
             throw new RuntimeException("Cannot have two connection managers at the same time!");
         }
 
+        if ( context == null || peerListener == null) {
+            throw new RuntimeException("Both context and peer listener are required!");
+        }
         this.context = context;
+        this.peerListener = peerListener;
 
         // Create the P2P manager. Only initialize it once
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
@@ -120,9 +124,7 @@ public class ConnectionManager extends BroadcastReceiver
     }
 
     public void setPeerListener(PeerListener newPeerListener) {
-        if ( peerListener != null) {
-            throw new RuntimeException("Cannot have two peer listeners!");
-        }
+        // Just replace the existing guy, if any
         this.peerListener = newPeerListener;
     }
 
