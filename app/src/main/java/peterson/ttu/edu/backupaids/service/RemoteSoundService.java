@@ -2,7 +2,6 @@ package peterson.ttu.edu.backupaids.service;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.content.Context;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -11,10 +10,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.activities.MainActivity;
+import peterson.ttu.edu.backupaids.activities.ListenFragment;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -64,7 +62,7 @@ public class RemoteSoundService extends BaseStreamService {
               "Streaming audio",
               "Streaming audio from another device (FM style)",
                // TODO: this should be set from the outside...
-               MainActivity.class);
+               ListenFragment.class);
     }
 
     @Override

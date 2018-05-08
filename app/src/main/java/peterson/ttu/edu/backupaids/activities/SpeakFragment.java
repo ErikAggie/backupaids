@@ -5,15 +5,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.StreamCorruptedException;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,18 +22,19 @@ import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SendSoundActivity extends AppCompatActivity implements ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
+public class SpeakFragment extends Fragment implements ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private ConnectionManager connectionManager;
     private final List<String> peers = new ArrayList<>();
     private ConnectionPopupFragment connectionPopup;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_send_sound);
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-        TextView ourPin = findViewById(R.id.sendSoundOurPinTextView);
+        //setContentView(R.layout.activity_send_sound);
+
+        TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
         ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
 
         // Listen for Bluetooth connections (for recording)
@@ -42,20 +42,21 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-        registerReceiver(BluetoothMonitor.createIfNeeded(this), connectFilter);
+        getActivity().registerReceiver(BluetoothMonitor.createIfNeeded(getContext()), connectFilter);
 
         // If we're already streaming (i.e. we've been woken up), find the existing connection manager
         if ( StreamSoundService.isCurrentlyStreaming()) {
             connectionManager = ConnectionManager.getInstance();
         } else {
-            connectionManager = new ConnectionManager(this, this);
-            Toast.makeText(this, "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+            connectionManager = new ConnectionManager(getContext(), this);
+            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }
     }
 
+
     @Override
-    protected void onStart() {
-        super.onStart();
+    public void onResume() {
+        super.onResume();
         if ( connectionManager != null) {
             connectionManager.setPeerListener(this);
         }
@@ -64,43 +65,43 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     }
 
     @Override
-    protected void onStop() {
+    public void onPause() {
         if ( connectionManager != null) {
             connectionManager.removePeerListener(this);
         }
         StreamSoundService.unregisterListener(this);
-        super.onStop();
+        super.onPause();
     }
 
     @Override
-    protected void onDestroy() {
-        unregisterReceiver(BluetoothMonitor.createIfNeeded(this));
+    public void onDestroyView() {
+        getActivity().unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext()));
         if ( connectionManager != null) {
             connectionManager.close();
             connectionManager = null;
         }
-        super.onDestroy();
+        super.onDestroyView();
     }
 
     public void sendSound(View view) {
         if ( StreamSoundService.isCurrentlyStreaming()) {
-            stopService(new Intent(this, StreamSoundService.class));
+            getActivity().stopService(new Intent(getContext(), StreamSoundService.class));
         } else if ( connectionManager != null) {
             // Ignore, we're still trying to connect
-            Toast.makeText(this, "Please be patient; I'll let you know when I've found a connection.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Please be patient; I'll let you know when I've found a connection.", Toast.LENGTH_SHORT).show();
         } else {
             // User wants to restart
-            connectionManager = new ConnectionManager(this, this);
+            connectionManager = new ConnectionManager(getContext(), this);
             StreamSoundService.registerListener(this);
             updatePlayButton();
         }
     }
 
     private void updatePlayButton() {
-        runOnUiThread(new Runnable() {
+        getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ImageButton playButton = findViewById(R.id.sendSoundStartButton);
+                ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
                 if (StreamSoundService.isCurrentlyStreaming()) {
                     playButton.setImageResource(R.drawable.ic_power_button_green);
                 } else if ( connectionManager != null ){
@@ -115,15 +116,15 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void servicePublishingFailed() {
-        Toast.makeText(this, "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG).show();
-        finish();
+        Toast.makeText(getContext(), "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG).show();
+        //finish();
     }
 
     @Override
     public void foundAPeer(String newPeer) {
         connectionPopup = new ConnectionPopupFragment();
         connectionPopup.setConnection(newPeer);
-        connectionPopup.show(getSupportFragmentManager(), "Connections");
+        connectionPopup.show(getActivity().getSupportFragmentManager(), "Connections");
     }
 
     @Override
@@ -139,7 +140,7 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
             connectionPopup = null;
         }
         connectionManager.removePeerListener(this);
-        startService(new Intent(this, StreamSoundService.class));
+        getActivity().startService(new Intent(getContext(), StreamSoundService.class));
         // Service takes control of ConnectionManager instance
         connectionManager = null;
     }
@@ -161,10 +162,10 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void connectionFailed() {
-        runOnUiThread(new Runnable() {
+        getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(SendSoundActivity.this, "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
                 updatePlayButton();
             }
         });
@@ -172,10 +173,10 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
 
     @Override
     public void connectionClosed() {
-        runOnUiThread(new Runnable() {
+        getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(SendSoundActivity.this, "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
                 updatePlayButton();
             }
         });
@@ -189,9 +190,9 @@ public class SendSoundActivity extends AppCompatActivity implements ConnectionMa
     public void connectionConfirmed(String connectionName) {
         // Let's get started!
         connectionManager.removePeerListener(this);
-        Intent intent = new Intent(this, StreamSoundService.class);
+        Intent intent = new Intent(getContext(), StreamSoundService.class);
         intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
-        startService(intent);
+        getActivity().startService(intent);
         // Service takes control of the connection manager
         connectionManager = null;
     }

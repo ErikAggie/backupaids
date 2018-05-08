@@ -1,16 +1,7 @@
 package peterson.ttu.edu.backupaids.service;
 
-import android.app.IntentService;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.Context;
 import android.media.AudioManager;
-import android.os.Build;
-import android.os.Process;
-import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -20,9 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.activities.SendSoundActivity;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.activities.SpeakFragment;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -59,7 +48,7 @@ public class StreamSoundService extends BaseStreamService {
               "Streaming audio",
               "Streaming audio to another device (FM style)",
                // TODO: this should be set from the outside...
-               SendSoundActivity.class);
+               SpeakFragment.class);
     }
 
     @Override
