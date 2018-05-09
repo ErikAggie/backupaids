@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,26 +23,33 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SpeakFragment extends Fragment implements ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
+public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
 
     private ConnectionManager connectionManager;
     private final List<String> peers = new ArrayList<>();
     private ConnectionPopupFragment connectionPopup;
 
+    //----------------------------------------------------------------------------------------------
+    // Lifecycle methods
+    //----------------------------------------------------------------------------------------------
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        return inflater.inflate(R.layout.activity_send_sound, container, false);
+        // Apparently we'll think we're visible at first...
+        setUserVisibleHint(false);
+        return inflater.inflate(R.layout.fragment_speak, container, false);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        //setContentView(R.layout.activity_send_sound);
+        //setContentView(R.layout.fragment_speak);
 
         TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
         ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
@@ -53,33 +61,30 @@ public class SpeakFragment extends Fragment implements ConnectionManager.PeerLis
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         getActivity().registerReceiver(BluetoothMonitor.createIfNeeded(getContext()), connectFilter);
 
-        // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-        if ( StreamSoundService.isCurrentlyStreaming()) {
-            connectionManager = ConnectionManager.getInstance();
-        } else {
-            connectionManager = new ConnectionManager(getContext(), this);
-            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
-        }
-        updatePlayButton(view);
     }
 
-
     @Override
-    public void onResume() {
-        super.onResume();
-        if ( connectionManager != null) {
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if ( isVisibleToUser) {
+            // If we're already streaming (i.e. we've been woken up), find the existing connection manager
+            if (StreamSoundService.isCurrentlyStreaming()) {
+                connectionManager = ConnectionManager.getInstance();
+            } else {
+                connectionManager = new ConnectionManager(getContext(), this);
+                Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+            }
             connectionManager.setPeerListener(this);
+            StreamSoundService.registerListener(this);
+            updatePlayButton();
+        } else {
+            if ( connectionManager != null) {
+                // We're still looking for a connection, so stop...
+                connectionManager.close();
+                connectionManager = null;
+            }
+            StreamSoundService.unregisterListener(this);
         }
-        StreamSoundService.registerListener(this);
-    }
-
-    @Override
-    public void onPause() {
-        if ( connectionManager != null) {
-            connectionManager.removePeerListener(this);
-        }
-        StreamSoundService.unregisterListener(this);
-        super.onPause();
     }
 
     @Override
@@ -92,7 +97,22 @@ public class SpeakFragment extends Fragment implements ConnectionManager.PeerLis
         super.onDestroyView();
     }
 
-    public void sendSound(View view) {
+    //----------------------------------------------------------------------------------------------
+    // UI events
+    //----------------------------------------------------------------------------------------------
+
+    @Override
+    public void onClick(View view) {
+        switch ( view.getId()) {
+            case R.id.sendSoundStartButton:
+                sendSound();
+                break;
+            default:
+                throw new RuntimeException("Unexpected button push!");
+        }
+    }
+
+    private void sendSound() {
         if ( StreamSoundService.isCurrentlyStreaming()) {
             getActivity().stopService(new Intent(getContext(), StreamSoundService.class));
         } else if ( connectionManager != null) {
@@ -105,6 +125,10 @@ public class SpeakFragment extends Fragment implements ConnectionManager.PeerLis
             updatePlayButton();
         }
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Helper methods
+    //----------------------------------------------------------------------------------------------
 
     private void updatePlayButton() {
         if ( getView() != null) {

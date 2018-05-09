@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="peterson.ttu.edu.backupaids.activities.SpeakFragment"
-    tools:showIn="@layout/activity_send_sound">
+    tools:showIn="@layout/fragment_speak">
 
     <TextView
         android:id="@+id/sendSoundOurPinTextView"
@@ -29,7 +29,6 @@
         android:layout_height="0dp"
         android:adjustViewBounds="false"
         android:background="@android:color/transparent"
-        android:onClick="sendSound"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_power_button_blue"
         android:layout_marginTop="16dp"

@@ -5,6 +5,6 @@
     android:layout_height="match_parent"
     tools:context="peterson.ttu.edu.backupaids.activities.SpeakFragment">
 
-    <include layout="@layout/content_send_sound" />
+    <include layout="@layout/content_speak" />
 
 </android.support.design.widget.CoordinatorLayout>

@@ -4,11 +4,13 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -28,7 +30,7 @@ import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 
-public class ListenFragment extends Fragment implements ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
+public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
 
 
     private ConnectionManager connectionManager;
@@ -63,18 +65,31 @@ public class ListenFragment extends Fragment implements ConnectionPopupFragment.
         }
     };
 
+    //----------------------------------------------------------------------------------------------
+    // Lifecycle methods
+    //----------------------------------------------------------------------------------------------
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        return inflater.inflate(R.layout.activity_main, container, false);
+        View fragmentView = inflater.inflate(R.layout.fragment_listen, container, false);
+
+
+        // Set up our button's onClickEvents (why can't they target this automatically???
+        Button newPresetButton = fragmentView.findViewById(R.id.newPresetButton);
+        newPresetButton.setOnClickListener(this);
+        ImageButton playButton = fragmentView.findViewById(R.id.playSound);
+        playButton.setOnClickListener(this);
+        ImageButton makeDiscoverableButton = fragmentView.findViewById(R.id.makeDiscoverable);
+        makeDiscoverableButton.setOnClickListener(this);
+
+        return fragmentView;
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-//        setContentView(R.layout.activity_main);
 
         TextView ourPin = getView().findViewById(R.id.ourPinTextView);
         ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
@@ -122,16 +137,76 @@ public class ListenFragment extends Fragment implements ConnectionPopupFragment.
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        LocalSoundService.registerListener(listener);
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if ( isVisibleToUser) {
+            LocalSoundService.registerListener(listener);
+        } else {
+            LocalSoundService.unregisterListener(listener);
+        }
     }
 
+    //----------------------------------------------------------------------------------------------
+    // UI action methods
+    //----------------------------------------------------------------------------------------------
+
     @Override
-    public void onPause() {
-        LocalSoundService.unregisterListener(listener);
-        super.onPause();
+    public void onClick(View view) {
+        switch ( view.getId()) {
+            case R.id.playSound:
+                playLocalSound();
+                break;
+            case R.id.newPresetButton:
+                newPreset();
+                break;
+            case R.id.makeDiscoverable:
+                makeDiscoverable();
+                break;
+            default:
+                throw new RuntimeException("Unexpected button push!");
+        }
     }
+
+    private void playLocalSound() {
+        if ( LocalSoundService.isRunning()) {
+            stopPlaying();
+        } else {
+            // Start playing!
+            getActivity().startService(new Intent(getContext(), LocalSoundService.class));
+        }
+    }
+
+    private void newPreset() {
+        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
+    }
+
+    private void makeDiscoverable() {
+        if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
+            stopListening();
+        } else {
+            connectionManager = new ConnectionManager(getContext(), this);
+            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+
+            // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
+            discoverableCountdown = new Timer();
+            discoverableCountdown.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            stopListening();
+                            Toast.makeText(getContext(), "Looking for other devices timed out.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }, 180000); // 2 minutes
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Helper methods
+    //----------------------------------------------------------------------------------------------
 
     private void updateSpinner() {
         SoundPresetManager presetManager = SoundPresetManager.getInstance(getContext());
@@ -159,39 +234,6 @@ public class ListenFragment extends Fragment implements ConnectionPopupFragment.
             makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
         } else {
             makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
-        }
-    }
-
-    public void playLocalSound(View view) throws IOException {
-        if ( LocalSoundService.isRunning()) {
-            stopPlaying();
-        } else {
-            // Start playing!
-            getActivity().startService(new Intent(getContext(), LocalSoundService.class));
-        }
-    }
-
-    public void makeDiscoverable(View view) {
-        if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
-            stopListening();
-        } else {
-            connectionManager = new ConnectionManager(getContext(), this);
-            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
-
-            // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
-            discoverableCountdown = new Timer();
-            discoverableCountdown.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            stopListening();
-                            Toast.makeText(getContext(), "Looking for other devices timed out.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            }, 180000); // 2 minutes
         }
     }
 
@@ -231,16 +273,6 @@ public class ListenFragment extends Fragment implements ConnectionPopupFragment.
         }
     }
 
-    public void newPreset(View view) {
-        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
-    }
-
-    public void editPreset(View view) {
-        Intent intent = new Intent(getContext(), PresetSetupActivity.class);
-        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-        intent.putExtra(Util.SELECTED_PRESET_ITEM, presetSpinner.getSelectedItemPosition());
-        startActivity(intent);
-    }
 
     public void sendToOtherPhone(View view) {
         // Stop all this stuff now so that SpeakFragment can start service discovery fresh
