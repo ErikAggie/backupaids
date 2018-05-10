@@ -4,19 +4,9 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.net.Uri;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-
-import java.util.List;
-
-import peterson.ttu.edu.backupaids.R;
 
 /**
  * Fragment for showing available connections
@@ -25,11 +15,15 @@ public class ConnectionPopupFragment extends DialogFragment {
 
     public static final String CONNECTIONS_ARGUMENT = "connections";
 
-    private OnFragmentInteractionListener mListener;
+    private OnFragmentInteractionListener listener;
     private String availableConnection;
 
     public ConnectionPopupFragment() {
         // Required empty public constructor
+    }
+
+    public void setListener(OnFragmentInteractionListener listener) {
+        this.listener = listener;
     }
 
     public void setConnection(String connection) {
@@ -45,27 +39,16 @@ public class ConnectionPopupFragment extends DialogFragment {
                 .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        mListener.connectionConfirmed(availableConnection);
+                        listener.connectionConfirmed(availableConnection);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        mListener.cancelled();
+                        listener.cancelled();
                     }
                 });
         return builder.create();
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
     }
 
     /**
@@ -79,7 +62,6 @@ public class ConnectionPopupFragment extends DialogFragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void connectionConfirmed(String connectionName);
         void cancelled();
     }

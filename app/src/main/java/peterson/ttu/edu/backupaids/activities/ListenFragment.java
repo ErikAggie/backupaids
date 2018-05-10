@@ -30,7 +30,7 @@ import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 
-public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionPopupFragment.OnFragmentInteractionListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
+public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
 
 
     private ConnectionManager connectionManager;
@@ -273,24 +273,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
     }
 
-
-    public void sendToOtherPhone(View view) {
-        // Stop all this stuff now so that SpeakFragment can start service discovery fresh
-        // (otherwise I think there's a race condition between us stopping and the other starting)
-        // Use the runnable to kick off the activity only when the service stuff is stopped
-        if ( connectionManager != null) {
-            todoOnServiceStopped = new Runnable() {
-                @Override
-                public void run() {
-                    startActivity(new Intent(getContext(), SpeakFragment.class));
-                }
-            };
-            stopListening();
-        } else {
-            startActivity(new Intent(getContext(), SpeakFragment.class));
-        }
-    }
-
 //    @Override
 //    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 //        super.onActivityResult(requestCode, resultCode, data);
@@ -346,15 +328,43 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                     connectionPopup.dismiss();
                 }
                 connectionPopup = new ConnectionPopupFragment();
+                connectionPopup.setListener(
+                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
+                            @Override
+                            public void connectionConfirmed(String connectionName) {
+                                RemoteSoundService.registerListener(ListenFragment.this);
+                                Intent intent = new Intent(getContext(), RemoteSoundService.class);
+                                intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
+                                getActivity().startService(intent);
+
+                                // Service takes over this connection manager
+                                connectionManager.removePeerListener(ListenFragment.this);
+                                connectionManager = null;
+
+                            }
+
+                            @Override
+                            public void cancelled() {
+                                if (connectionPopup != null) {
+                                    connectionPopup.dismiss();
+                                    connectionPopup = null;
+                                }
+                                stopListening();
+                            }
+                        });
+                connectionPopup.setTargetFragment(ListenFragment.this, 1);
                 connectionPopup.setConnection(peerName);
-                connectionPopup.show(getActivity().getSupportFragmentManager(), "Connections");
+                connectionPopup.show(getFragmentManager(), "Connections");
             }
         });
     }
 
     @Override
     public void findingPeerFailed(IOException e) {
-        // TODO: do something here...
+        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+        connectionManager.close();
+        connectionManager = null;
+        updateMakeDiscoverableButton();
     }
 
     @Override
@@ -369,27 +379,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         getActivity().startService(new Intent(getContext(), RemoteSoundService.class));
         // Service takes over this connection manager
         connectionManager = null;
-    }
-
-    @Override
-    public void connectionConfirmed(String connectionName) {
-        RemoteSoundService.registerListener(this);
-        Intent intent = new Intent(getContext(), RemoteSoundService.class);
-        intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
-        getActivity().startService(intent);
-
-        // Service takes over this connection manager
-        connectionManager.removePeerListener(this);
-        connectionManager = null;
-    }
-
-    @Override
-    public void cancelled() {
-        if ( connectionPopup != null) {
-            connectionPopup.dismiss();
-            connectionPopup = null;
-        }
-        stopListening();
     }
 
     @Override

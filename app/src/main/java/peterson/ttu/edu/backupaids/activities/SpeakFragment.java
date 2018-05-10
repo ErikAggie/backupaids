@@ -26,7 +26,7 @@ import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, StreamSoundService.Listener, ConnectionPopupFragment.OnFragmentInteractionListener {
+public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, StreamSoundService.Listener {
 
     private ConnectionManager connectionManager;
     private final List<String> peers = new ArrayList<>();
@@ -42,7 +42,12 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         super.onCreateView(inflater, container, savedInstanceState);
         // Apparently we'll think we're visible at first...
         setUserVisibleHint(false);
-        return inflater.inflate(R.layout.fragment_speak, container, false);
+        View fragmentView = inflater.inflate(R.layout.fragment_speak, container, false);
+
+        ImageButton sendSoundStartButton = fragmentView.findViewById(R.id.sendSoundStartButton);
+        sendSoundStartButton.setOnClickListener(this);
+
+        return fragmentView;
     }
 
     @Override
@@ -162,8 +167,27 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     @Override
     public void foundAPeer(String newPeer) {
         connectionPopup = new ConnectionPopupFragment();
+        connectionPopup.setListener(new ConnectionPopupFragment.OnFragmentInteractionListener() {
+            @Override
+            public void connectionConfirmed(String connectionName) {
+                // Let's get started!
+                connectionManager.removePeerListener(SpeakFragment.this);
+                Intent intent = new Intent(getContext(), StreamSoundService.class);
+                intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
+                getActivity().startService(intent);
+                // Service takes control of the connection manager
+                connectionManager = null;
+            }
+
+            @Override
+            public void cancelled() {
+                connectionManager.close();
+                updatePlayButton();
+            }
+        });
+        connectionPopup.setTargetFragment(this, 1);
         connectionPopup.setConnection(newPeer);
-        connectionPopup.show(getActivity().getSupportFragmentManager(), "Connections");
+        connectionPopup.show(getFragmentManager(), "Connections");
     }
 
     @Override
@@ -219,29 +243,5 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                 updatePlayButton();
             }
         });
-    }
-
-    /**
-     * Callback for the connection confirmation dialog
-     * @param connectionName
-     */
-    @Override
-    public void connectionConfirmed(String connectionName) {
-        // Let's get started!
-        connectionManager.removePeerListener(this);
-        Intent intent = new Intent(getContext(), StreamSoundService.class);
-        intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
-        getActivity().startService(intent);
-        // Service takes control of the connection manager
-        connectionManager = null;
-    }
-
-    /**
-     * Callback for the connection confirmation dialog
-     */
-    @Override
-    public void cancelled() {
-        connectionManager.close();
-        updatePlayButton();
     }
 }
