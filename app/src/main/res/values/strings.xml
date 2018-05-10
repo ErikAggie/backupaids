@@ -13,8 +13,8 @@
     <string name="preset">Preset:</string>
     <string name="new_preset">New Preset</string>
     <string name="play_stop_playing_what_the_phone_hears">Play/stop playing what the phone hears</string>
-    <string name="allow_another_phone_to_send_audio">Allow another phone to send audio:</string>
-    <string name="make_this_phone_discoverable_by_other_phones">Make this phone discoverable by other phones</string>
+    <string name="allow_another_phone_to_send_audio">Listen to another phone:</string>
+    <string name="make_this_phone_discoverable_by_other_phones">Connect to another phone</string>
     <string name="send_audio_to_another_phone">Send audio to another phone:</string>
     <string name="start_sending_audio_to_another_phones">Start sending audio to another phones</string>
     <string name="send_to">Send to:</string>
@@ -24,5 +24,11 @@
     <string name="increase_volume">Increase volume</string>
     <string name="decrease_volume">Decrease volume</string>
     <string name="play_stop_playing_the_tone">Play/stop playing the tone</string>
+    <string name="title_activity_tabbed_main">Hearing Phone</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="tab_text_3">Tab 3</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 
 </resources>
