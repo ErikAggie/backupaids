@@ -1,6 +1,9 @@
 package peterson.ttu.edu.backupaids.sound.source;
 
+import android.content.Context;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -22,13 +25,23 @@ public class SourceFactory {
      *
      * @throws IOException If we can't initialize recording
      */
-    public static SoundSource createCamcorderAudioRecord() throws IOException {
+    public static SoundSource createCamcorderAudioRecord(Context context) throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
                         Util.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT,
                         Util.INPUT_MIN_BUFFER_SIZE);
+        // Force use of the phone's microphones
+        // TODO: might want to change this later
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        for ( AudioDeviceInfo device : audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
+            if ( device.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) {
+                audioRecord.setPreferredDevice(device);
+                break;
+            }
+        }
+        Log.i(TAG, "Audio device is " + audioRecord.getPreferredDevice());
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
@@ -46,7 +59,7 @@ public class SourceFactory {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.MIC,
                         Util.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT,
                         Util.INPUT_MIN_BUFFER_SIZE);
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {

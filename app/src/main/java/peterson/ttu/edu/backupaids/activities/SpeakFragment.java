@@ -236,12 +236,14 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void connectionClosed() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                updatePlayButton();
-            }
-        });
+        if ( getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
+                    updatePlayButton();
+                }
+            });
+        }
     }
 }

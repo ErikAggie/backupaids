@@ -27,7 +27,7 @@ public class Util {
 
     public static final int INPUT_MIN_BUFFER_SIZE =
             AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.CHANNEL_IN_STEREO,
                     AudioFormat.ENCODING_PCM_16BIT);
 
 

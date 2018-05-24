@@ -120,7 +120,7 @@ public class LocalSoundService extends IntentService {
         SoundDestination soundDestination = null;
 
         try {
-            soundSource = SourceFactory.createCamcorderAudioRecord();
+            soundSource = SourceFactory.createCamcorderAudioRecord(this);
             // TODO: find current sound source (key/value store)
             soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset);
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
