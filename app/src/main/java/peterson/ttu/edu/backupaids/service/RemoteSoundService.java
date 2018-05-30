@@ -66,6 +66,11 @@ public class RemoteSoundService extends BaseStreamService {
     }
 
     @Override
+    public boolean isRunning() {
+        return isCurrentlyStreaming();
+    }
+
+    @Override
     protected void onHandleIntent(Intent intent) {
         setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
     }

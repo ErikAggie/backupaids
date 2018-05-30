@@ -1,0 +1,36 @@
+package peterson.ttu.edu.backupaids.service;
+
+import android.app.IntentService;
+
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * Base class that keeps track of all running services
+ */
+public abstract class BaseService extends IntentService {
+
+    private static CopyOnWriteArrayList<BaseService> ALL_SERVICES = new CopyOnWriteArrayList<>();
+
+    public BaseService(String name) {
+        super(name);
+    }
+
+    protected void registerThisService() {
+        ALL_SERVICES.add(this);
+    }
+
+    protected void unregisterThisService() {
+        ALL_SERVICES.remove(this);
+    }
+
+    public abstract boolean isRunning();
+
+    public static boolean isAnyServiceRunning() {
+        for ( BaseService service : ALL_SERVICES) {
+            if ( service.isRunning()) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

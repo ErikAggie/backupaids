@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -168,7 +167,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void playLocalSound() {
-        if ( LocalSoundService.isRunning()) {
+        if ( LocalSoundService.isLocalSoundServiceRunning()) {
             stopPlaying();
         } else {
             // Start playing!
@@ -219,7 +218,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void updatePlayButton() {
         ImageButton playButton = getView().findViewById(R.id.playSound);
-        if ( LocalSoundService.isRunning()) {
+        if ( LocalSoundService.isLocalSoundServiceRunning()) {
             playButton.setImageResource(R.drawable.ic_power_button_green);
         } else {
             playButton.setImageResource(R.drawable.ic_power_button_blue);
@@ -261,7 +260,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void stopPlaying() {
-        if ( LocalSoundService.isRunning()) {
+        if ( LocalSoundService.isLocalSoundServiceRunning()) {
             getActivity().stopService(new Intent(getContext(), LocalSoundService.class));
         }
         if ( RemoteSoundService.isCurrentlyStreaming()) {

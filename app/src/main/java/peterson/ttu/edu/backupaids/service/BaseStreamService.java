@@ -20,7 +20,7 @@ import peterson.ttu.edu.backupaids.network.ConnectionManager;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends IntentService implements ConnectionManager.ConnectionListener {
+public abstract class BaseStreamService extends BaseService implements ConnectionManager.ConnectionListener {
 
     private static final String TAG = "BaseStreamService";
 
@@ -47,6 +47,7 @@ public abstract class BaseStreamService extends IntentService implements Connect
 
     @Override
     public void onDestroy() {
+        unregisterThisService();
         stopStreaming();
         if ( connectionManager != null) {
             connectionManager.close();
@@ -62,6 +63,8 @@ public abstract class BaseStreamService extends IntentService implements Connect
         if ( intent == null) {
             return;
         }
+
+        registerThisService();
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
 

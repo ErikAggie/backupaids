@@ -30,7 +30,7 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 /**
  * Service for playing local sound.
  */
-public class LocalSoundService extends IntentService {
+public class LocalSoundService extends BaseService {
 
     private static final String TAG = "LocalSoundService";
     private static final int FOREGROUND_ID = 1234;
@@ -47,7 +47,7 @@ public class LocalSoundService extends IntentService {
         super("LocalSoundService");
     }
 
-    public static boolean isRunning() {
+    public static boolean isLocalSoundServiceRunning() {
         return running.get();
     }
 
@@ -69,9 +69,10 @@ public class LocalSoundService extends IntentService {
 
     @Override
     public void onDestroy() {
+        unregisterThisService();
+
         // This will tell the thread to stop
         playing = false;
-
 
         for ( Listener listener : listeners) {
             listener.playbackStopped();
@@ -80,13 +81,15 @@ public class LocalSoundService extends IntentService {
         super.onDestroy();
     }
 
-
     /**
      * Do the playback/stream (read from the source and play at the destination)
      * @param intent Intent that started us
      */
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
+
+        registerThisService();
+
         SoundPreset soundPreset = null;
         if ( preset != null && !preset.isEmpty()) {
             soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
@@ -164,6 +167,11 @@ public class LocalSoundService extends IntentService {
                 // Nothing to do
             }
         }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return isLocalSoundServiceRunning();
     }
 
     public interface Listener {

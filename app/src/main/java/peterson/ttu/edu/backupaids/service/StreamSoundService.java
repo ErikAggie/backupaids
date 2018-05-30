@@ -52,6 +52,11 @@ public class StreamSoundService extends BaseStreamService {
     }
 
     @Override
+    public boolean isRunning() {
+        return isCurrentlyStreaming();
+    }
+
+    @Override
     public void onDestroy() {
         currentlyStreaming.set(false); // This will stop the thread
 
