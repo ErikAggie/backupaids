@@ -75,6 +75,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             // If we're already streaming (i.e. we've been woken up), find the existing connection manager
             if (StreamSoundService.isCurrentlyStreaming()) {
                 connectionManager = ConnectionManager.getInstance();
+            } else if ( ConnectionManager.getInstance() != null) {
+                ConnectionManager.getInstance().close();
             } else {
                 connectionManager = new ConnectionManager(getContext(), this);
                 Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();

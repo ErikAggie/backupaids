@@ -78,7 +78,7 @@ public class ConnectionManager extends BroadcastReceiver
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
     // We have two listeners because this is split between peer discovery (in an Activity) and
-    // the actual connection (in a service)
+    // the actual connection (in a Service)
     private PeerListener peerListener;
 
     private ConnectionListener connectionListener;
@@ -535,11 +535,10 @@ public class ConnectionManager extends BroadcastReceiver
 
         // We don't know the IP address of the peer, so get it...
         savedIPs.put(remoteAppInstanceName, null);
-
+            // Make the connection
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
-
         wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -549,7 +548,7 @@ public class ConnectionManager extends BroadcastReceiver
             @Override
             public void onFailure(int i) {
                 Log.e(TAG, "Connection setup failed: " + i);
-                if ( peerListener != null) {
+                if (peerListener != null) {
                     peerListener.findingPeerFailed(new IOException("WiFiP2pManager.connect failed: " + i));
                 }
             }
@@ -559,6 +558,12 @@ public class ConnectionManager extends BroadcastReceiver
     @Override
     public void onConnectionInfoAvailable(final WifiP2pInfo wifiP2pInfo) {
         // Called when we have connection info (in particular, the all-important IP address)
+
+        // Apparently only the group owner can connect to members (not the other way around),
+        // so don't do anything if we've found the owner
+        if ( wifiP2pInfo.isGroupOwner) {
+            return;
+        }
 
         // See if we're waiting on this information, then save it
         for (String buddyName : savedIPs.keySet()) {
