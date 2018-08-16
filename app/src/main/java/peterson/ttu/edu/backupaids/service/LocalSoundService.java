@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.activities.ListenFragment;
+import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
@@ -95,7 +96,7 @@ public class LocalSoundService extends BaseService {
             soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
         }
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, ListenFragment.class), 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, TabbedMain.class), 0);
 
         if ( Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...

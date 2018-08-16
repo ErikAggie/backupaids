@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.activities.ListenFragment;
+import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
@@ -61,8 +62,7 @@ public class RemoteSoundService extends BaseStreamService {
                R.drawable.ic_stream_in,
               "Streaming audio",
               "Streaming audio from another device (FM style)",
-               // TODO: this should be set from the outside...
-               ListenFragment.class);
+               TabbedMain.class);
     }
 
     @Override

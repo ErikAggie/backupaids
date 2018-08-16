@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.activities.SpeakFragment;
+import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -47,8 +48,7 @@ public class StreamSoundService extends BaseStreamService {
                R.drawable.ic_stream_out,
               "Streaming audio",
               "Streaming audio to another device (FM style)",
-               // TODO: this should be set from the outside...
-               SpeakFragment.class);
+               TabbedMain.class);
     }
 
     @Override
