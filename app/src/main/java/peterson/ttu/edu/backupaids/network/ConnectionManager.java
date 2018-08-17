@@ -32,6 +32,24 @@ import peterson.ttu.edu.backupaids.Util;
 public class ConnectionManager extends BroadcastReceiver
         implements WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
 
+    private static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
+    private static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
+
+    /**
+     * Makes it easy to declare how we're using the service (listening or speaking)
+     */
+    public enum Mode {
+        LISTEN(LISTEN_BUDDY_NAME, SPEAK_BUDDY_NAME),
+        SPEAK(SPEAK_BUDDY_NAME, LISTEN_BUDDY_NAME);
+
+        private final String myService;
+        private final String otherService;
+        Mode(String myService, String otherService) {
+            this.myService = myService;
+            this.otherService = otherService;
+        }
+    }
+
     private static final String TAG = "ConnectionManager";
 
     // Keep the same pin throughout this instance of the app so we can reconnect--Android doesn't
@@ -49,6 +67,7 @@ public class ConnectionManager extends BroadcastReceiver
 
     private final Context context;
     private final WifiP2pManager wifiP2pManager;
+    private final Mode mode;
     private static WifiP2pManager.Channel channel;
 
     private static final WifiP2pManager.ActionListener noOpActionListener = new WifiP2pManager.ActionListener() {
@@ -88,7 +107,8 @@ public class ConnectionManager extends BroadcastReceiver
      *
      * @param context Context (Activity) to use for registration
      */
-    public ConnectionManager(final Context context, PeerListener peerListener) {
+    public ConnectionManager(final Context context, PeerListener peerListener, Mode mode) {
+        this.mode = mode;
 
         if ( instance != null) {
             throw new RuntimeException("Cannot have two connection managers at the same time!");
@@ -204,7 +224,7 @@ public class ConnectionManager extends BroadcastReceiver
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map<String, String> record = new HashMap<>();
         record.put(Util.LISTEN_PORT_STRING, Integer.toString(listenPortNumber));
-        record.put(Util.BUDDY_NAME_STRING, context.getString(R.string.app_name));
+        record.put(Util.BUDDY_NAME_STRING, mode.myService);
         record.put(Util.PIN_NUMBER_STRING, Integer.toString(OUR_PIN));
         record.put("available", "visible");
 
@@ -367,7 +387,7 @@ public class ConnectionManager extends BroadcastReceiver
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
         if ( (record.get(Util.BUDDY_NAME_STRING) != null) &&
              (record.get(Util.PIN_NUMBER_STRING) != null) &&
-              record.get(Util.BUDDY_NAME_STRING).equals(context.getString(R.string.app_name))) {
+              record.get(Util.BUDDY_NAME_STRING).equals(mode.otherService)) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
             fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(Util.PIN_NUMBER_STRING));
             buddyNameToPortNumber.put(record.get(Util.PIN_NUMBER_STRING), Integer.valueOf(record.get(Util.LISTEN_PORT_STRING)));

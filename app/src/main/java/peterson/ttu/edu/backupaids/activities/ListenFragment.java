@@ -183,7 +183,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
             stopListening();
         } else {
-            connectionManager = new ConnectionManager(getContext(), this);
+            connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.LISTEN);
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
 
             // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)

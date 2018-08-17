@@ -78,7 +78,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             } else if ( ConnectionManager.getInstance() != null) {
                 ConnectionManager.getInstance().close();
             } else {
-                connectionManager = new ConnectionManager(getContext(), this);
+                connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.SPEAK);
                 Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
             }
             connectionManager.setPeerListener(this);
@@ -127,7 +127,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             Toast.makeText(getContext(), "Please be patient; I'll let you know when I've found a connection.", Toast.LENGTH_SHORT).show();
         } else {
             // User wants to restart
-            connectionManager = new ConnectionManager(getContext(), this);
+            connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.SPEAK);
             StreamSoundService.registerListener(this);
             updatePlayButton();
         }
