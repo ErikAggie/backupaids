@@ -126,7 +126,7 @@ public class LocalSoundService extends BaseService {
         try {
             soundSource = SourceFactory.createCamcorderAudioRecord(this);
             // TODO: find current sound source (key/value store)
-            soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset);
+            soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset, this);
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size

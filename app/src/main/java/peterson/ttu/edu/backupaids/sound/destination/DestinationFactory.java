@@ -1,7 +1,9 @@
 package peterson.ttu.edu.backupaids.sound.destination;
 
+import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.audiofx.Equalizer;
 import android.os.Build;
@@ -15,6 +17,8 @@ import java.util.Map;
 import peterson.ttu.edu.backupaids.Util;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 
+import static android.content.Context.AUDIO_SERVICE;
+
 /**
  * Create various destination
  */
@@ -26,7 +30,7 @@ public class DestinationFactory {
      * Create a local audio destination (audio track)
      * @return SoundDestination
      */
-    public static SoundDestination createLocalAudioDestination(SoundPreset preset) throws IOException {
+    public static SoundDestination createLocalAudioDestination(SoundPreset preset, Context context) throws IOException {
         AudioTrack audioTrack;
         if ( Build.VERSION.SDK_INT >= 26) {
             // Android O contains a low-latency playback mode
@@ -53,6 +57,8 @@ public class DestinationFactory {
 
         // Set up the audio effects
         if ( preset != null) {
+            AudioManager audio = (AudioManager) context.getSystemService(AUDIO_SERVICE);
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, preset.getVolumeAdjust(), 0);
             applyEffects(preset, audioTrack.getAudioSessionId());
         }
 

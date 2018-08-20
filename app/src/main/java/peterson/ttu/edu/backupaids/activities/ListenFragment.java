@@ -272,11 +272,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        updateSpinner();
-//    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        updateSpinner();
+    }
 
     @Override
     public void servicesStarted() {

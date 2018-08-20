@@ -102,6 +102,6 @@ public class RemoteSoundService extends BaseStreamService {
             soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
         }
 
-        return DestinationFactory.createLocalAudioDestination(soundPreset);
+        return DestinationFactory.createLocalAudioDestination(soundPreset, this);
     }
 }
