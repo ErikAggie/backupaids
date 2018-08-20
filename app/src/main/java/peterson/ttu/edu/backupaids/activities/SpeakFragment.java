@@ -66,6 +66,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         getActivity().registerReceiver(BluetoothMonitor.createIfNeeded(getContext()), connectFilter);
 
+        updatePlayButton(view);
     }
 
     @Override
@@ -85,12 +86,13 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             StreamSoundService.registerListener(this);
             updatePlayButton();
         } else {
-            if ( connectionManager != null) {
+            // If the connection is already made, do nothing...
+            if ( connectionManager != null && !StreamSoundService.isCurrentlyStreaming()) {
                 // We're still looking for a connection, so stop...
                 connectionManager.close();
                 connectionManager = null;
+                StreamSoundService.unregisterListener(this);
             }
-            StreamSoundService.unregisterListener(this);
         }
     }
 

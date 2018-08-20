@@ -23,6 +23,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class TabbedMain extends AppCompatActivity {
 
@@ -65,6 +66,10 @@ public class TabbedMain extends AppCompatActivity {
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+
+        if (StreamSoundService.isCurrentlyStreaming()) {
+            tabLayout.getTabAt(1).select();
+        }
 
     }
 
