@@ -88,21 +88,24 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         } else {
             // If the connection is already made, do nothing...
             if ( connectionManager != null && !StreamSoundService.isCurrentlyStreaming()) {
-                // We're still looking for a connection, so stop...
-                connectionManager.close();
-                connectionManager = null;
-                StreamSoundService.unregisterListener(this);
+                stopTryingToConnect();
             }
         }
+    }
+
+    private void stopTryingToConnect() {
+        if ( connectionManager != null) {
+            connectionManager.close();
+            connectionManager = null;
+        }
+        StreamSoundService.unregisterListener(this);
+        updatePlayButton();
     }
 
     @Override
     public void onDestroyView() {
         getActivity().unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext()));
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
-        }
+        stopTryingToConnect();
         super.onDestroyView();
     }
 
@@ -164,8 +167,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void servicePublishingFailed() {
-        Toast.makeText(getContext(), "Unable to make ourselves visible to other phones.", Toast.LENGTH_LONG).show();
-        //finish();
+        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+        stopTryingToConnect();
     }
 
     @Override
@@ -185,8 +188,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
             @Override
             public void cancelled() {
-                connectionManager.close();
-                updatePlayButton();
+                stopTryingToConnect();
             }
         });
         connectionPopup.setTargetFragment(this, 1);
@@ -196,7 +198,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void findingPeerFailed(IOException e) {
-        // TODO: Show something...
+        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+        stopTryingToConnect();
     }
 
     @Override

@@ -309,8 +309,8 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void servicePublishingFailed() {
-        // TODO: should do something here...
         connectionManager = null;
+        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
         updateMakeDiscoverableButton();
     }
 
