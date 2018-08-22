@@ -1,6 +1,5 @@
 package peterson.ttu.edu.backupaids.service;
 
-import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -27,6 +26,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     private ConnectionManager connectionManager;
 
     private boolean thisServiceIsStreaming;
+    private boolean streamingStopped = false;
 
     private final int notificationIcon;
     private final String notificationTitle;
@@ -106,7 +106,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         thisServiceIsStreaming = true;
         streamingStarted();
         for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.connectionMade();
+            listener.streamingStarted();
         }
 
         SoundSource soundSource = null;
@@ -136,9 +136,8 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         } catch ( Exception e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
-            stopStreaming();
-
-            // Clean up
+            // Clean up the source and destination (created in this method)
+            // The other bits will be taken care of when ConnectionManager calls streamingStopped
             try {
                 if ( soundSource != null) {
                     soundSource.stop();
@@ -157,36 +156,37 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     }
 
     private void stopStreaming() {
-        if ( !thisServiceIsStreaming) {
+        stopStreaming(false);
+    }
+
+    private void stopStreaming(boolean failed) {
+        if ( streamingStopped) {
             // Already stopped
             return;
         }
 
         thisServiceIsStreaming = false;
+        streamingStopped = true;
         streamingStopped();
         for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.connectionClosed();
+            if ( failed) {
+                listener.streamingFailed();
+            } else {
+                listener.streamingStopped();
+            }
         }
     }
 
     @Override
     public void connectionFailed(IOException e) {
         Log.w(TAG, "Connection failed: " + e.getMessage(), e);
-        thisServiceIsStreaming = false;
-        streamingStopped();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.connectionFailed();
-        }
+        stopStreaming(true);
     }
 
     @Override
     public void connectionClosed() {
-        Log.i(TAG, "Streaming (out) connection closed.");
-        thisServiceIsStreaming = false;
-        streamingStopped();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.connectionClosed();
-        }
+        Log.i(TAG, "Streaming connection closed.");
+        stopStreaming();
     }
 
     protected abstract void streamingStarted();
@@ -201,9 +201,9 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     protected abstract SoundDestination createDestination(Socket socket) throws IOException;
 
     public interface Listener {
-        void connectionMade();
-        void connectionFailed();
-        void connectionClosed();
+        void streamingStarted();
+        void streamingFailed();
+        void streamingStopped();
     }
 
 }

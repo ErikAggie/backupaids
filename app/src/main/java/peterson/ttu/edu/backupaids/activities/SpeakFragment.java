@@ -226,12 +226,12 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     @Override
-    public void connectionMade() {
+    public void streamingStarted() {
         updatePlayButton();
     }
 
     @Override
-    public void connectionFailed() {
+    public void streamingFailed() {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -242,7 +242,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     @Override
-    public void connectionClosed() {
+    public void streamingStopped() {
         if ( getActivity() != null) {
             getActivity().runOnUiThread(new Runnable() {
                 @Override

@@ -381,7 +381,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void connectionMade() {
+    public void streamingStarted() {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -391,7 +391,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void connectionFailed() {
+    public void streamingFailed() {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -402,7 +402,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void connectionClosed() {
+    public void streamingStopped() {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
