@@ -1,6 +1,5 @@
 package peterson.ttu.edu.backupaids.service;
 
-import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -18,8 +17,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.activities.ListenFragment;
+import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;

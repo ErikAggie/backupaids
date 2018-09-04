@@ -20,55 +20,34 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.util.ConnectionType;
+import peterson.ttu.edu.backupaids.util.Util;
 
 /**
  * Handles connecting to another phone. This class is expected to be fairly transient: you should
  * only construct it when you're ready to look for connections, and then call close() and
  * drop your reference to it when you're done.
  */
-public class ConnectionManager extends BroadcastReceiver
+public class ConnectionMaker extends BroadcastReceiver
         implements WifiP2pManager.DnsSdTxtRecordListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.ConnectionInfoListener {
 
-    private static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
-    private static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
-
-    /**
-     * Makes it easy to declare how we're using the service (listening or speaking)
-     */
-    public enum Mode {
-        LISTEN(LISTEN_BUDDY_NAME, SPEAK_BUDDY_NAME),
-        SPEAK(SPEAK_BUDDY_NAME, LISTEN_BUDDY_NAME);
-
-        private final String myService;
-        private final String otherService;
-        Mode(String myService, String otherService) {
-            this.myService = myService;
-            this.otherService = otherService;
-        }
-    }
-
-    private static final String TAG = "ConnectionManager";
+    private static final String TAG = "ConnectionMaker";
 
     // Keep the same pin throughout this instance of the app so we can reconnect--Android doesn't
     // seem to give us the connection info multiple times
     // Make it a 6-digit number (100001-999999)
     private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
 
-    /**
-     * We only allow one instance of this to be working at a time so a service can easily look it up
-     * (i.e. we don't have to try to pass it to a service)
-     */
-    private static ConnectionManager instance;
-
     private int listenPortNumber;
 
     private final Context context;
     private final WifiP2pManager wifiP2pManager;
-    private final Mode mode;
+    private final ConnectionType mode;
     private static WifiP2pManager.Channel channel;
+
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     private static final WifiP2pManager.ActionListener noOpActionListener = new WifiP2pManager.ActionListener() {
         @Override
@@ -96,31 +75,19 @@ public class ConnectionManager extends BroadcastReceiver
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
-    // We have two listeners because this is split between peer discovery (in an Activity) and
-    // the actual connection (in a Service)
-    private PeerListener peerListener;
-
-    private ConnectionListener connectionListener;
+    private final ConnectionListener connectionListener;
 
     /**
      * Set things up and kick things off.
      *
      * @param context Context (Activity) to use for registration
      */
-    public ConnectionManager(final Context context, PeerListener peerListener, Mode mode) {
+    public ConnectionMaker(final Context context, ConnectionListener connectionListener, ConnectionType mode) {
+        this.context = context;
+        this.connectionListener = connectionListener;
         this.mode = mode;
 
-        if ( instance != null) {
-            throw new RuntimeException("Cannot have two connection managers at the same time!");
-        }
-
-        if ( context == null || peerListener == null) {
-            throw new RuntimeException("Both context and peer listener are required!");
-        }
-        this.context = context;
-        this.peerListener = peerListener;
-
-        // Create the P2P manager. Only initialize it once
+        // Create the P2P manager.
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         if ( channel == null) {
             //noinspection ConstantConditions
@@ -131,57 +98,15 @@ public class ConnectionManager extends BroadcastReceiver
         listenForConnections();
         publishService();
         beginServiceDiscovery();
-
-        instance = this;
-    }
-
-    /**
-     * Get the current instance
-     * @return The current instance
-     */
-    public static ConnectionManager getInstance() {
-        return instance;
-    }
-
-    public void setPeerListener(PeerListener newPeerListener) {
-        // Just replace the existing guy, if any
-        this.peerListener = newPeerListener;
-    }
-
-    public void removePeerListener(PeerListener oldPeerListener) {
-        if ( peerListener == null) {
-            return;
-        }
-
-        if ( peerListener != oldPeerListener) {
-            throw new RuntimeException("Cannot remove someone else as a peer listener!");
-        }
-        this.peerListener = null;
-    }
-
-    public void setConnectionListener(ConnectionListener newConnectionListener) {
-        if ( connectionListener != null) {
-            throw new RuntimeException("Cannot have two connection listeners!");
-        }
-        this.connectionListener = newConnectionListener;
-    }
-
-    public void removeConnectionListener(ConnectionListener oldConnectionListener) {
-        if ( connectionListener == null) {
-            return;
-        }
-
-        if ( connectionListener != oldConnectionListener) {
-            throw new RuntimeException("Cannot remove someone else as a connection listener!");
-        }
-        this.connectionListener = null;
     }
 
     public void close() {
-        if ( instance == null) {
+        // Only do this once (probably won't hurt to do it again, but it wastes time/energy)
+        if ( isClosed.getAndSet(true)) {
             // Already closed
             return;
         }
+
         stopServiceDiscovery();
         unpublishService();
         stopListeningForConnections();
@@ -194,15 +119,6 @@ public class ConnectionManager extends BroadcastReceiver
         wifiP2pManager.clearLocalServices(channel, noOpActionListener);
         wifiP2pManager.clearServiceRequests(channel, noOpActionListener);
         wifiP2pManager.removeGroup(channel, noOpActionListener);
-
-        peerListener = null;
-        connectionListener = null;
-        instance = null;
-    }
-
-    public boolean isClosed() {
-        // Last action of "close" is to release the instance variable
-        return (instance == null);
     }
 
     /**
@@ -631,16 +547,12 @@ public class ConnectionManager extends BroadcastReceiver
         }
     }
 
-    public interface PeerListener {
+    public interface ConnectionListener {
         void servicesStarted();
         void servicesStopped();
         void servicePublishingFailed();
         void foundAPeer(String peerName);
         void findingPeerFailed(IOException e);
-        void connectionWaiting();
-    }
-
-    public interface ConnectionListener {
         void connectionFailed(IOException e);
         void connectionClosed();
         void connectionReady(Socket socket) throws IOException;

@@ -14,16 +14,16 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 
-import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.util.Util;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends BaseService implements ConnectionManager.ConnectionListener {
+public abstract class BaseStreamService extends BaseService implements ConnectionMaker.ConnectionListener {
 
     private static final String TAG = "BaseStreamService";
 
-    private ConnectionManager connectionManager;
+    private ConnectionMaker connectionMaker;
 
     private boolean thisServiceIsStreaming;
     private boolean streamingStopped = false;
@@ -49,9 +49,9 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     public void onDestroy() {
         unregisterThisService();
         stopStreaming();
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
+        if ( connectionMaker != null) {
+            connectionMaker.close();
+            connectionMaker = null;
         }
         super.onDestroy();
     }
@@ -84,19 +84,19 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
         startForeground(foregroundId, notificationBuilder.build());
 
-        connectionManager = ConnectionManager.getInstance();
-        if ( connectionManager == null) {
+        connectionMaker = ConnectionMaker.getInstance();
+        if ( connectionMaker == null) {
             throw new RuntimeException("Can't get Connection Manager (shouldn't be null)!");
         }
-        connectionManager.setConnectionListener(this);
+        connectionMaker.setConnectionListener(this);
 
         final String connectionName = intent.getStringExtra(Util.CONNECTION_NAME_EXTRA);
         if ( connectionName == null) {
             // Connection is waiting. This will call connectionReady() immediately
-            connectionManager.readyForConnection();
+            connectionMaker.readyForConnection();
         } else {
             // We need to initiate the connection
-            connectionManager.makeConnection(connectionName);
+            connectionMaker.makeConnection(connectionName);
         }
     }
 
@@ -137,7 +137,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
             // Clean up the source and destination (created in this method)
-            // The other bits will be taken care of when ConnectionManager calls streamingStopped
+            // The other bits will be taken care of when ConnectionMaker calls streamingStopped
             try {
                 if ( soundSource != null) {
                     soundSource.stop();

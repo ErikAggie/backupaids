@@ -1,14 +1,12 @@
-package peterson.ttu.edu.backupaids;
+package peterson.ttu.edu.backupaids.util;
 
-import android.content.Context;
 import android.content.IntentFilter;
-import android.hardware.display.DisplayManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.util.Log;
 import android.util.SparseIntArray;
-import android.view.Display;
+
+import peterson.ttu.edu.backupaids.R;
 
 /**
  * Stuff that should probably be in a resource someday...
@@ -20,6 +18,10 @@ public class Util {
     public static final String BUDDY_NAME_STRING = "BuddyName";
     public static final String LISTEN_PORT_STRING = "ListenPort";
     public static final String PIN_NUMBER_STRING = "PinNumber";
+
+    public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
+    public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
+
 
     public static final String CONNECTION_NAME_EXTRA = "ConnectionName";
 

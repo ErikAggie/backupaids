@@ -16,28 +16,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.controller.ConnectionController;
+import peterson.ttu.edu.backupaids.util.ConnectionType;
+import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.service.BaseStreamService;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 
-public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, BaseStreamService.Listener {
+public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
 
-
-    private ConnectionManager connectionManager;
-    private Timer discoverableCountdown = null;
     private Runnable todoOnServiceStopped;
 
     // For showing a popup with available connections
     private ConnectionPopupFragment connectionPopup;
+
+    private ConnectionController connectionController;
 
     /**
      * Listener for local sound events
@@ -91,7 +89,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onViewCreated(view, savedInstanceState);
 
         TextView ourPin = getView().findViewById(R.id.ourPinTextView);
-        ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
+        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
 
         updateSpinner();
 
@@ -130,7 +128,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void onDestroyView() {
-        stopListening();
+        stopStreaming();
         stopPlaying();
         super.onDestroyView();
     }
@@ -180,26 +178,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void makeDiscoverable() {
-        if ( connectionManager != null || RemoteSoundService.isCurrentlyStreaming()) {
-            stopListening();
+        if ( connectionController != null) {
+            stopStreaming();
         } else {
-            connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.LISTEN);
+            connectionController = new ConnectionController(getContext(), getActivity(), ConnectionType.LISTEN, this);
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
-
-            // Set a timer so we aren't discoverable forever (which wouldn't be allowed anyway)
-            discoverableCountdown = new Timer();
-            discoverableCountdown.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            stopListening();
-                            Toast.makeText(getContext(), "Looking for other devices timed out.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            }, 180000); // 2 minutes
         }
     }
 
@@ -227,27 +210,24 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void updateMakeDiscoverableButton() {
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
-        if ( RemoteSoundService.isCurrentlyStreaming()) {
-            makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
-        } else if ( connectionManager != null) {
-            makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
-        } else {
+        if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
         }
-    }
 
-    private void stopListening() {
-        getActivity().stopService(new Intent(getContext(), RemoteSoundService.class));
-        getActivity().stopService(new Intent(getContext(), LocalSoundService.class));
-        if ( discoverableCountdown != null) {
-            discoverableCountdown.cancel();
-            discoverableCountdown = null;
+        switch (connectionController.getState()) {
+            case STARTUP:
+            case CONNECTING:
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+                break;
+            case STREAMING:
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+                break;
+            case STOPPED:
+                makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                break;
+            default:
+                throw new RuntimeException("Unknown connection state " + connectionController.getState() + "!");
         }
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
-        }
-        updateMakeDiscoverableButton();
     }
 
     private SoundPreset getCurrentSoundPreset() {
@@ -259,16 +239,16 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         return null;
     }
 
+    private void stopStreaming() {
+        if ( connectionController != null) {
+            connectionController.stop();
+            connectionController = null;
+        }
+    }
+
     private void stopPlaying() {
         if ( LocalSoundService.isLocalSoundServiceRunning()) {
             getActivity().stopService(new Intent(getContext(), LocalSoundService.class));
-        }
-        if ( RemoteSoundService.isCurrentlyStreaming()) {
-            getActivity().stopService(new Intent(getContext(), RemoteSoundService.class));
-        }
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
         }
     }
 
@@ -276,16 +256,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         updateSpinner();
-    }
-
-    @Override
-    public void servicesStarted() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                updateMakeDiscoverableButton();
-            }
-        });
     }
 
     @Override
@@ -297,7 +267,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                     connectionPopup.dismiss();
                     connectionPopup = null;
                 }
-                connectionManager = null;
+                connectionMaker = null;
                 updateMakeDiscoverableButton();
                 if ( todoOnServiceStopped != null) {
                     todoOnServiceStopped.run();
@@ -309,7 +279,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void servicePublishingFailed() {
-        connectionManager = null;
+        connectionMaker = null;
         Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
         updateMakeDiscoverableButton();
     }
@@ -337,8 +307,8 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                                 getActivity().startService(intent);
 
                                 // Service takes over this connection manager
-                                connectionManager.removePeerListener(ListenFragment.this);
-                                connectionManager = null;
+                                connectionMaker.removePeerListener(ListenFragment.this);
+                                connectionMaker = null;
 
                             }
 
@@ -348,7 +318,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                                     connectionPopup.dismiss();
                                     connectionPopup = null;
                                 }
-                                stopListening();
+                                stopStreaming();
                             }
                         });
                 connectionPopup.setTargetFragment(ListenFragment.this, 1);
@@ -361,8 +331,8 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void findingPeerFailed(IOException e) {
         Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-        connectionManager.close();
-        connectionManager = null;
+        connectionMaker.close();
+        connectionMaker = null;
         updateMakeDiscoverableButton();
     }
 
@@ -374,10 +344,10 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
 
         RemoteSoundService.registerListener(this);
-        connectionManager.removePeerListener(this);
+        connectionMaker.removePeerListener(this);
         getActivity().startService(new Intent(getContext(), RemoteSoundService.class));
         // Service takes over this connection manager
-        connectionManager = null;
+        connectionMaker = null;
     }
 
     @Override
@@ -408,6 +378,23 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             public void run() {
                 Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
                 updateMakeDiscoverableButton();
+            }
+        });
+    }
+
+    @Override
+    public void stateChanged(final ConnectionController.State state) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updateMakeDiscoverableButton();
+                if ( state == ConnectionController.State.STOPPED) {
+                    connectionController = null;
+                    if ( todoOnServiceStopped != null) {
+                        todoOnServiceStopped.run();
+                        todoOnServiceStopped = null;
+                    }
+                }
             }
         });
     }
