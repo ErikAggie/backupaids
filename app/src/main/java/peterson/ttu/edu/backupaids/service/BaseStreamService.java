@@ -19,9 +19,11 @@ import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends BaseService implements ConnectionMaker.ConnectionListener {
+public abstract class BaseStreamService extends BaseService {
 
     private static final String TAG = "BaseStreamService";
+
+    public static final String CONNECTION_NUMBER_EXTRA = "ConnectionNumber";
 
     private ConnectionMaker connectionMaker;
 
@@ -64,6 +66,15 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             return;
         }
 
+        int connectionNumber = intent.getIntExtra(CONNECTION_NUMBER_EXTRA, -1);
+        if ( connectionNumber < 0) {
+            throw new RuntimeException("Must provide a connection number!");
+        }
+        connectionMaker = ConnectionMaker.getConnectionMaker(connectionNumber);
+        if ( connectionMaker == null) {
+            throw new RuntimeException("Can't find connection maker for connection " + connectionNumber);
+        }
+
         registerThisService();
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
@@ -84,30 +95,13 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
         startForeground(foregroundId, notificationBuilder.build());
 
-        connectionMaker = ConnectionMaker.getInstance();
-        if ( connectionMaker == null) {
-            throw new RuntimeException("Can't get Connection Manager (shouldn't be null)!");
+        Socket socket = connectionMaker.getWaitingSocket();
+        if ( socket == null) {
+            throw new RuntimeException("No socket available?");
         }
-        connectionMaker.setConnectionListener(this);
 
-        final String connectionName = intent.getStringExtra(Util.CONNECTION_NAME_EXTRA);
-        if ( connectionName == null) {
-            // Connection is waiting. This will call connectionReady() immediately
-            connectionMaker.readyForConnection();
-        } else {
-            // We need to initiate the connection
-            connectionMaker.makeConnection(connectionName);
-        }
-    }
-
-
-    @Override
-    public void connectionReady(Socket socket) throws IOException {
         thisServiceIsStreaming = true;
         streamingStarted();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.streamingStarted();
-        }
 
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
@@ -168,42 +162,14 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         thisServiceIsStreaming = false;
         streamingStopped = true;
         streamingStopped();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            if ( failed) {
-                listener.streamingFailed();
-            } else {
-                listener.streamingStopped();
-            }
-        }
-    }
-
-    @Override
-    public void connectionFailed(IOException e) {
-        Log.w(TAG, "Connection failed: " + e.getMessage(), e);
-        stopStreaming(true);
-    }
-
-    @Override
-    public void connectionClosed() {
-        Log.i(TAG, "Streaming connection closed.");
-        stopStreaming();
     }
 
     protected abstract void streamingStarted();
 
     protected abstract void streamingStopped();
 
-    // Have to do this per-CLASS because these lists are static
-    protected abstract List<Listener> getListeners();
-
     protected abstract SoundSource createSource(Socket socket) throws IOException;
 
     protected abstract SoundDestination createDestination(Socket socket) throws IOException;
-
-    public interface Listener {
-        void streamingStarted();
-        void streamingFailed();
-        void streamingStopped();
-    }
 
 }

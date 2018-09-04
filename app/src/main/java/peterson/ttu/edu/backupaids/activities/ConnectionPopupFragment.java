@@ -39,7 +39,7 @@ public class ConnectionPopupFragment extends DialogFragment {
                 .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        listener.connectionConfirmed(availableConnection);
+                        listener.connectionConfirmed();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -62,7 +62,7 @@ public class ConnectionPopupFragment extends DialogFragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        void connectionConfirmed(String connectionName);
+        void connectionConfirmed();
         void cancelled();
     }
 }

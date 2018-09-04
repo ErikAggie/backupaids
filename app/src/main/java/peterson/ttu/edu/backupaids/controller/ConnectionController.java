@@ -3,7 +3,6 @@ package peterson.ttu.edu.backupaids.controller;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -16,7 +15,7 @@ import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 
-public class ConnectionController implements ConnectionMaker.ConnectionListener, BaseStreamService.Listener {
+public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, BaseStreamService.Listener, PeerCallback {
 
     public enum State {
         STARTUP,
@@ -26,9 +25,8 @@ public class ConnectionController implements ConnectionMaker.ConnectionListener,
         STOPPED;
     }
 
-    private final Context context;
-    private final Activity activity;
-    private final ConnectionType connectionType;
+    protected final Context context;
+    protected final Activity activity;
     private final ConnectionMaker connectionMaker;
     private final Listener listener;
 
@@ -39,7 +37,6 @@ public class ConnectionController implements ConnectionMaker.ConnectionListener,
     public ConnectionController(Context context, Activity activity, ConnectionType connectionType, Listener listener) {
         this.context = context;
         this.activity = activity;
-        this.connectionType = connectionType;
         connectionMaker = new ConnectionMaker(context, this, connectionType);
         this.listener = listener;
 
@@ -55,19 +52,14 @@ public class ConnectionController implements ConnectionMaker.ConnectionListener,
     }
 
     public void stop() {
-        switch ( connectionType) {
-            case SPEAK:
-                activity.stopService(new Intent(context, StreamSoundService.class));
-                break;
-            case LISTEN:
-                activity.stopService(new Intent(context, RemoteSoundService.class));
-                break;
-            default:
-                throw new RuntimeException("Unknown state: " + state);
-        }
+        discoverableCountdown.cancel();
+        stopActivity();
         connectionMaker.close();
         updateState(State.STOPPED);
+
     }
+
+    protected abstract void stopActivity();
 
     private void updateState(State state) {
         if ( state != this.state) {
@@ -102,28 +94,44 @@ public class ConnectionController implements ConnectionMaker.ConnectionListener,
 
     @Override
     public void foundAPeer(String peerName) {
-        // TODO: fill in
+        listener.askAboutConnection(peerName, this);
     }
+
 
     @Override
     public void findingPeerFailed(IOException e) {
-        // TODO: fill in
+        updateState(State.FAILED);
+        stop();
     }
 
     @Override
+    public abstract void connectionReady(int connectionNumber);
+
+    @Override
     public void connectionFailed(IOException e) {
-        // TODO: fill in
+        stop();
     }
 
     @Override
     public void connectionClosed() {
-        // TODO: fill in
+        stop();
+    }
+
+    //----------------------------------------------------------------------------------
+    // Connection approval/deny callbacks
+    //----------------------------------------------------------------------------------
+
+    @Override
+    public void approveConnection(String connectionName) {
+        // No need to start the service yet (like it was done before this class came into being
+        connectionMaker.makeConnection(connectionName);
     }
 
     @Override
-    public void connectionReady(Socket socket) throws IOException {
-        // TODO: fill in
+    public void denyConnection(String connectionName) {
+        stop();
     }
+
 
     //----------------------------------------------------------------------------------
     // Service callbacks
@@ -142,11 +150,12 @@ public class ConnectionController implements ConnectionMaker.ConnectionListener,
 
     @Override
     public void streamingStopped() {
-        // TODO: this is where we would retry...
+        // TODO: this is where we would retry?
         stop();
     }
 
     public interface Listener {
         void stateChanged(State state);
+        void askAboutConnection(String connectionName, PeerCallback callback);
     }
 }

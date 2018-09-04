@@ -11,4 +11,12 @@ public enum ConnectionType {
         this.myService = myService;
         this.otherService = otherService;
     }
+
+    public String getMyService() {
+        return myService;
+    }
+
+    public String getOtherService() {
+        return otherService;
+    }
 }

@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 import peterson.ttu.edu.backupaids.util.Util;
@@ -39,6 +40,17 @@ public class ConnectionMaker extends BroadcastReceiver
     // seem to give us the connection info multiple times
     // Make it a 6-digit number (100001-999999)
     private static final int OUR_PIN = (int)(Math.random() * 900000) + 100000;
+
+    private static AtomicInteger connectionCounter = new AtomicInteger(0);
+
+    //-----------------------------------------------------------------------------------
+    //
+    private static final Map<Integer, ConnectionMaker> connectionMakerMap = new HashMap<>();
+
+
+    public static ConnectionMaker getConnectionMaker(Integer number) {
+        return connectionMakerMap.remove(number);
+    }
 
     private int listenPortNumber;
 
@@ -107,8 +119,15 @@ public class ConnectionMaker extends BroadcastReceiver
             return;
         }
 
-        stopServiceDiscovery();
-        unpublishService();
+        if ( serviceRequest != null) {
+            wifiP2pManager.removeServiceRequest(channel, serviceRequest, noOpActionListener);
+        }
+
+        if ( serviceInfo != null) {
+            wifiP2pManager.removeLocalService(channel, serviceInfo, noOpActionListener);
+            serviceInfo = null;
+        }
+
         stopListeningForConnections();
         context.unregisterReceiver(this);
 
@@ -119,6 +138,8 @@ public class ConnectionMaker extends BroadcastReceiver
         wifiP2pManager.clearLocalServices(channel, noOpActionListener);
         wifiP2pManager.clearServiceRequests(channel, noOpActionListener);
         wifiP2pManager.removeGroup(channel, noOpActionListener);
+
+        connectionListener.servicesStopped();
     }
 
     /**
@@ -128,6 +149,10 @@ public class ConnectionMaker extends BroadcastReceiver
      */
     public static int getPin() {
         return OUR_PIN;
+    }
+
+    public Socket getWaitingSocket() {
+        return waitingSocket;
     }
 
     /**
@@ -140,7 +165,7 @@ public class ConnectionMaker extends BroadcastReceiver
         // Taken from https://developer.android.com/training/connect-devices-wirelessly/nsd-wifi-direct.html
         Map<String, String> record = new HashMap<>();
         record.put(Util.LISTEN_PORT_STRING, Integer.toString(listenPortNumber));
-        record.put(Util.BUDDY_NAME_STRING, mode.myService);
+        record.put(Util.BUDDY_NAME_STRING, mode.getMyService());
         record.put(Util.PIN_NUMBER_STRING, Integer.toString(OUR_PIN));
         record.put("available", "visible");
 
@@ -162,33 +187,9 @@ public class ConnectionMaker extends BroadcastReceiver
             @Override
             public void onFailure(int arg0) {
                 Log.e(TAG, "Failed to set up listener: " + arg0);
-                if ( peerListener != null) {
-                    peerListener.servicePublishingFailed();
-                }
+                connectionListener.servicePublishingFailed();
             }
         });
-    }
-
-    /**
-     * Unpublish our service
-     */
-    private void unpublishService() {
-        if ( serviceInfo == null) {
-            // Nothing to unpublish
-            return;
-        }
-        wifiP2pManager.removeLocalService(channel, serviceInfo, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                // Good, but not something we need to react to...
-            }
-
-            @Override
-            public void onFailure(int i) {
-                // Nothing we can do about it...
-            }
-        });
-        serviceInfo = null;
     }
 
     /**
@@ -215,9 +216,7 @@ public class ConnectionMaker extends BroadcastReceiver
             @Override
             public void onSuccess() {
                 Log.i(TAG, "Discover services succeeded.");
-                if ( peerListener != null) {
-                    peerListener.servicesStarted();
-                }
+                connectionListener.servicesStarted();
             }
 
             @Override
@@ -227,43 +226,6 @@ public class ConnectionMaker extends BroadcastReceiver
             }
         });
     }
-
-    /**
-     * Call when you want to stop finding peers (i.e. when an activity is paused)
-     */
-    private void stopServiceDiscovery() {
-        Log.i(TAG, "Stopping service discovery");
-        if ( serviceRequest != null) {
-            wifiP2pManager.removeServiceRequest(channel, serviceRequest, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    if ( peerListener != null) {
-                        peerListener.servicesStopped();
-                    }
-                    // Cool
-                }
-
-                @Override
-                public void onFailure(int i) {
-                    // Nothing we can do, really
-                }
-            });
-        }
-        wifiP2pManager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                if ( peerListener != null) {
-                    peerListener.servicesStopped();
-                }
-            }
-
-            @Override
-            public void onFailure(int i) {
-                // Don't care
-            }
-        });
-    }
-
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -303,7 +265,7 @@ public class ConnectionMaker extends BroadcastReceiver
     public void onDnsSdTxtRecordAvailable(String fullDomain, Map<String, String> record, WifiP2pDevice wifiP2pDevice) {
         if ( (record.get(Util.BUDDY_NAME_STRING) != null) &&
              (record.get(Util.PIN_NUMBER_STRING) != null) &&
-              record.get(Util.BUDDY_NAME_STRING).equals(mode.otherService)) {
+              record.get(Util.BUDDY_NAME_STRING).equals(mode.getOtherService())) {
             Log.i(TAG, "Service available on " + wifiP2pDevice.deviceName + "!");
             fullPeerBuddyMap.put(wifiP2pDevice.deviceAddress, record.get(Util.PIN_NUMBER_STRING));
             buddyNameToPortNumber.put(record.get(Util.PIN_NUMBER_STRING), Integer.valueOf(record.get(Util.LISTEN_PORT_STRING)));
@@ -359,17 +321,28 @@ public class ConnectionMaker extends BroadcastReceiver
                     // Do this until we're not listening for connections anymore
                     while ( serverSocket != null) {
                         Log.i(TAG, "Listening for connections.");
-                        Socket clientSocket = serverSocket.accept();
+                        waitingSocket = serverSocket.accept();
                         if ( serverSocket == null) {
                             // We're not listening anymore, so stop
                             try {
-                                clientSocket.close();
+                                waitingSocket.close();
                             } catch ( Exception e) {
 
+                            } finally {
+                                waitingSocket = null;
                             }
                             break;
                         }
-                        handleSocket(clientSocket);
+                        Log.i(TAG, "Accepted connection from " + waitingSocket.getInetAddress().getCanonicalHostName());
+                        // TODO: do some sort of security verification (send a code phrase first, perhaps)
+                        try {
+                            int connectionNumber = connectionCounter.getAndIncrement();
+                            connectionMakerMap.put(connectionNumber, ConnectionMaker.this);
+                            connectionListener.connectionReady(connectionNumber);
+                        } catch ( IOException e) {
+                            // Nothing to do here, since all we (might have) done is close the socket
+                            Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
+                        }
                     }
                 } catch (IOException e) {
                     Log.w(TAG, "Connection listening stopped: " + e.getMessage(), e);
@@ -387,51 +360,6 @@ public class ConnectionMaker extends BroadcastReceiver
                 }
             }
         }).start();
-    }
-
-    private void handleSocket(final Socket clientSocket) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Log.i(TAG, "Accepted connection from " + clientSocket.getInetAddress().getCanonicalHostName());
-                // TODO: do some sort of security verification (send a code phrase first, perhaps)
-                try {
-                    if ( peerListener == null) {
-                        clientSocket.close();
-                        throw new RuntimeException("No peer listening for socket to be ready?!?");
-                    }
-                    if ( peerListener != null) {
-                        waitingSocket = clientSocket;
-                        peerListener.connectionWaiting();
-                    }
-                } catch ( IOException e) {
-                    // Nothing to do here, since all we (might have) done is close the socket
-                    Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
-                }
-            }
-        }).start();
-    }
-
-    public void readyForConnection() {
-        if ( waitingSocket == null) {
-            throw new RuntimeException("We don't have a connection for you!");
-        }
-        try {
-            connectionListener.connectionReady(waitingSocket);
-        } catch ( IOException e) {
-            // The connection might've been caught elsewhere. This is okay
-            Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
-        } finally {
-            try {
-                waitingSocket.close();
-            } catch (Exception e) {
-                // Do nothing
-            }
-            waitingSocket = null;
-            if ( connectionListener != null) {
-                connectionListener.connectionClosed();
-            }
-        }
     }
 
     private void stopListeningForConnections() {
@@ -463,9 +391,7 @@ public class ConnectionMaker extends BroadcastReceiver
 
         if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
             // We already know the IP and can connect directly!
-            if ( peerListener != null) {
-                peerListener.foundAPeer(remoteAppInstanceName);
-            }
+            connectionListener.foundAPeer(remoteAppInstanceName);
             return;
         }
 
@@ -484,9 +410,7 @@ public class ConnectionMaker extends BroadcastReceiver
             @Override
             public void onFailure(int i) {
                 Log.e(TAG, "Connection setup failed: " + i);
-                if (peerListener != null) {
-                    peerListener.findingPeerFailed(new IOException("WiFiP2pManager.connect failed: " + i));
-                }
+                connectionListener.findingPeerFailed(new IOException("WiFiP2pManager.connect failed: " + i));
             }
         });
     }
@@ -507,9 +431,7 @@ public class ConnectionMaker extends BroadcastReceiver
                 savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
 
                 // We have all we need to connect at this point. NOW inform the activity
-                if ( peerListener != null) {
-                    peerListener.foundAPeer(buddyName);
-                }
+                connectionListener.foundAPeer(buddyName);
                 break;
             }
         }
@@ -529,21 +451,15 @@ public class ConnectionMaker extends BroadcastReceiver
         }
         Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
 
-        try (Socket client = new Socket(connectionAddress, portToConnectTo)){
+        try{
+            waitingSocket = new Socket(connectionAddress, portToConnectTo);
             Log.i(TAG, "Connected!");
-            if ( connectionListener != null) {
-                connectionListener.connectionReady(client);
-            }
+            int connectionNumber = connectionCounter.getAndIncrement();
+            connectionMakerMap.put(connectionNumber, this);
+            connectionListener.connectionReady(connectionNumber);
         } catch ( IOException e) {
             Log.e(TAG, "Connection failure: ", e);
-            if ( connectionListener != null) {
-                connectionListener.connectionFailed(e);
-            }
-        } finally {
-            Log.i(TAG, "Connection closed");
-            if ( connectionListener != null) {
-                connectionListener.connectionClosed();
-            }
+            connectionListener.connectionFailed(e);
         }
     }
 
@@ -553,8 +469,8 @@ public class ConnectionMaker extends BroadcastReceiver
         void servicePublishingFailed();
         void foundAPeer(String peerName);
         void findingPeerFailed(IOException e);
+        void connectionReady(int connectionNumber) throws IOException;
         void connectionFailed(IOException e);
         void connectionClosed();
-        void connectionReady(Socket socket) throws IOException;
     }
 }

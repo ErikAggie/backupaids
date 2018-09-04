@@ -33,7 +33,6 @@ public class RemoteSoundService extends BaseStreamService {
     private static final String STREAM_CHANNEL_NAME = "Stream In";
 
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
-    private static final List<StreamSoundService.Listener> listeners = new ArrayList<>();
     private static String preset;
 
     public static String getCurrentPreset() {
@@ -47,14 +46,6 @@ public class RemoteSoundService extends BaseStreamService {
 
     public static boolean isCurrentlyStreaming() {
         return currentlyStreaming.get();
-    }
-
-    public static void registerListener(StreamSoundService.Listener listener) {
-        listeners.add(listener);
-    }
-
-    public static void unregisterListener(StreamSoundService.Listener listener) {
-        listeners.remove(listener);
     }
 
     public RemoteSoundService() {
@@ -83,11 +74,6 @@ public class RemoteSoundService extends BaseStreamService {
     @Override
     protected void streamingStopped() {
         currentlyStreaming.set(false);
-    }
-
-    @Override
-    protected List<Listener> getListeners() {
-        return listeners;
     }
 
     @Override

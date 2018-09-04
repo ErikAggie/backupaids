@@ -15,12 +15,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
-import peterson.ttu.edu.backupaids.util.ConnectionType;
-import peterson.ttu.edu.backupaids.util.Util;
+import peterson.ttu.edu.backupaids.controller.ListenConnectionController;
+import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
@@ -181,7 +179,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         if ( connectionController != null) {
             stopStreaming();
         } else {
-            connectionController = new ConnectionController(getContext(), getActivity(), ConnectionType.LISTEN, this);
+            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }
     }
@@ -222,6 +220,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
                 break;
+            case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
                 break;
@@ -258,129 +257,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         updateSpinner();
     }
 
-    @Override
-    public void servicesStopped() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                    connectionPopup = null;
-                }
-                connectionMaker = null;
-                updateMakeDiscoverableButton();
-                if ( todoOnServiceStopped != null) {
-                    todoOnServiceStopped.run();
-                    todoOnServiceStopped = null;
-                }
-            }
-        });
-    }
-
-    @Override
-    public void servicePublishingFailed() {
-        connectionMaker = null;
-        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-        updateMakeDiscoverableButton();
-    }
-
-    @Override
-    public void foundAPeer(final String peerName) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( discoverableCountdown != null) {
-                    discoverableCountdown.cancel();
-                    discoverableCountdown = null;
-                }
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                }
-                connectionPopup = new ConnectionPopupFragment();
-                connectionPopup.setListener(
-                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
-                            @Override
-                            public void connectionConfirmed(String connectionName) {
-                                RemoteSoundService.registerListener(ListenFragment.this);
-                                Intent intent = new Intent(getContext(), RemoteSoundService.class);
-                                intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
-                                getActivity().startService(intent);
-
-                                // Service takes over this connection manager
-                                connectionMaker.removePeerListener(ListenFragment.this);
-                                connectionMaker = null;
-
-                            }
-
-                            @Override
-                            public void cancelled() {
-                                if (connectionPopup != null) {
-                                    connectionPopup.dismiss();
-                                    connectionPopup = null;
-                                }
-                                stopStreaming();
-                            }
-                        });
-                connectionPopup.setTargetFragment(ListenFragment.this, 1);
-                connectionPopup.setConnection(peerName);
-                connectionPopup.show(getFragmentManager(), "Connections");
-            }
-        });
-    }
-
-    @Override
-    public void findingPeerFailed(IOException e) {
-        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-        connectionMaker.close();
-        connectionMaker = null;
-        updateMakeDiscoverableButton();
-    }
-
-    @Override
-    public void connectionWaiting() {
-        if ( connectionPopup != null) {
-            connectionPopup.dismiss();
-            connectionPopup = null;
-        }
-
-        RemoteSoundService.registerListener(this);
-        connectionMaker.removePeerListener(this);
-        getActivity().startService(new Intent(getContext(), RemoteSoundService.class));
-        // Service takes over this connection manager
-        connectionMaker = null;
-    }
-
-    @Override
-    public void streamingStarted() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                updateMakeDiscoverableButton();
-            }
-        });
-    }
-
-    @Override
-    public void streamingFailed() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
-                updateMakeDiscoverableButton();
-            }
-        });
-    }
-
-    @Override
-    public void streamingStopped() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                updateMakeDiscoverableButton();
-            }
-        });
-    }
+    //---------------------------------------------------------------------------------------------
+    // ConnectionController callbacks
+    //---------------------------------------------------------------------------------------------
 
     @Override
     public void stateChanged(final ConnectionController.State state) {
@@ -388,13 +267,63 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             @Override
             public void run() {
                 updateMakeDiscoverableButton();
-                if ( state == ConnectionController.State.STOPPED) {
-                    connectionController = null;
-                    if ( todoOnServiceStopped != null) {
-                        todoOnServiceStopped.run();
-                        todoOnServiceStopped = null;
-                    }
+                switch ( state) {
+                    case STREAMING:
+                        if ( connectionPopup != null) {
+                            connectionPopup.dismiss();
+                            connectionPopup = null;
+                        }
+                        break;
+                    case FAILED:
+                        Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+                        // Don't have to stop since we'll get a STOPPED state shortly...
+                        break;
+                    case STOPPED:
+                        if ( connectionPopup != null) {
+                            connectionPopup.dismiss();
+                            connectionPopup = null;
+                        }
+                        if ( todoOnServiceStopped != null) {
+                            todoOnServiceStopped.run();
+                            todoOnServiceStopped = null;
+                        }
+                        connectionController = null;
+                        break;
+                    default:
+                        // Nothing to do...
                 }
+            }
+        });
+    }
+
+    @Override
+    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ( connectionPopup != null) {
+                    connectionPopup.dismiss();
+                }
+                connectionPopup = new ConnectionPopupFragment();
+                connectionPopup.setListener(
+                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
+                            @Override
+                            public void connectionConfirmed() {
+                                callback.approveConnection(connectionName);
+                            }
+
+                            @Override
+                            public void cancelled() {
+                                callback.denyConnection(connectionName);
+                                if (connectionPopup != null) {
+                                    connectionPopup.dismiss();
+                                    connectionPopup = null;
+                                }
+                            }
+                        });
+                connectionPopup.setTargetFragment(ListenFragment.this, 1);
+                connectionPopup.setConnection(connectionName);
+                connectionPopup.show(getFragmentManager(), "Connections");
             }
         });
     }

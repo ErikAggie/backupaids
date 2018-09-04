@@ -27,20 +27,11 @@ public class StreamSoundService extends BaseStreamService {
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
 
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
-    private static final List<BaseStreamService.Listener> listeners = new ArrayList<>();
 
     private boolean usedBluetooth = false;
 
     public static boolean isCurrentlyStreaming() {
         return currentlyStreaming.get();
-    }
-
-    public static void registerListener(BaseStreamService.Listener listener) {
-        listeners.add(listener);
-    }
-
-    public static void unregisterListener(BaseStreamService.Listener listener) {
-        listeners.remove(listener);
     }
 
     public StreamSoundService() {
@@ -91,11 +82,6 @@ public class StreamSoundService extends BaseStreamService {
     @Override
     protected void streamingStopped() {
         currentlyStreaming.set(false);
-    }
-
-    @Override
-    protected List<Listener> getListeners() {
-        return listeners;
     }
 
     @Override
