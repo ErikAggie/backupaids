@@ -134,6 +134,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
+        // TODO: need a way to re-connect with services that are already started...
         if ( isVisibleToUser) {
             LocalSoundService.registerListener(listener);
         } else {
@@ -279,6 +280,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                         // Don't have to stop since we'll get a STOPPED state shortly...
                         break;
                     case STOPPED:
+                        Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
                         if ( connectionPopup != null) {
                             connectionPopup.dismiss();
                             connectionPopup = null;

@@ -2,20 +2,16 @@ package peterson.ttu.edu.backupaids.controller;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.BaseStreamService;
-import peterson.ttu.edu.backupaids.service.RemoteSoundService;
-import peterson.ttu.edu.backupaids.service.StreamSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 
-public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, BaseStreamService.Listener, PeerCallback {
+public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
 
     public enum State {
         STARTUP,
@@ -53,13 +49,13 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     public void stop() {
         discoverableCountdown.cancel();
-        stopActivity();
+        stopService();
         connectionMaker.close();
         updateState(State.STOPPED);
 
     }
 
-    protected abstract void stopActivity();
+    protected abstract void stopService();
 
     private void updateState(State state) {
         if ( state != this.state) {
@@ -105,7 +101,12 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public abstract void connectionReady(int connectionNumber);
+    public void connectionReady(int connectionNumber) {
+        startService(connectionNumber);
+        updateState(State.STREAMING);
+    }
+
+    protected abstract void startService(int connectionNumber);
 
     @Override
     public void connectionFailed(IOException e) {
@@ -129,28 +130,6 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void denyConnection(String connectionName) {
-        stop();
-    }
-
-
-    //----------------------------------------------------------------------------------
-    // Service callbacks
-    //----------------------------------------------------------------------------------
-    @Override
-    public void streamingStarted() {
-        updateState(State.STREAMING);
-    }
-
-    // TODO: needed?
-    @Override
-    public void streamingFailed() {
-        updateState(State.FAILED);
-        stop();
-    }
-
-    @Override
-    public void streamingStopped() {
-        // TODO: this is where we would retry?
         stop();
     }
 
