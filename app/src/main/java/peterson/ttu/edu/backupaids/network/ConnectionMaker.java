@@ -442,25 +442,29 @@ public class ConnectionMaker extends BroadcastReceiver
      *
      * @param remoteAppInstanceName Remote instance to connect to (PIN number)
      */
-    public void makeConnection(String remoteAppInstanceName) {
+    public void makeConnection(final String remoteAppInstanceName) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final InetAddress connectionAddress = savedIPs.get(remoteAppInstanceName);
+                if ( connectionAddress == null) {
+                    // Shouldn't happen since we won't pass connection info without having this...
+                    throw new RuntimeException("Don't have connection info for " + remoteAppInstanceName);
+                }
+                Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
 
-        final InetAddress connectionAddress = savedIPs.get(remoteAppInstanceName);
-        if ( connectionAddress == null) {
-            // Shouldn't happen since we won't pass connection info without having this...
-            throw new RuntimeException("Don't have connection info for " + remoteAppInstanceName);
-        }
-        Log.i(TAG, "Connecting to " + connectionAddress + ": " + portToConnectTo);
-
-        try{
-            waitingSocket = new Socket(connectionAddress, portToConnectTo);
-            Log.i(TAG, "Connected!");
-            int connectionNumber = connectionCounter.getAndIncrement();
-            connectionMakerMap.put(connectionNumber, this);
-            connectionListener.connectionReady(connectionNumber);
-        } catch ( IOException e) {
-            Log.e(TAG, "Connection failure: ", e);
-            connectionListener.connectionFailed(e);
-        }
+                try{
+                    waitingSocket = new Socket(connectionAddress, portToConnectTo);
+                    Log.i(TAG, "Connected!");
+                    int connectionNumber = connectionCounter.getAndIncrement();
+                    connectionMakerMap.put(connectionNumber, ConnectionMaker.this);
+                    connectionListener.connectionReady(connectionNumber);
+                } catch ( IOException e) {
+                    Log.e(TAG, "Connection failure: ", e);
+                    connectionListener.connectionFailed(e);
+                }
+            }
+        }).start();
     }
 
     public interface ConnectionListener {

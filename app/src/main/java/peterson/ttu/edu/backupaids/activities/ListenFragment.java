@@ -211,6 +211,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
         if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+            return;
         }
 
         switch (connectionController.getState()) {

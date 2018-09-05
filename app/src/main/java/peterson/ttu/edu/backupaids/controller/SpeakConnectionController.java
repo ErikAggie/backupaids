@@ -17,7 +17,7 @@ public class SpeakConnectionController extends ConnectionController {
     @Override
     public void startService(int connectionNumber) {
         Intent startIntent = new Intent(context, StreamSoundService.class);
-        startIntent.getExtras().putInt(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
+        startIntent.putExtra(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
         activity.startService(startIntent);
     }
 
