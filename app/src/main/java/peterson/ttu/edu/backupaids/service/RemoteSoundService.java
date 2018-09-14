@@ -5,6 +5,8 @@ import android.content.Intent;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
@@ -46,6 +48,8 @@ public class RemoteSoundService extends BaseStreamService {
     }
 
     private static RemoteSoundService instance;
+
+    private Timer killTimer = new Timer();
 
     /**
      * Returns the current ConnectionMaker. If we aren't running, this will be null;
@@ -89,6 +93,13 @@ public class RemoteSoundService extends BaseStreamService {
     protected void streamingStarted() {
         instance = this;
         currentlyStreaming.set(true);
+
+//        killTimer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                stopStreaming();
+//            }
+//        }, 10000);
     }
 
     @Override

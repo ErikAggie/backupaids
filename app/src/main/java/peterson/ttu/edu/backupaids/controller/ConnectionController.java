@@ -6,10 +6,15 @@ import android.content.Context;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 
 public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
+
+    private static final int LENGTH_OF_REPEAT_FAILURE_TIMEOUT = 120000; // two minutes
+
+    private static final int MAX_FAILURES_IN_TWO_MINUTES = 2;
 
     public enum State {
         STARTUP,
@@ -25,8 +30,11 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
-
     private State state = State.STARTUP;
+
+    private AtomicInteger numRecentFailures = new AtomicInteger(0);
+    private Timer repeatFailureTimer = new Timer();
+    private String savedApplicationName;
 
     protected ConnectionController(Context context, Activity activity, Listener listener) {
         this.context = context;
@@ -48,6 +56,8 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     public void stop() {
         discoverableCountdown.cancel();
+        repeatFailureTimer.cancel();
+
         stopService();
         connectionMaker.close();
         updateState(State.STOPPED);
@@ -116,7 +126,21 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void connectionClosed() {
-        stop();
+        int numFailures = numRecentFailures.incrementAndGet();
+        if ( numFailures > MAX_FAILURES_IN_TWO_MINUTES) {
+            stop();
+        } else {
+            connectionMaker.makeConnection(savedApplicationName);
+
+            // Restart the timer
+            repeatFailureTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if ( state == State.STREAMING)
+                    numRecentFailures.set(0);
+                }
+            }, LENGTH_OF_REPEAT_FAILURE_TIMEOUT);
+        }
     }
 
     //----------------------------------------------------------------------------------
@@ -125,6 +149,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void approveConnection(String connectionName) {
+        savedApplicationName = connectionName;
         // No need to start the service yet (like it was done before this class came into being
         connectionMaker.makeConnection(connectionName);
     }

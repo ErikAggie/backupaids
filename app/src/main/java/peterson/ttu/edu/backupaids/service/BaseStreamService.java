@@ -12,14 +12,13 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends BaseService {
+public abstract class BaseStreamService extends BaseService implements ConnectionMaker.SocketHandler {
 
     private static final String TAG = "BaseStreamService";
 
@@ -62,16 +61,16 @@ public abstract class BaseStreamService extends BaseService {
                                 String channelName,
                                 int foregroundId) {
 
-        if ( intent == null) {
+        if (intent == null) {
             return;
         }
 
         int connectionNumber = intent.getIntExtra(CONNECTION_NUMBER_EXTRA, -1);
-        if ( connectionNumber < 0) {
+        if (connectionNumber < 0) {
             throw new RuntimeException("Must provide a connection number!");
         }
         connectionMaker = ConnectionMaker.getConnectionMaker(connectionNumber);
-        if ( connectionMaker == null) {
+        if (connectionMaker == null) {
             throw new RuntimeException("Can't find connection maker for connection " + connectionNumber);
         }
 
@@ -79,7 +78,7 @@ public abstract class BaseStreamService extends BaseService {
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
 
-        if ( Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...
             NotificationChannel channel = new NotificationChannel(channelName, channelName, NotificationManager.IMPORTANCE_HIGH);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -95,10 +94,12 @@ public abstract class BaseStreamService extends BaseService {
 
         startForeground(foregroundId, notificationBuilder.build());
 
-        Socket socket = connectionMaker.getWaitingSocket();
-        if ( socket == null) {
-            throw new RuntimeException("No socket available?");
-        }
+        // Calling this will in turn call handleSocket()
+        connectionMaker.readyForSocket(this);
+    }
+
+    @Override
+    public void handleSocket(Socket socket) {
 
         thisServiceIsStreaming = true;
         streamingStarted();
@@ -149,7 +150,7 @@ public abstract class BaseStreamService extends BaseService {
         }
     }
 
-    private void stopStreaming() {
+    protected void stopStreaming() {
         stopStreaming(false);
     }
 

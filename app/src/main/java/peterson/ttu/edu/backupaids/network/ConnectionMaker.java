@@ -160,8 +160,11 @@ public class ConnectionMaker extends BroadcastReceiver
         return OUR_PIN;
     }
 
-    public Socket getWaitingSocket() {
-        return waitingSocket;
+    public void readyForSocket(SocketHandler socketHandler) {
+        socketHandler.handleSocket(waitingSocket);
+
+        // This call returning means that the caller is done with the socket
+        connectionListener.connectionClosed();
     }
 
     /**
@@ -485,5 +488,12 @@ public class ConnectionMaker extends BroadcastReceiver
         void connectionReady(int connectionNumber) throws IOException;
         void connectionFailed(IOException e);
         void connectionClosed();
+    }
+
+    /**
+     * Exists so we can know when the service is done with the socket
+     */
+    public interface SocketHandler {
+        void handleSocket(Socket socket);
     }
 }
