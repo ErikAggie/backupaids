@@ -87,7 +87,7 @@ public class ConnectionMaker extends BroadcastReceiver
 
     private WifiP2pDnsSdServiceRequest serviceRequest;
 
-    private final ConnectionListener connectionListener;
+    private ConnectionListener connectionListener;
 
     /**
      * Set things up and kick things off.
@@ -110,6 +110,15 @@ public class ConnectionMaker extends BroadcastReceiver
         listenForConnections();
         publishService();
         beginServiceDiscovery();
+    }
+
+    /**
+     * Change who notifications go to (such as when we're resumed and are re-connecting to a running
+     * service).
+     * @param connectionListener
+     */
+    public void changeConnectionListener(ConnectionListener connectionListener) {
+        this.connectionListener = connectionListener;
     }
 
     public void close() {

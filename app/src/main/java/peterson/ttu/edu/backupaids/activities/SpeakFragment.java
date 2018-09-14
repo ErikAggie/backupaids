@@ -74,17 +74,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
             // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-            if (StreamSoundService.isCurrentlyStreaming()) {
-                // TODO: need to re-establish links if the service is already running
-//                connectionMaker = ConnectionMaker.getInstance();
-//            } else if ( ConnectionMaker.getInstance() != null) {
-//                ConnectionMaker.getInstance().close();
-            } else {
-                connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            if (!StreamSoundService.isCurrentlyStreaming()) {
                 Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
             }
         } else {
-            // If the connection is already made, do nothing...
             if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
                 stopTryingToConnect();
             }

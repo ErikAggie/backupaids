@@ -118,6 +118,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             RemoteSoundService.setCurrentPreset(initialPreset.getName());
         }
 
+        if ( RemoteSoundService.isCurrentlyStreaming()) {
+            // Already streaming. Need to re-connect with this guy
+            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
+        }
+
         // We could already be playing, so check on that...
         updatePlayButton();
         updateMakeDiscoverableButton();
@@ -134,7 +139,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        // TODO: need a way to re-connect with services that are already started...
         if ( isVisibleToUser) {
             LocalSoundService.registerListener(listener);
         } else {
@@ -163,6 +167,10 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
     }
 
+    //----------------------------------------------------------------------------------------------
+    // Helper methods
+    //----------------------------------------------------------------------------------------------
+
     private void playLocalSound() {
         if ( LocalSoundService.isLocalSoundServiceRunning()) {
             stopPlaying();
@@ -184,10 +192,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }
     }
-
-    //----------------------------------------------------------------------------------------------
-    // Helper methods
-    //----------------------------------------------------------------------------------------------
 
     private void updateSpinner() {
         SoundPresetManager presetManager = SoundPresetManager.getInstance(getContext());

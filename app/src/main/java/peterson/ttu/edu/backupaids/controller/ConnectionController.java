@@ -8,8 +8,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
-import peterson.ttu.edu.backupaids.service.BaseStreamService;
-import peterson.ttu.edu.backupaids.util.ConnectionType;
 
 public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
 
@@ -23,19 +21,19 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     protected final Context context;
     protected final Activity activity;
-    private final ConnectionMaker connectionMaker;
+    protected final ConnectionMaker connectionMaker;
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
 
     private State state = State.STARTUP;
 
-    public ConnectionController(Context context, Activity activity, ConnectionType connectionType, Listener listener) {
+    protected ConnectionController(Context context, Activity activity, Listener listener) {
         this.context = context;
         this.activity = activity;
-        connectionMaker = new ConnectionMaker(context, this, connectionType);
         this.listener = listener;
 
+        connectionMaker = getConnectionMaker();
         discoverableCountdown.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -45,6 +43,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
                 }
             }
         }, 180000); // 3 minutes
+
     }
 
     public void stop() {
@@ -57,7 +56,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     protected abstract void stopService();
 
-    private void updateState(State state) {
+    protected void updateState(State state) {
         if ( state != this.state) {
             // A change...
             this.state = state;
@@ -105,6 +104,8 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         startService(connectionNumber);
         updateState(State.STREAMING);
     }
+
+    protected abstract ConnectionMaker getConnectionMaker();
 
     protected abstract void startService(int connectionNumber);
 

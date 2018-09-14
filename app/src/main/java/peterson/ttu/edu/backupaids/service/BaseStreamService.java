@@ -25,7 +25,7 @@ public abstract class BaseStreamService extends BaseService {
 
     public static final String CONNECTION_NUMBER_EXTRA = "ConnectionNumber";
 
-    private ConnectionMaker connectionMaker;
+    protected ConnectionMaker connectionMaker;
 
     private boolean thisServiceIsStreaming;
     private boolean streamingStopped = false;
