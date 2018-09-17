@@ -148,6 +148,9 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                         case STREAMING:
                             playButton.setImageResource(R.drawable.ic_power_button_green);
                             break;
+                        case RETRY:
+                            // TODO fill in with an animation and/or toast message
+                            break;
                         case STOPPED:
                         case FAILED:
                             playButton.setImageResource(R.drawable.ic_refresh_black);

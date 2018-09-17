@@ -226,6 +226,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
                 break;
+            case RETRY:
+                // TODO fill in with an animation and/or toast message
+                break;
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);

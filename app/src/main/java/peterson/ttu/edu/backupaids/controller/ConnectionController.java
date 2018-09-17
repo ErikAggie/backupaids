@@ -2,6 +2,7 @@ package peterson.ttu.edu.backupaids.controller;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 
 import java.io.IOException;
 import java.util.Timer;
@@ -12,6 +13,9 @@ import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 
 public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
 
+    private static final String TAG = "ConnectionController";
+
+    private static final int LENGTH_TO_WAIT_FOR_RECONNECT = 3000; // 3 seconds
     private static final int LENGTH_OF_REPEAT_FAILURE_TIMEOUT = 120000; // two minutes
 
     private static final int MAX_FAILURES_IN_TWO_MINUTES = 2;
@@ -20,6 +24,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         STARTUP,
         CONNECTING,
         STREAMING,
+        RETRY,
         FAILED,
         STOPPED;
     }
@@ -126,10 +131,27 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void connectionClosed() {
+        if ( state == State.STOPPED) {
+            return;
+        }
         int numFailures = numRecentFailures.incrementAndGet();
         if ( numFailures > MAX_FAILURES_IN_TWO_MINUTES) {
             stop();
+        } else if ( savedApplicationName == null) {
+            updateState(State.RETRY);
+            // We are the listener, so the other device might try to reconnect.
+            // Set up a short timer to give him a chance to reconnect
+            Log.i(TAG, "Connection lost; giving sender time to reconnect...");
+            repeatFailureTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if ( state == State.STREAMING)
+                        numRecentFailures.set(0);
+                }
+            }, LENGTH_TO_WAIT_FOR_RECONNECT);
         } else {
+            Log.i(TAG, "Attempting to reconnect...");
+            updateState(State.RETRY);
             connectionMaker.makeConnection(savedApplicationName);
 
             // Restart the timer

@@ -93,13 +93,6 @@ public class RemoteSoundService extends BaseStreamService {
     protected void streamingStarted() {
         instance = this;
         currentlyStreaming.set(true);
-
-//        killTimer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                stopStreaming();
-//            }
-//        }, 10000);
     }
 
     @Override

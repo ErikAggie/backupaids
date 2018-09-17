@@ -50,10 +50,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     public void onDestroy() {
         unregisterThisService();
         stopStreaming();
-        if ( connectionMaker != null) {
-            connectionMaker.close();
-            connectionMaker = null;
-        }
         super.onDestroy();
     }
 
