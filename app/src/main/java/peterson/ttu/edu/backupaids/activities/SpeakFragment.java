@@ -7,7 +7,6 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,15 +20,16 @@ import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
-import peterson.ttu.edu.backupaids.service.LocalSoundService;
+import peterson.ttu.edu.backupaids.controller.ConnectionController;
+import peterson.ttu.edu.backupaids.controller.PeerCallback;
+import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
+import peterson.ttu.edu.backupaids.util.Util;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
-public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionManager.PeerListener, StreamSoundService.Listener {
+public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
 
-    private ConnectionManager connectionManager;
-    private final List<String> peers = new ArrayList<>();
+    private ConnectionController connectionController;
     private ConnectionPopupFragment connectionPopup;
 
     //----------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         //setContentView(R.layout.fragment_speak);
 
         TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
-        ourPin.setText(getString(R.string.our_pin, ConnectionManager.getPin()));
+        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
 
         // Listen for Bluetooth connections (for recording)
         IntentFilter connectFilter = new IntentFilter();
@@ -74,32 +74,22 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
             // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-            if (StreamSoundService.isCurrentlyStreaming()) {
-                connectionManager = ConnectionManager.getInstance();
-            } else if ( ConnectionManager.getInstance() != null) {
-                ConnectionManager.getInstance().close();
-            } else {
-                connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.SPEAK);
+            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            if (!StreamSoundService.isCurrentlyStreaming()) {
                 Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
             }
-            connectionManager.setPeerListener(this);
-            StreamSoundService.registerListener(this);
-            updatePlayButton();
         } else {
-            // If the connection is already made, do nothing...
-            if ( connectionManager != null && !StreamSoundService.isCurrentlyStreaming()) {
+            if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
                 stopTryingToConnect();
             }
         }
     }
 
     private void stopTryingToConnect() {
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
+        if ( connectionController!= null) {
+            connectionController.stop();
         }
-        StreamSoundService.unregisterListener(this);
-        updatePlayButton();
+        // Play button will get updated by a status update
     }
 
     @Override
@@ -125,16 +115,10 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     private void sendSound() {
-        if ( StreamSoundService.isCurrentlyStreaming()) {
-            getActivity().stopService(new Intent(getContext(), StreamSoundService.class));
-        } else if ( connectionManager != null) {
-            // Ignore, we're still trying to connect
-            Toast.makeText(getContext(), "Please be patient; I'll let you know when I've found a connection.", Toast.LENGTH_SHORT).show();
+        if ( connectionController == null) {
+            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
         } else {
-            // User wants to restart
-            connectionManager = new ConnectionManager(getContext(), this, ConnectionManager.Mode.SPEAK);
-            StreamSoundService.registerListener(this);
-            updatePlayButton();
+            connectionController.stop();
         }
     }
 
@@ -153,104 +137,84 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             @Override
             public void run() {
                 ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
-                if (StreamSoundService.isCurrentlyStreaming()) {
-                    playButton.setImageResource(R.drawable.ic_power_button_green);
-                } else if ( connectionManager != null ){
-                    playButton.setImageResource(R.drawable.ic_power_button_blue);
-                } else {
-                    // We're dead. Show button for restart
+                if ( connectionController == null) {
                     playButton.setImageResource(R.drawable.ic_refresh_black);
+                } else {
+                    switch (connectionController.getState()) {
+                        case STARTUP:
+                        case CONNECTING:
+                            playButton.setImageResource(R.drawable.ic_power_button_blue);
+                            break;
+                        case STREAMING:
+                            playButton.setImageResource(R.drawable.ic_power_button_green);
+                            break;
+                        case RETRY:
+                            // TODO fill in with an animation and/or toast message
+                            break;
+                        case STOPPED:
+                        case FAILED:
+                            playButton.setImageResource(R.drawable.ic_refresh_black);
+                            break;
+                        default:
+                            throw new RuntimeException("Unknown state " + connectionController.getState());
+                    }
                 }
             }
         });
     }
 
+
     @Override
-    public void servicePublishingFailed() {
-        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-        stopTryingToConnect();
+    public void stateChanged(ConnectionController.State state) {
+        updatePlayButton();
+        switch ( state) {
+            case STREAMING:
+                if ( connectionPopup != null) {
+                    connectionPopup.dismiss();
+                    connectionPopup = null;
+                }
+                break;
+            case FAILED:
+                Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+                // Don't have to stop since we'll get a STOPPED state shortly...
+                break;
+            case STOPPED:
+                Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
+                if ( connectionPopup != null) {
+                    connectionPopup.dismiss();
+                    connectionPopup = null;
+                }
+                connectionController = null;
+                break;
+            default:
+                // Nothing to do...
+        }
     }
 
     @Override
-    public void foundAPeer(String newPeer) {
+    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
+        if ( connectionPopup != null) {
+            connectionPopup.dismiss();
+        }
         connectionPopup = new ConnectionPopupFragment();
         connectionPopup.setListener(new ConnectionPopupFragment.OnFragmentInteractionListener() {
             @Override
-            public void connectionConfirmed(String connectionName) {
-                // Let's get started!
-                connectionManager.removePeerListener(SpeakFragment.this);
-                Intent intent = new Intent(getContext(), StreamSoundService.class);
-                intent.putExtra(Util.CONNECTION_NAME_EXTRA, connectionName);
-                getActivity().startService(intent);
-                // Service takes control of the connection manager
-                connectionManager = null;
+            public void connectionConfirmed() {
+                callback.approveConnection(connectionName);
             }
 
             @Override
             public void cancelled() {
-                stopTryingToConnect();
+                callback.denyConnection(connectionName);
+                if (connectionPopup != null) {
+                    connectionPopup.dismiss();
+                    connectionPopup = null;
+                }
             }
         });
         connectionPopup.setTargetFragment(this, 1);
-        connectionPopup.setConnection(newPeer);
+        connectionPopup.setConnection(connectionName);
         connectionPopup.show(getFragmentManager(), "Connections");
-    }
 
-    @Override
-    public void findingPeerFailed(IOException e) {
-        Toast.makeText(getContext(), "Unable to connect to another device. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-        stopTryingToConnect();
-    }
-
-    @Override
-    public void connectionWaiting() {
-        // Someone else is trying to connect (they got the popup). Start the service
-        if ( connectionPopup != null) {
-            connectionPopup.dismiss();
-            connectionPopup = null;
-        }
-        connectionManager.removePeerListener(this);
-        getActivity().startService(new Intent(getContext(), StreamSoundService.class));
-        // Service takes control of ConnectionManager instance
-        connectionManager = null;
-    }
-
-    @Override
-    public void servicesStarted() {
-        // Nothing for us to do
-    }
-
-    @Override
-    public void servicesStopped() {
-        updatePlayButton();
-    }
-
-    @Override
-    public void streamingStarted() {
-        updatePlayButton();
-    }
-
-    @Override
-    public void streamingFailed() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
-                updatePlayButton();
-            }
-        });
-    }
-
-    @Override
-    public void streamingStopped() {
-        if ( getActivity() != null) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                    updatePlayButton();
-                }
-            });
-        }
     }
 }

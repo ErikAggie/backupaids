@@ -21,7 +21,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.util.Util;
 
 /**
  * A simple {@link Fragment} subclass.

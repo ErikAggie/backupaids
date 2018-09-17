@@ -5,15 +5,15 @@ import android.content.Intent;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.activities.ListenFragment;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -33,7 +33,6 @@ public class RemoteSoundService extends BaseStreamService {
     private static final String STREAM_CHANNEL_NAME = "Stream In";
 
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
-    private static final List<StreamSoundService.Listener> listeners = new ArrayList<>();
     private static String preset;
 
     public static String getCurrentPreset() {
@@ -44,17 +43,23 @@ public class RemoteSoundService extends BaseStreamService {
         preset = newPreset;
     }
 
-
     public static boolean isCurrentlyStreaming() {
         return currentlyStreaming.get();
     }
 
-    public static void registerListener(StreamSoundService.Listener listener) {
-        listeners.add(listener);
-    }
+    private static RemoteSoundService instance;
 
-    public static void unregisterListener(StreamSoundService.Listener listener) {
-        listeners.remove(listener);
+    private Timer killTimer = new Timer();
+
+    /**
+     * Returns the current ConnectionMaker. If we aren't running, this will be null;
+     * @return
+     */
+    public static ConnectionMaker getConnectionMaker() {
+        if ( instance == null) {
+            throw new RuntimeException("No instance available!");
+        }
+        return instance.connectionMaker;
     }
 
     public RemoteSoundService() {
@@ -65,7 +70,16 @@ public class RemoteSoundService extends BaseStreamService {
                TabbedMain.class);
     }
 
+
     @Override
+    public void onDestroy() {
+        currentlyStreaming.set(false); // This will stop the thread
+        instance = null;
+
+        super.onDestroy();
+    }
+
+        @Override
     public boolean isRunning() {
         return isCurrentlyStreaming();
     }
@@ -77,17 +91,14 @@ public class RemoteSoundService extends BaseStreamService {
 
     @Override
     protected void streamingStarted() {
+        instance = this;
         currentlyStreaming.set(true);
     }
 
     @Override
     protected void streamingStopped() {
         currentlyStreaming.set(false);
-    }
-
-    @Override
-    protected List<Listener> getListeners() {
-        return listeners;
+        instance = null;
     }
 
     @Override

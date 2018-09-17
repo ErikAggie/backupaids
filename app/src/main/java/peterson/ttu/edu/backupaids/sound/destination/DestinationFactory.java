@@ -14,7 +14,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import peterson.ttu.edu.backupaids.Util;
+import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 
 import static android.content.Context.AUDIO_SERVICE;

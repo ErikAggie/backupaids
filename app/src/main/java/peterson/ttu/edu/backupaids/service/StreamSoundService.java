@@ -13,6 +13,7 @@ import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.activities.SpeakFragment;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -25,23 +26,11 @@ public class StreamSoundService extends BaseStreamService {
 
     private static final int FOREGROUND_ID = 1235;
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
-
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
-    private static final List<BaseStreamService.Listener> listeners = new ArrayList<>();
+
+    private static StreamSoundService instance = null;
 
     private boolean usedBluetooth = false;
-
-    public static boolean isCurrentlyStreaming() {
-        return currentlyStreaming.get();
-    }
-
-    public static void registerListener(BaseStreamService.Listener listener) {
-        listeners.add(listener);
-    }
-
-    public static void unregisterListener(BaseStreamService.Listener listener) {
-        listeners.remove(listener);
-    }
 
     public StreamSoundService() {
         super("StreamSoundService",
@@ -49,6 +38,17 @@ public class StreamSoundService extends BaseStreamService {
               "Streaming audio",
               "Streaming audio to another device (FM style)",
                TabbedMain.class);
+    }
+
+    public static boolean isCurrentlyStreaming() {
+        return currentlyStreaming.get();
+    }
+
+    public static ConnectionMaker getConnectionMaker() {
+        if ( instance == null) {
+            throw new RuntimeException("Attempt to get StreamSoundService when one isn't active!");
+        }
+        return instance.connectionMaker;
     }
 
     @Override
@@ -59,6 +59,7 @@ public class StreamSoundService extends BaseStreamService {
     @Override
     public void onDestroy() {
         currentlyStreaming.set(false); // This will stop the thread
+        instance = null;
 
         if ( usedBluetooth) {
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -75,6 +76,7 @@ public class StreamSoundService extends BaseStreamService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
+        instance = this;
         if (BluetoothMonitor.createIfNeeded(this).isHeadsetConnected()) {
             usedBluetooth = true;
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -90,12 +92,8 @@ public class StreamSoundService extends BaseStreamService {
 
     @Override
     protected void streamingStopped() {
+        instance = null;
         currentlyStreaming.set(false);
-    }
-
-    @Override
-    protected List<Listener> getListeners() {
-        return listeners;
     }
 
     @Override

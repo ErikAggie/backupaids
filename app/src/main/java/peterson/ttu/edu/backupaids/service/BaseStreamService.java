@@ -12,18 +12,19 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 
-import peterson.ttu.edu.backupaids.Util;
-import peterson.ttu.edu.backupaids.network.ConnectionManager;
+import peterson.ttu.edu.backupaids.util.Util;
+import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends BaseService implements ConnectionManager.ConnectionListener {
+public abstract class BaseStreamService extends BaseService implements ConnectionMaker.SocketHandler {
 
     private static final String TAG = "BaseStreamService";
 
-    private ConnectionManager connectionManager;
+    public static final String CONNECTION_NUMBER_EXTRA = "ConnectionNumber";
+
+    protected ConnectionMaker connectionMaker;
 
     private boolean thisServiceIsStreaming;
     private boolean streamingStopped = false;
@@ -49,10 +50,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     public void onDestroy() {
         unregisterThisService();
         stopStreaming();
-        if ( connectionManager != null) {
-            connectionManager.close();
-            connectionManager = null;
-        }
         super.onDestroy();
     }
 
@@ -60,15 +57,24 @@ public abstract class BaseStreamService extends BaseService implements Connectio
                                 String channelName,
                                 int foregroundId) {
 
-        if ( intent == null) {
+        if (intent == null) {
             return;
+        }
+
+        int connectionNumber = intent.getIntExtra(CONNECTION_NUMBER_EXTRA, -1);
+        if (connectionNumber < 0) {
+            throw new RuntimeException("Must provide a connection number!");
+        }
+        connectionMaker = ConnectionMaker.getConnectionMaker(connectionNumber);
+        if (connectionMaker == null) {
+            throw new RuntimeException("Can't find connection maker for connection " + connectionNumber);
         }
 
         registerThisService();
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
 
-        if ( Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...
             NotificationChannel channel = new NotificationChannel(channelName, channelName, NotificationManager.IMPORTANCE_HIGH);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -84,30 +90,15 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
         startForeground(foregroundId, notificationBuilder.build());
 
-        connectionManager = ConnectionManager.getInstance();
-        if ( connectionManager == null) {
-            throw new RuntimeException("Can't get Connection Manager (shouldn't be null)!");
-        }
-        connectionManager.setConnectionListener(this);
-
-        final String connectionName = intent.getStringExtra(Util.CONNECTION_NAME_EXTRA);
-        if ( connectionName == null) {
-            // Connection is waiting. This will call connectionReady() immediately
-            connectionManager.readyForConnection();
-        } else {
-            // We need to initiate the connection
-            connectionManager.makeConnection(connectionName);
-        }
+        // Calling this will in turn call handleSocket()
+        connectionMaker.readyForSocket(this);
     }
 
-
     @Override
-    public void connectionReady(Socket socket) throws IOException {
+    public void handleSocket(Socket socket) {
+
         thisServiceIsStreaming = true;
         streamingStarted();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            listener.streamingStarted();
-        }
 
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
@@ -137,7 +128,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
             // Clean up the source and destination (created in this method)
-            // The other bits will be taken care of when ConnectionManager calls streamingStopped
+            // The other bits will be taken care of when ConnectionMaker calls streamingStopped
             try {
                 if ( soundSource != null) {
                     soundSource.stop();
@@ -155,7 +146,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         }
     }
 
-    private void stopStreaming() {
+    protected void stopStreaming() {
         stopStreaming(false);
     }
 
@@ -168,42 +159,14 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         thisServiceIsStreaming = false;
         streamingStopped = true;
         streamingStopped();
-        for ( BaseStreamService.Listener listener : getListeners()) {
-            if ( failed) {
-                listener.streamingFailed();
-            } else {
-                listener.streamingStopped();
-            }
-        }
-    }
-
-    @Override
-    public void connectionFailed(IOException e) {
-        Log.w(TAG, "Connection failed: " + e.getMessage(), e);
-        stopStreaming(true);
-    }
-
-    @Override
-    public void connectionClosed() {
-        Log.i(TAG, "Streaming connection closed.");
-        stopStreaming();
     }
 
     protected abstract void streamingStarted();
 
     protected abstract void streamingStopped();
 
-    // Have to do this per-CLASS because these lists are static
-    protected abstract List<Listener> getListeners();
-
     protected abstract SoundSource createSource(Socket socket) throws IOException;
 
     protected abstract SoundDestination createDestination(Socket socket) throws IOException;
-
-    public interface Listener {
-        void streamingStarted();
-        void streamingFailed();
-        void streamingStopped();
-    }
 
 }
