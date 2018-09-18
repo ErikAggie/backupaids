@@ -214,10 +214,10 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
                 .build();
 
         mAudioTrack.write(tone, 0, amountRead);
-        mAudioTrack.setPlaybackHeadPosition(100); // To avoid a click
+        mAudioTrack.setPlaybackHeadPosition(44); // To avoid a click
 
         // Play this forever
-        mAudioTrack.setLoopPoints(100, amountRead / 2, -1);
+        mAudioTrack.setLoopPoints(0, amountRead / 4 - 1, -1);
         mAudioTrack.play();
 
         mPlaying = true;
