@@ -88,6 +88,8 @@ public class TabbedMain extends AppCompatActivity {
         }
 
         // Getting here means permission is granted!
+
+        // We use the music stream, so make sure the user can adjust the volume for us correctly
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 

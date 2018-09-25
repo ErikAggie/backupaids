@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Process;
 import android.support.annotation.Nullable;
@@ -137,6 +139,9 @@ public class LocalSoundService extends BaseService {
             while (playing) {
                 int amountRead = soundSource.read(audioBuffer);
                 if (amountRead < 0) {
+                    break;
+                }
+                if ( soundDestination.hasStopped()) {
                     break;
                 }
                 soundDestination.write(audioBuffer, amountRead);

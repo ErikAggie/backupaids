@@ -17,8 +17,6 @@ import java.util.Map;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 
-import static android.content.Context.AUDIO_SERVICE;
-
 /**
  * Create various destination
  */
@@ -31,19 +29,18 @@ public class DestinationFactory {
      * @return SoundDestination
      */
     public static SoundDestination createLocalAudioDestination(SoundPreset preset, Context context) throws IOException {
+        AudioAttributes audioAttributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
         AudioTrack audioTrack;
         if ( Build.VERSION.SDK_INT >= 26) {
             // Android O contains a low-latency playback mode
-            audioTrack = new AudioTrack.Builder().setAudioAttributes(
-                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+            audioTrack = new AudioTrack.Builder().setAudioAttributes(audioAttributes)
                     .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
                     .setBufferSizeInBytes(Util.INPUT_MIN_BUFFER_SIZE)
                     .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .build();
         } else {
-            audioTrack = new AudioTrack.Builder().setAudioAttributes(
-                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+            audioTrack = new AudioTrack.Builder().setAudioAttributes(audioAttributes)
                     .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
                     .setBufferSizeInBytes(Util.INPUT_MIN_BUFFER_SIZE)
                     .setTransferMode(AudioTrack.MODE_STREAM)
@@ -57,12 +54,12 @@ public class DestinationFactory {
 
         // Set up the audio effects
         if ( preset != null) {
-            AudioManager audio = (AudioManager) context.getSystemService(AUDIO_SERVICE);
-            audio.setStreamVolume(AudioManager.STREAM_MUSIC, preset.getVolumeAdjust(), 0);
+            AudioManager audioManager = context.getSystemService(AudioManager.class);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preset.getVolumeAdjust(), 0);
             applyEffects(preset, audioTrack.getAudioSessionId());
         }
 
-        return new LocalSoundDestination(audioTrack);
+        return new LocalSoundDestination(context, audioTrack, audioAttributes);
     }
 
     /**

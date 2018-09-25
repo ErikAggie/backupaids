@@ -28,6 +28,11 @@ public class RemoteSoundDestination implements SoundDestination {
     }
 
     @Override
+    public boolean hasStopped() {
+        return false;
+    }
+
+    @Override
     public void stop() throws IOException {
         socket.close();
     }
