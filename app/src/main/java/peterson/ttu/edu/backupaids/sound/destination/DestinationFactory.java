@@ -29,7 +29,11 @@ public class DestinationFactory {
      * @return SoundDestination
      */
     public static SoundDestination createLocalAudioDestination(SoundPreset preset, Context context) throws IOException {
-        AudioAttributes audioAttributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
+        AudioAttributes audioAttributes =
+                new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build();
         AudioTrack audioTrack;
         if ( Build.VERSION.SDK_INT >= 26) {
             // Android O contains a low-latency playback mode

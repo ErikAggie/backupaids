@@ -1,6 +1,9 @@
 package peterson.ttu.edu.backupaids.sound.destination;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -31,6 +34,16 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
 
     private final AtomicBoolean paused = new AtomicBoolean(false);
 
+    private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ( AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                Log.i(TAG, "Becoming noisy (headphones removed, etc.), so stopping playback.");
+                stop();
+            }
+        }
+    };
+
     public LocalSoundDestination(Context context, AudioTrack audioTrack, AudioAttributes audioAttributes) {
         this.context = context;
         this.audioTrack = audioTrack;
@@ -39,7 +52,10 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
 
     @Override
     public void play() throws IOException {
-        AudioManager audioManager = context.getSystemService(AudioManager.class);
+        IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        context.getApplicationContext().registerReceiver(becomingNoisyReceiver, intentFilter);
+
+        AudioManager audioManager = context.getApplicationContext().getSystemService(AudioManager.class);
 
         if ( numberPlaying.getAndIncrement() == 0) {
 
@@ -48,14 +64,18 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
                         .setAudioAttributes(audioAttributes)
                         .setAcceptsDelayedFocusGain(false)
                         .setOnAudioFocusChangeListener(this)
+                        .setWillPauseWhenDucked(true)
                         .build();
-                if ( audioManager.requestAudioFocus(audioFocusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                if ( audioManager.requestAudioFocus(audioFocusRequest) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    Log.i(TAG, "Gained audio focus!");
+                } else {
                     // We didn't get audio focus. No point in continuing
                     numberPlaying.decrementAndGet();
                     audioFocusRequest = null;
                     throw new IOException("Unable to get audio focus!");
                 }
             } else {
+                // Pre-Oreo
                 int res = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 requestingSoundDestination = this;
                 if ( res != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
@@ -84,10 +104,14 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
 
     @Override
     public void stop() {
+        if ( stopped) {
+            return;
+        }
         stopped = true;
+        context.getApplicationContext().unregisterReceiver(becomingNoisyReceiver);
         int numRemainingPlayers = numberPlaying.decrementAndGet();
         if ( numRemainingPlayers <= 0) {
-            AudioManager audioManager = context.getSystemService(AudioManager.class);
+            AudioManager audioManager = context.getApplicationContext().getSystemService(AudioManager.class);
             if (  Build.VERSION.SDK_INT >= 26) {
                 if ( audioFocusRequest != null) {
                     audioManager.abandonAudioFocusRequest(audioFocusRequest);
@@ -111,9 +135,12 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
                 stopped = true;
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                Log.i(TAG, "Audio focus temporarily lost. Pausing...");
                 paused.set(true);
                 audioTrack.pause();
                 audioTrack.flush();
+                // Note that we will keep listening to data, but won't play any of it...
                 break;
             case AudioManager.AUDIOFOCUS_GAIN:
                 paused.set(false);
