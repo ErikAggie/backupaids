@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -14,6 +15,8 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import peterson.ttu.edu.backupaids.service.ServiceSetupException;
 
 /**
  * Class for playing sound locally (speakers/headphones)
@@ -51,11 +54,19 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
     }
 
     @Override
-    public void play() throws IOException {
+    public void play() throws ServiceSetupException, IOException {
+
+        AudioManager audioManager = context.getApplicationContext().getSystemService(AudioManager.class);
+
         IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         context.getApplicationContext().registerReceiver(becomingNoisyReceiver, intentFilter);
 
-        AudioManager audioManager = context.getApplicationContext().getSystemService(AudioManager.class);
+        // We wait until now to check for headphones because it might take a while to get here
+        // (e.g. connecting to a phone takes a few seconds, so we don't want to assume headphones
+        // are attached immediately)
+        if ( !areHeadphonesActive(audioManager)) {
+            throw new ServiceSetupException("Please insert headphones before listening. Otherwise you're likely to get a horrible screeching noise. :)");
+        }
 
         if ( numberPlaying.getAndIncrement() == 0) {
 
@@ -72,7 +83,7 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
                     // We didn't get audio focus. No point in continuing
                     numberPlaying.decrementAndGet();
                     audioFocusRequest = null;
-                    throw new IOException("Unable to get audio focus!");
+                    throw new IOException("Unable to play back (likely due to a phone call)");
                 }
             } else {
                 // Pre-Oreo
@@ -88,6 +99,22 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
         }
 
         audioTrack.play();
+    }
+
+    private boolean areHeadphonesActive(AudioManager audioManager) {
+        AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+        for ( AudioDeviceInfo audioDevice : audioDevices) {
+            switch(audioDevice.getType()) {
+                case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                case AudioDeviceInfo.TYPE_LINE_ANALOG:
+                case AudioDeviceInfo.TYPE_LINE_DIGITAL:
+                case AudioDeviceInfo.TYPE_USB_HEADSET:
+                case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                    return true;
+            }
+        }
+        return false;
     }
 
     @Override

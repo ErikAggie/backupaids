@@ -9,7 +9,7 @@ import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 
-public class ListenConnectionController extends ConnectionController {
+public class ListenConnectionController extends ConnectionController implements RemoteSoundService.Listener {
 
     public ListenConnectionController(Context context, Activity activity, Listener listener) {
         super(context, activity, listener);
@@ -30,6 +30,7 @@ public class ListenConnectionController extends ConnectionController {
 
     @Override
     public void startService(int connectionNumber) {
+        RemoteSoundService.registerListener(this);
         Intent startIntent = new Intent(context, RemoteSoundService.class);
         startIntent.putExtra(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
         activity.startService(startIntent);
@@ -37,7 +38,12 @@ public class ListenConnectionController extends ConnectionController {
 
     @Override
     protected void stopService() {
+        RemoteSoundService.unregisterListener(this);
         activity.stopService(new Intent(context, RemoteSoundService.class));
     }
 
+    @Override
+    public void playbackErrored(String error) {
+        failed(error);
+    }
 }

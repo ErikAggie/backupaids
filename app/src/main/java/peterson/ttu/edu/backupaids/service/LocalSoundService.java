@@ -100,19 +100,10 @@ public class LocalSoundService extends BaseService {
 
         if ( Build.VERSION.SDK_INT >= 26) {
             // Create the notification channel needed to show this notification...
-            NotificationChannel channel = new NotificationChannel(PLAYBACK_CHANNEL_NAME, PLAYBACK_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel channel = new NotificationChannel(PLAYBACK_CHANNEL_NAME, PLAYBACK_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.createNotificationChannel(channel);
         }
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, PLAYBACK_CHANNEL_NAME)
-                .setOngoing(true)
-                .setSmallIcon(R.drawable.ic_play)
-                .setContentTitle("Playing mic audio")
-                .setContentText("Playing audio from the phone's microphones")
-                .setContentIntent(pendingIntent);
-
-        startForeground(FOREGROUND_ID, notificationBuilder.build());
 
         running.set(true);
 
@@ -135,19 +126,34 @@ public class LocalSoundService extends BaseService {
             soundSource.record();
             soundDestination.play();
 
+
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, PLAYBACK_CHANNEL_NAME)
+                    .setOngoing(true)
+                    .setSmallIcon(R.drawable.ic_play)
+                    .setContentTitle("Playing mic audio")
+                    .setContentText("Playing audio from the phone's microphones")
+                    .setContentIntent(pendingIntent);
+
+            startForeground(FOREGROUND_ID, notificationBuilder.build());
+
             // Here's the playing loop!
             while (playing) {
                 int amountRead = soundSource.read(audioBuffer);
                 if (amountRead < 0) {
                     break;
                 }
-                if ( soundDestination.hasStopped()) {
+                if (soundDestination.hasStopped()) {
                     break;
                 }
                 soundDestination.write(audioBuffer, amountRead);
             }
-        } catch ( Exception e) {
-            Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
+        } catch ( ServiceSetupException e) {
+            Log.w(TAG, "Setup error: " + e.getMessage());
+            for ( Listener listener : listeners) {
+                listener.playbackErrored(e.getMessage());
+            }
+        } catch ( IOException e) {
+            Log.w(TAG, "Stopping playback: " + e.getMessage());
         } finally {
             running.set(false);
 
@@ -181,5 +187,6 @@ public class LocalSoundService extends BaseService {
     public interface Listener {
         void playbackStarted();
         void playbackStopped();
+        void playbackErrored(String error);
     }
 }

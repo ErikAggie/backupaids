@@ -192,6 +192,12 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     @Override
+    public void failed(String Reason) {
+        // This isn't likely (at present--September, 2018--this is only for headphone not present--not a problem here
+        Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
     public void askAboutConnection(final String connectionName, final PeerCallback callback) {
         if ( connectionPopup != null) {
             connectionPopup.dismiss();

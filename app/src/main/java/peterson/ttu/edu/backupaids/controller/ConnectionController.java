@@ -79,6 +79,16 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         }
     }
 
+    protected void failed(String reason) {
+        if ( state == State.FAILED ||
+             state == State.STOPPED) {
+            // Already noted, or not important
+            return;
+        }
+        listener.failed(reason);
+        updateState(State.FAILED);
+    }
+
     public State getState() {
         return state;
     }
@@ -183,6 +193,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     public interface Listener {
         void stateChanged(State state);
+        void failed(String Reason);
         void askAboutConnection(String connectionName, PeerCallback callback);
     }
 }

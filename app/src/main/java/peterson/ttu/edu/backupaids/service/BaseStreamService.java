@@ -34,6 +34,9 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     private final String notificationContent;
     private final Class activityToInvoke;
 
+    private String channelName;
+    private int foregroundId;
+
     public BaseStreamService(String name,
                              int icon,
                              String notificationTitle,
@@ -56,6 +59,8 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     protected void setUpService(Intent intent,
                                 String channelName,
                                 int foregroundId) {
+        this.channelName = channelName;
+        this.foregroundId = foregroundId;
 
         if (intent == null) {
             return;
@@ -72,24 +77,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
         registerThisService();
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
-
-        if (Build.VERSION.SDK_INT >= 26) {
-            // Create the notification channel needed to show this notification...
-            NotificationChannel channel = new NotificationChannel(channelName, channelName, NotificationManager.IMPORTANCE_HIGH);
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelName)
-                .setOngoing(true)
-                .setSmallIcon(notificationIcon)
-                .setContentTitle(notificationTitle)
-                .setContentText(notificationContent)
-                .setContentIntent(pendingIntent);
-
-        startForeground(foregroundId, notificationBuilder.build());
-
         // Calling this will in turn call handleSocket()
         connectionMaker.readyForSocket(this);
     }
@@ -98,7 +85,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
     public void handleSocket(Socket socket) {
 
         thisServiceIsStreaming = true;
-        streamingStarted();
 
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
@@ -111,10 +97,30 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             // Short buffer would be half of the buffer size; byte buffer is the full size
             byte[] audioBuffer = new byte[Util.INPUT_MIN_BUFFER_SIZE];
 
-            Log.i(TAG, "Ready to send!");
+            Log.i(TAG, "Ready to send/receive!");
 
             soundSource.record();
             soundDestination.play();
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, activityToInvoke), 0);
+
+            if (Build.VERSION.SDK_INT >= 26) {
+                // Create the notification channel needed to show this notification...
+                NotificationChannel channel = new NotificationChannel(channelName, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.createNotificationChannel(channel);
+            }
+
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelName)
+                    .setOngoing(true)
+                    .setSmallIcon(notificationIcon)
+                    .setContentTitle(notificationTitle)
+                    .setContentText(notificationContent)
+                    .setContentIntent(pendingIntent);
+
+            startForeground(foregroundId, notificationBuilder.build());
+
+            streamingStarted();
 
             // Here's the playing loop!
             while (thisServiceIsStreaming) {
@@ -124,7 +130,10 @@ public abstract class BaseStreamService extends BaseService implements Connectio
                 }
                 soundDestination.write(audioBuffer, amountRead);
             }
-        } catch ( Exception e) {
+        } catch ( ServiceSetupException e) {
+            Log.w(TAG, "Service setup error: " + e.getMessage());
+            noteError(e.getMessage());
+        } catch( IOException e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
         } finally {
             // Clean up the source and destination (created in this method)
@@ -169,4 +178,5 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
     protected abstract SoundDestination createDestination(Socket socket) throws IOException;
 
+    protected abstract void noteError(String error);
 }

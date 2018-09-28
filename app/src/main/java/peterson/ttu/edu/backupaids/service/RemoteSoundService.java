@@ -5,6 +5,8 @@ import android.content.Intent;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,12 +30,21 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 public class RemoteSoundService extends BaseStreamService {
 
     private static final String TAG = "RemoteSoundService";
-
     private static final int FOREGROUND_ID = 1236;
     private static final String STREAM_CHANNEL_NAME = "Stream In";
 
+    private final static List<Listener> listeners = new ArrayList<>();
+
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
     private static String preset;
+
+    public static void registerListener(Listener listener) {
+        listeners.add(listener);
+    }
+
+    public static void unregisterListener(Listener listener) {
+        listeners.remove(listener);
+    }
 
     public static String getCurrentPreset() {
         return preset;
@@ -115,4 +126,17 @@ public class RemoteSoundService extends BaseStreamService {
 
         return DestinationFactory.createLocalAudioDestination(soundPreset, this);
     }
+
+    @Override
+    protected void noteError(String error) {
+        for ( Listener listener : listeners) {
+            listener.playbackErrored(error);
+        }
+    }
+
+
+    public interface Listener {
+        void playbackErrored(String error);
+    }
+
 }

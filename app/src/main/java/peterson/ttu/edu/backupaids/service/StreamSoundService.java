@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.activities.SpeakFragment;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
@@ -28,9 +27,19 @@ public class StreamSoundService extends BaseStreamService {
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
 
+    private final static List<Listener> listeners = new ArrayList<>();
+
     private static StreamSoundService instance = null;
 
     private boolean usedBluetooth = false;
+
+    public static void registerListener(Listener listener) {
+        listeners.add(listener);
+    }
+
+    public static void unregisterListener(Listener listener) {
+        listeners.remove(listener);
+    }
 
     public StreamSoundService() {
         super("StreamSoundService",
@@ -104,5 +113,17 @@ public class StreamSoundService extends BaseStreamService {
     @Override
     protected SoundDestination createDestination(Socket socket) throws IOException{
         return DestinationFactory.createRemoteSoundDestination(socket);
+    }
+
+    @Override
+    protected void noteError(String error) {
+        for ( Listener listener : listeners) {
+            listener.streamingErrored(error);
+        }
+    }
+
+
+    public interface Listener {
+        void streamingErrored(String error);
     }
 }

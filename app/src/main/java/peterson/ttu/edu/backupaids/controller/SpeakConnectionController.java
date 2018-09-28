@@ -9,7 +9,7 @@ import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 
-public class SpeakConnectionController extends ConnectionController {
+public class SpeakConnectionController extends ConnectionController implements StreamSoundService.Listener {
 
     public SpeakConnectionController(Context context, Activity activity, Listener listener) {
         super(context, activity, listener);
@@ -30,6 +30,7 @@ public class SpeakConnectionController extends ConnectionController {
 
     @Override
     public void startService(int connectionNumber) {
+        StreamSoundService.registerListener(this);
         Intent startIntent = new Intent(context, StreamSoundService.class);
         startIntent.putExtra(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
         activity.startService(startIntent);
@@ -37,7 +38,12 @@ public class SpeakConnectionController extends ConnectionController {
 
     @Override
     protected void stopService() {
+        StreamSoundService.unregisterListener(this);
         activity.stopService(new Intent(context, StreamSoundService.class));
     }
 
+    @Override
+    public void streamingErrored(String error) {
+        failed(error);
+    }
 }

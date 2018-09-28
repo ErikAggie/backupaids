@@ -1,5 +1,7 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -57,6 +59,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                     updatePlayButton();
                 }
             });
+        }
+
+        @Override
+        public void playbackErrored(final String error) {
+            showPlaybackError(error);
         }
     };
 
@@ -266,6 +273,25 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         updateSpinner();
     }
 
+    private void showPlaybackError(final String error) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(getContext())
+                        .setTitle("Unable to play")
+                        .setMessage(error)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Do nothing...
+                            }
+                        })
+                        .show();
+            }
+        });
+    }
+
     //---------------------------------------------------------------------------------------------
     // ConnectionController callbacks
     //---------------------------------------------------------------------------------------------
@@ -304,6 +330,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 }
             }
         });
+    }
+
+    @Override
+    public void failed(String error) {
+        showPlaybackError(error);
     }
 
     @Override
