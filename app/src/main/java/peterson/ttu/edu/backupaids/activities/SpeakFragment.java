@@ -144,16 +144,19 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                         case STARTUP:
                         case CONNECTING:
                             playButton.setImageResource(R.drawable.ic_power_button_blue);
+                            Util.rotateImageButton(playButton);
                             break;
                         case STREAMING:
                             playButton.setImageResource(R.drawable.ic_power_button_green);
+                            playButton.setAnimation(null);
                             break;
                         case RETRY:
-                            // TODO fill in with an animation and/or toast message
+                            Util.rotateImageButton(playButton);
                             break;
                         case STOPPED:
                         case FAILED:
                             playButton.setImageResource(R.drawable.ic_refresh_black);
+                            playButton.setAnimation(null);
                             break;
                         default:
                             throw new RuntimeException("Unknown state " + connectionController.getState());

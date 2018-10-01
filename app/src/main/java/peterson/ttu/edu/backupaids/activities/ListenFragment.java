@@ -27,6 +27,7 @@ import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
+import peterson.ttu.edu.backupaids.util.Util;
 
 public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
 
@@ -230,18 +231,21 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case STARTUP:
             case CONNECTING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+                Util.rotateImageButton(makeDiscoverableButton, 0.7f, 0.5f);
                 pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+                makeDiscoverableButton.setAnimation(null);
                 pinTextView.setVisibility(View.GONE);
                 break;
             case RETRY:
-                // TODO fill in with an animation and/or toast message
+                Util.rotateImageButton(makeDiscoverableButton, 0.7f, 0.5f);
                 break;
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                makeDiscoverableButton.setAnimation(null);
                 pinTextView.setVisibility(View.GONE);
                 break;
             default:

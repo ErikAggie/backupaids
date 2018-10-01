@@ -5,6 +5,10 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.SparseIntArray;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageButton;
 
 import peterson.ttu.edu.backupaids.R;
 
@@ -54,5 +58,25 @@ public class Util {
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         WIFI_P2P_INTENT_FILTER.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+    }
+
+    public static void rotateImageButton(ImageButton button) {
+        rotateImageButton(button, .5f, .5f);
+    }
+
+    public static void rotateImageButton(ImageButton button, float rotateX, float rotateY) {
+        // Add rotate animation, with code adapted from https://stackoverflow.com/questions/2032304/android-imageview-animation
+        RotateAnimation anim =
+                new RotateAnimation(0.0f,
+                        360.0f,
+                        Animation.RELATIVE_TO_SELF,
+                        rotateX,
+                        Animation.RELATIVE_TO_SELF,
+                        rotateY);
+
+        anim.setInterpolator(new AccelerateDecelerateInterpolator());
+        anim.setRepeatCount(Animation.INFINITE);
+        anim.setDuration(1500);
+        button.startAnimation(anim);
     }
 }
