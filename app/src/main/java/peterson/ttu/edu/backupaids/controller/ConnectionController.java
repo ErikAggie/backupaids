@@ -35,7 +35,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
-    private State state = State.STARTUP;
+    private volatile State state = State.STARTUP;
 
     private AtomicInteger numRecentFailures = new AtomicInteger(0);
     private Timer repeatFailureTimer = new Timer();
@@ -71,15 +71,16 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     protected abstract void stopService();
 
-    protected void updateState(State state) {
-        if ( state != this.state) {
+    protected synchronized void updateState(State state) {
+        if ( state != this.state || state == State.STOPPED) {
             // A change...
             this.state = state;
             listener.stateChanged(state);
         }
     }
 
-    protected void failed(String reason) {
+    protected synchronized void failed(String reason) {
+        Log.i(TAG, "Streaming failed: " + reason);
         if ( state == State.FAILED ||
              state == State.STOPPED) {
             // Already noted, or not important
@@ -156,8 +157,11 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
             repeatFailureTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    if ( state == State.STREAMING)
+                    if ( state == State.STREAMING) {
                         numRecentFailures.set(0);
+                    } else {
+                        stop();
+                    }
                 }
             }, LENGTH_TO_WAIT_FOR_RECONNECT);
         } else {

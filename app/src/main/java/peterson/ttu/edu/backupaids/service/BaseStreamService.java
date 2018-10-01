@@ -137,6 +137,7 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             }
         } catch ( ServiceSetupException e) {
             Log.w(TAG, "Service setup error: " + e.getMessage());
+            connectionMaker.disallowRetry();
             noteError(e.getMessage());
         } catch( IOException e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
