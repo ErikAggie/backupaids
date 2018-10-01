@@ -140,12 +140,13 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void connectionClosed() {
+    public void connectionClosed(boolean allowRetry) {
         if ( state == State.STOPPED) {
+            // Duplicate
             return;
         }
         int numFailures = numRecentFailures.incrementAndGet();
-        if ( numFailures > MAX_FAILURES_IN_TWO_MINUTES) {
+        if ( !allowRetry || (numFailures > MAX_FAILURES_IN_TWO_MINUTES)) {
             stop();
         } else if ( savedApplicationName == null) {
             updateState(State.RETRY);

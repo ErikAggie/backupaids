@@ -76,6 +76,8 @@ public class ConnectionMaker extends BroadcastReceiver
     private final Map<String, InetAddress> savedIPs = new HashMap<>();
     private int portToConnectTo;
 
+    private boolean allowRetry = true;
+
     // Because of the way service discovery appears to work (only one of the two sides gets notified about a service),
     // both sides have to listen for a connection
     private ServerSocket serverSocket;
@@ -121,6 +123,13 @@ public class ConnectionMaker extends BroadcastReceiver
         this.connectionListener = connectionListener;
     }
 
+    /**
+     * Call this when you don't want to allow an automatic retry
+     */
+    public void disallowRetry() {
+        allowRetry = false;
+    }
+
     public void close() {
         // Only do this once (probably won't hurt to do it again, but it wastes time/energy)
         if ( isClosed.getAndSet(true)) {
@@ -164,7 +173,7 @@ public class ConnectionMaker extends BroadcastReceiver
         socketHandler.handleSocket(waitingSocket);
 
         // This call returning means that the caller is done with the socket
-        connectionListener.connectionClosed();
+        connectionListener.connectionClosed(allowRetry);
     }
 
     /**
@@ -487,7 +496,7 @@ public class ConnectionMaker extends BroadcastReceiver
         void findingPeerFailed(IOException e);
         void connectionReady(int connectionNumber) throws IOException;
         void connectionFailed(IOException e);
-        void connectionClosed();
+        void connectionClosed(boolean ableToRetry);
     }
 
     /**

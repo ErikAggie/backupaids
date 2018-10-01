@@ -105,10 +105,6 @@ public class LocalSoundService extends BaseService {
             notificationManager.createNotificationChannel(channel);
         }
 
-        for ( Listener listener : listeners) {
-            listener.playbackStarted();
-        }
-
         SoundSource soundSource = null;
         SoundDestination soundDestination = null;
 
@@ -134,6 +130,10 @@ public class LocalSoundService extends BaseService {
             startForeground(FOREGROUND_ID, notificationBuilder.build());
 
             running.set(true);
+
+            for ( Listener listener : listeners) {
+                listener.playbackStarted();
+            }
 
             // Here's the playing loop!
             while (playing) {

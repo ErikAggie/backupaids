@@ -124,6 +124,11 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
             // Here's the playing loop!
             while (thisServiceIsStreaming) {
+                if ( soundDestination.hasStopped()) {
+                    // Not playing anymore, likely due to headphones being removed
+                    connectionMaker.disallowRetry();
+                    break;
+                }
                 int amountRead = soundSource.read(audioBuffer);
                 if (amountRead < 0) {
                     break;

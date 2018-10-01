@@ -165,30 +165,35 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
 
     @Override
-    public void stateChanged(ConnectionController.State state) {
-        updatePlayButton();
-        switch ( state) {
-            case STREAMING:
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                    connectionPopup = null;
+    public void stateChanged(final ConnectionController.State state) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updatePlayButton();
+                switch ( state) {
+                    case STREAMING:
+                        if ( connectionPopup != null) {
+                            connectionPopup.dismiss();
+                            connectionPopup = null;
+                        }
+                        break;
+                    case FAILED:
+                        Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+                        // Don't have to stop since we'll get a STOPPED state shortly...
+                        break;
+                    case STOPPED:
+                        Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
+                        if ( connectionPopup != null) {
+                            connectionPopup.dismiss();
+                            connectionPopup = null;
+                        }
+                        connectionController = null;
+                        break;
+                    default:
+                        // Nothing to do...
                 }
-                break;
-            case FAILED:
-                Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-                // Don't have to stop since we'll get a STOPPED state shortly...
-                break;
-            case STOPPED:
-                Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                    connectionPopup = null;
-                }
-                connectionController = null;
-                break;
-            default:
-                // Nothing to do...
-        }
+            }
+        });
     }
 
     @Override
