@@ -277,6 +277,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                updatePlayButton();
                 new AlertDialog.Builder(getContext())
                         .setTitle("Unable to play")
                         .setMessage(error)

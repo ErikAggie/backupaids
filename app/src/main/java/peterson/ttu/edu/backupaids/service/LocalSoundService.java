@@ -105,8 +105,6 @@ public class LocalSoundService extends BaseService {
             notificationManager.createNotificationChannel(channel);
         }
 
-        running.set(true);
-
         for ( Listener listener : listeners) {
             listener.playbackStarted();
         }
@@ -126,7 +124,6 @@ public class LocalSoundService extends BaseService {
             soundSource.record();
             soundDestination.play();
 
-
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, PLAYBACK_CHANNEL_NAME)
                     .setOngoing(true)
                     .setSmallIcon(R.drawable.ic_play)
@@ -135,6 +132,8 @@ public class LocalSoundService extends BaseService {
                     .setContentIntent(pendingIntent);
 
             startForeground(FOREGROUND_ID, notificationBuilder.build());
+
+            running.set(true);
 
             // Here's the playing loop!
             while (playing) {
@@ -148,6 +147,7 @@ public class LocalSoundService extends BaseService {
                 soundDestination.write(audioBuffer, amountRead);
             }
         } catch ( ServiceSetupException e) {
+            running.set(false);
             Log.w(TAG, "Setup error: " + e.getMessage());
             for ( Listener listener : listeners) {
                 listener.playbackErrored(e.getMessage());
