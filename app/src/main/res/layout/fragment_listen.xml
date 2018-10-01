@@ -14,6 +14,7 @@
         android:text="@string/our_pin"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
         android:textSize="18sp"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/newPresetButton"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -96,8 +97,8 @@
 
     <ImageButton
         android:id="@+id/makeDiscoverable"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_marginBottom="16dp"
         android:layout_marginEnd="16dp"
         android:adjustViewBounds="false"

@@ -220,6 +220,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void updateMakeDiscoverableButton() {
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
+        TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
         if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
             return;
@@ -229,9 +230,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case STARTUP:
             case CONNECTING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
+                pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+                pinTextView.setVisibility(View.GONE);
                 break;
             case RETRY:
                 // TODO fill in with an animation and/or toast message
@@ -239,6 +242,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                pinTextView.setVisibility(View.GONE);
                 break;
             default:
                 throw new RuntimeException("Unknown connection state " + connectionController.getState() + "!");
