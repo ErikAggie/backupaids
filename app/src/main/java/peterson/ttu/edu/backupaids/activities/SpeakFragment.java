@@ -3,7 +3,6 @@ package peterson.ttu.edu.backupaids.activities;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -15,10 +14,6 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -140,7 +135,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             public void run() {
                 ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
                 if ( connectionController == null) {
-                    playButton.setImageResource(R.drawable.ic_refresh_black);
+                    playButton.setImageResource(R.drawable.ic_refresh_gray);
                 } else {
                     switch (connectionController.getState()) {
                         case STARTUP:
@@ -157,7 +152,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                             break;
                         case STOPPED:
                         case FAILED:
-                            playButton.setImageResource(R.drawable.ic_refresh_black);
+                            playButton.setImageResource(R.drawable.ic_refresh_gray);
                             playButton.setAnimation(null);
                             break;
                         default:

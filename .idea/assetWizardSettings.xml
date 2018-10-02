@@ -120,9 +120,9 @@
                           <map>
                             <entry key="assetSourceType" value="FILE" />
                             <entry key="color" value="0000b9" />
-                            <entry key="outputName" value="ic_phone_in_grey" />
+                            <entry key="outputName" value="ic_refresh_gray" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\erika\OneDrive\Pictures\App Images\Phone In Grey.svg" />
+                            <entry key="sourceFile" value="C:\Users\erika\OneDrive\Pictures\App Images\refresh-gray.svg" />
                           </map>
                         </option>
                       </PersistentState>
