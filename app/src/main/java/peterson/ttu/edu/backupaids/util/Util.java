@@ -61,18 +61,14 @@ public class Util {
     }
 
     public static void rotateImageButton(ImageButton button) {
-        rotateImageButton(button, .5f, .5f);
-    }
-
-    public static void rotateImageButton(ImageButton button, float rotateX, float rotateY) {
         // Add rotate animation, with code adapted from https://stackoverflow.com/questions/2032304/android-imageview-animation
         RotateAnimation anim =
                 new RotateAnimation(0.0f,
                         360.0f,
                         Animation.RELATIVE_TO_SELF,
-                        rotateX,
+                        .5f,
                         Animation.RELATIVE_TO_SELF,
-                        rotateY);
+                        .5f);
 
         anim.setInterpolator(new AccelerateDecelerateInterpolator());
         anim.setRepeatCount(Animation.INFINITE);

@@ -223,28 +223,28 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
         TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
         if ( connectionController == null) {
-            makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+            makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
             return;
         }
 
         switch (connectionController.getState()) {
             case STARTUP:
             case CONNECTING:
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_blue);
-                Util.rotateImageButton(makeDiscoverableButton, 0.7f, 0.5f);
+                makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_blue);
+                Util.rotateImageButton(makeDiscoverableButton);
                 pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_green);
+                makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_green);
                 makeDiscoverableButton.setAnimation(null);
                 pinTextView.setVisibility(View.GONE);
                 break;
             case RETRY:
-                Util.rotateImageButton(makeDiscoverableButton, 0.7f, 0.5f);
+                Util.rotateImageButton(makeDiscoverableButton);
                 break;
             case FAILED:
             case STOPPED:
-                makeDiscoverableButton.setImageResource(R.drawable.phone_in_gray);
+                makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
                 makeDiscoverableButton.setAnimation(null);
                 pinTextView.setVisibility(View.GONE);
                 break;

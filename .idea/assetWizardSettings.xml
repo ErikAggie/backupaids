@@ -118,12 +118,11 @@
                         </option>
                         <option name="values">
                           <map>
+                            <entry key="assetSourceType" value="FILE" />
                             <entry key="color" value="0000b9" />
-                            <entry key="height" value="600" />
-                            <entry key="outputName" value="ic_power_button_blue" />
+                            <entry key="outputName" value="ic_phone_in_grey" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\erika" />
-                            <entry key="width" value="600" />
+                            <entry key="sourceFile" value="C:\Users\erika\OneDrive\Pictures\App Images\Phone In Grey.svg" />
                           </map>
                         </option>
                       </PersistentState>
