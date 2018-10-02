@@ -37,6 +37,8 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     private final Timer discoverableCountdown = new Timer();
     private volatile State state = State.STARTUP;
 
+    private volatile boolean stopped = false;
+
     private AtomicInteger numRecentFailures = new AtomicInteger(0);
     private Timer repeatFailureTimer = new Timer();
     private String savedApplicationName;
@@ -59,7 +61,12 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     }
 
-    public void stop() {
+    public synchronized void stop() {
+        if ( stopped) {
+            return;
+        }
+        stopped = true;
+
         discoverableCountdown.cancel();
         repeatFailureTimer.cancel();
 
@@ -88,6 +95,8 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         }
         listener.failed(reason);
         updateState(State.FAILED);
+
+        stop();
     }
 
     public State getState() {
@@ -109,8 +118,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void servicePublishingFailed() {
-        updateState(State.FAILED);
-        stop();
+        failed("Unable to set up a connection. Please be sure that WiFi is on. Otherwise this usually gets fixed if you try again in a few seconds.");
     }
 
     @Override
@@ -121,8 +129,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void findingPeerFailed(IOException e) {
-        updateState(State.FAILED);
-        stop();
+        failed("Trouble finding another device. Please try again in a few seconds.");
     }
 
     @Override
@@ -198,7 +205,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     public interface Listener {
         void stateChanged(State state);
-        void failed(String Reason);
+        void failed(String reason);
         void askAboutConnection(String connectionName, PeerCallback callback);
     }
 }

@@ -281,14 +281,14 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         updateSpinner();
     }
 
-    private void showPlaybackError(final String error) {
+    private void showPlaybackError(final String reason) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 updatePlayButton();
                 new AlertDialog.Builder(getContext())
                         .setTitle("Unable to play")
-                        .setMessage(error)
+                        .setMessage(reason)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
@@ -319,8 +319,8 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                         }
                         break;
                     case FAILED:
-                        Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
-                        // Don't have to stop since we'll get a STOPPED state shortly...
+                        // Should have a separate notification, so don't show anything here
+                        // Will also get a STOPPED notification shortly, so no need to do anything else
                         break;
                     case STOPPED:
                         Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
@@ -342,8 +342,8 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void failed(String error) {
-        showPlaybackError(error);
+    public void failed(String reason) {
+        showPlaybackError(reason);
     }
 
     @Override

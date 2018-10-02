@@ -1,6 +1,8 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
@@ -200,7 +202,25 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     @Override
-    public void failed(String Reason) {
+    public void failed(final String reason) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updatePlayButton();
+                new AlertDialog.Builder(getContext())
+                        .setTitle("Unable to play")
+                        .setMessage(reason)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Do nothing...
+                            }
+                        })
+                        .show();
+            }
+        });
+
         // This isn't likely (at present--September, 2018--this is only for headphone not present--not a problem here
         Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
     }
