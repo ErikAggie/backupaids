@@ -120,9 +120,9 @@
                           <map>
                             <entry key="assetSourceType" value="FILE" />
                             <entry key="color" value="0000b9" />
-                            <entry key="outputName" value="ic_refresh_gray" />
+                            <entry key="outputName" value="ic_equalizer" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\erika\OneDrive\Pictures\App Images\refresh-gray.svg" />
+                            <entry key="sourceFile" value="C:\Users\erika\OneDrive\Pictures\App Images\Equalizer.svg" />
                           </map>
                         </option>
                       </PersistentState>

@@ -8,7 +8,6 @@
     <string name="preset_file_name">Presetv1.txt</string>
     <string name="title_activity_send_sound">Send Sound (FM style)</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="our_pin">Our PIN: %1$d</string>
     <string name="preset">Preset:</string>
     <string name="new_preset">New Preset</string>
@@ -30,5 +29,15 @@
     <string name="tab_text_3">Tab 3</string>
     <string name="action_settings">Settings</string>
     <string name="section_format">Hello World from section: %1$d</string>
+
+    <string name="using_phone_mic">Using phone mic</string>
+    <string name="using_headset_mic">Using headset mic</string>
+
+    <string name="not_connected">Not connected</string>
+    <string name="connecting">Connecting...</string>
+    <string name="connected">Connected!</string>
+
+    <string name="create_preset">Create preset</string>
+    <string name="edit_preset">$s (Edit/choose)</string>
 
 </resources>

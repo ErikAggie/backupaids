@@ -80,12 +80,15 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
 
         // Set up our button's onClickEvents (why can't they target this automatically???
-        Button newPresetButton = fragmentView.findViewById(R.id.newPresetButton);
-        newPresetButton.setOnClickListener(this);
+        // TODO: update with the new preset button
+        //Button newPresetButton = fragmentView.findViewById(R.id.newPresetButton);
+        //newPresetButton.setOnClickListener(this);
         ImageButton playButton = fragmentView.findViewById(R.id.playSound);
         playButton.setOnClickListener(this);
         ImageButton makeDiscoverableButton = fragmentView.findViewById(R.id.makeDiscoverable);
         makeDiscoverableButton.setOnClickListener(this);
+        ImageButton presetChooserButton = fragmentView.findViewById(R.id.presetChooser);
+        presetChooserButton.setOnClickListener(this);
 
         return fragmentView;
     }
@@ -99,27 +102,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         updateSpinner();
 
-        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-        presetSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                SoundPreset newPreset = getCurrentSoundPreset();
-                if ( newPreset != null) {
-                    LocalSoundService.setCurrentPreset(newPreset.getName());
-                    RemoteSoundService.setCurrentPreset(newPreset.getName());
-                }
-                // TODO: we're making the user restart playback; it'd be nice if we could do
-                // it for them, but the problem is this gets called as the Activity is being
-                // created, so cases where we're arriving while we're already playing
-                // (e.g. if a service kicks us off) then stopping playback would be bad
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-                // Shouldn't happen
-            }
-        });
-
+        // TODO: shouldn't this be handled by the preset manager (i.e. services can listen when needed)?
         SoundPreset initialPreset = getCurrentSoundPreset();
         if ( initialPreset != null) {
             LocalSoundService.setCurrentPreset(initialPreset.getName());
@@ -164,7 +147,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case R.id.playSound:
                 playLocalSound();
                 break;
-            case R.id.newPresetButton:
+            case R.id.presetChooser:
                 newPreset();
                 break;
             case R.id.makeDiscoverable:
@@ -202,12 +185,14 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void updateSpinner() {
-        SoundPresetManager presetManager = SoundPresetManager.getInstance(getContext());
-        String[] presetNames = presetManager.getSortedPresetNames();
-        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getContext(), R.layout.support_simple_spinner_dropdown_item, presetNames);
-        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
-        presetSpinner.setAdapter(arrayAdapter);
+        // TODO: update text with selected preset, if needed
+        // Use code here when popping up the list of presets
+//        SoundPresetManager presetManager = SoundPresetManager.getInstance(getContext());
+//        String[] presetNames = presetManager.getSortedPresetNames();
+//        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
+//        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getContext(), R.layout.support_simple_spinner_dropdown_item, presetNames);
+//        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
+//        presetSpinner.setAdapter(arrayAdapter);
     }
 
     private void updatePlayButton() {
@@ -221,9 +206,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void updateMakeDiscoverableButton() {
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
+        TextView textForMakeDiscoverableButton = getView().findViewById(R.id.textForMakeDiscoverableButton);
         TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
         if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
+            textForMakeDiscoverableButton.setText(R.string.not_connected);
             return;
         }
 
@@ -232,11 +219,13 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case CONNECTING:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_blue);
                 Util.rotateImageButton(makeDiscoverableButton);
+                textForMakeDiscoverableButton.setText(R.string.connecting);
                 pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_green);
                 makeDiscoverableButton.setAnimation(null);
+                textForMakeDiscoverableButton.setText(R.string.connected);
                 pinTextView.setVisibility(View.GONE);
                 break;
             case RETRY:
@@ -246,6 +235,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
                 makeDiscoverableButton.setAnimation(null);
+                textForMakeDiscoverableButton.setText(R.string.not_connected);
                 pinTextView.setVisibility(View.GONE);
                 break;
             default:
@@ -254,11 +244,12 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private SoundPreset getCurrentSoundPreset() {
-        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-        int position = presetSpinner.getSelectedItemPosition();
-        if ( position >= 0) {
-            return SoundPresetManager.getInstance(getContext()).getPreset(position);
-        }
+        // TODO: Get the current selection (which should be saved!)
+//        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
+//        int position = presetSpinner.getSelectedItemPosition();
+//        if ( position >= 0) {
+//            return SoundPresetManager.getInstance(getContext()).getPreset(position);
+//        }
         return null;
     }
 
