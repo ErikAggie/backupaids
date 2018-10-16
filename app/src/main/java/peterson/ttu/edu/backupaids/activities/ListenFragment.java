@@ -3,6 +3,7 @@ package peterson.ttu.edu.backupaids.activities;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -176,9 +177,17 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void makeDiscoverable() {
+        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+
         if ( connectionController != null) {
             stopStreaming();
         } else {
+            if ( !Util.areHeadphonesActive(audioManager)) {
+                // No headphones=no reason to try to stream (would just be annoying if we waited
+                // until we connected to notice this...)
+                showPlaybackError(getString(R.string.headphones_not_connected));
+                return;
+            }
             connectionController = new ListenConnectionController(getContext(), getActivity(), this);
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
         }

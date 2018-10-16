@@ -40,4 +40,6 @@
     <string name="create_preset">Create preset</string>
     <string name="edit_preset">$s (Edit/choose)</string>
 
+    <string name="headphones_not_connected">"Please insert headphones before listening. Otherwise you're likely to get a horrible screeching noise. :)"</string>
+
 </resources>

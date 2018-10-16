@@ -16,7 +16,9 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.service.ServiceSetupException;
+import peterson.ttu.edu.backupaids.util.Util;
 
 /**
  * Class for playing sound locally (speakers/headphones)
@@ -64,8 +66,8 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
         // We wait until now to check for headphones because it might take a while to get here
         // (e.g. connecting to a phone takes a few seconds, so we don't want to assume headphones
         // are attached immediately)
-        if ( !areHeadphonesActive(audioManager)) {
-            throw new ServiceSetupException("Please insert headphones before listening. Otherwise you're likely to get a horrible screeching noise. :)");
+        if ( !Util.areHeadphonesActive(audioManager)) {
+            throw new ServiceSetupException(context.getString(R.string.headphones_not_connected));
         }
 
         if ( numberPlaying.getAndIncrement() == 0) {
@@ -99,22 +101,6 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
         }
 
         audioTrack.play();
-    }
-
-    private boolean areHeadphonesActive(AudioManager audioManager) {
-        AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-        for ( AudioDeviceInfo audioDevice : audioDevices) {
-            switch(audioDevice.getType()) {
-                case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
-                case AudioDeviceInfo.TYPE_LINE_ANALOG:
-                case AudioDeviceInfo.TYPE_LINE_DIGITAL:
-                case AudioDeviceInfo.TYPE_USB_HEADSET:
-                case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
-                case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-                    return true;
-            }
-        }
-        return false;
     }
 
     @Override

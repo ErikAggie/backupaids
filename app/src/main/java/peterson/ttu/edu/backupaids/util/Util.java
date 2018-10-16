@@ -1,7 +1,9 @@
 package peterson.ttu.edu.backupaids.util;
 
 import android.content.IntentFilter;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.SparseIntArray;
@@ -75,4 +77,22 @@ public class Util {
         anim.setDuration(1500);
         button.startAnimation(anim);
     }
+
+
+    public static boolean areHeadphonesActive(AudioManager audioManager) {
+        AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+        for ( AudioDeviceInfo audioDevice : audioDevices) {
+            switch(audioDevice.getType()) {
+                case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                case AudioDeviceInfo.TYPE_LINE_ANALOG:
+                case AudioDeviceInfo.TYPE_LINE_DIGITAL:
+                case AudioDeviceInfo.TYPE_USB_HEADSET:
+                case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                    return true;
+            }
+        }
+        return false;
+    }
+
 }
