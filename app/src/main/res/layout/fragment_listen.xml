@@ -8,61 +8,30 @@
 
     <TextView
         android:id="@+id/ourPinTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:text="@string/our_pin"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/playSound"
-        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.6" />
+        app:layout_constraintBottom_toTopOf="@id/listenSpace"
+        app:layout_constraintLeft_toLeftOf="parent"/>
 
-    <!--<TextView
-        android:id="@+id/presetLabel"
-        android:layout_width="wrap_content"
+    <!-- Space so that the ImageButton has something to anchor on when the TextView is invisible -->
+    <android.support.v4.widget.Space
+        android:id="@+id/listenSpace"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="@string/preset"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@+id/newPresetButton"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/presetSpinner"
-        app:layout_constraintTop_toTopOf="@id/newPresetButton" />
-
-    <Spinner
-        android:id="@+id/presetSpinner"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="0dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintTop_toTopOf="@id/newPresetButton"
-        app:layout_constraintBottom_toBottomOf="@+id/newPresetButton"
-        app:layout_constraintLeft_toRightOf="@id/presetLabel"
-        app:layout_constraintRight_toLeftOf="@id/newPresetButton"/>
-
-    <Button
-        android:id="@+id/newPresetButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:text="@string/new_preset"
-        app:layout_constraintBottom_toTopOf="@id/playSound"
-        app:layout_constraintLeft_toRightOf="@id/presetSpinner"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ourPinTextView" />-->
+        app:layout_constraintTop_toBottomOf="@id/ourPinTextView"
+        app:layout_constraintBottom_toTopOf="@id/playSound"/>
 
     <ImageButton
         android:id="@+id/playSound"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:adjustViewBounds="false"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_power_button_blue"
@@ -70,45 +39,11 @@
         android:layout_marginBottom="16dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
-        app:layout_constraintHorizontal_bias="0.6"
-        app:layout_constraintVertical_weight="1.0"
+        app:layout_constraintTop_toBottomOf="@id/listenSpace"
         app:layout_constraintBottom_toTopOf="@id/bottomMenu"
-        app:layout_constraintTop_toBottomOf="@id/ourPinTextView"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintVertical_bias="0.6"
         android:contentDescription="@string/play_stop_playing_what_the_phone_hears" />
-
-    <!--<TextView
-        android:id="@+id/textForMakeDiscoverableButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:text="@string/allow_another_phone_to_send_audio"
-        android:textAlignment="viewEnd"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@id/makeDiscoverable"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/makeDiscoverable"
-        app:layout_constraintTop_toTopOf="@id/makeDiscoverable"
-        app:layout_constraintHorizontal_chainStyle="packed"/>
-
-    <ImageButton
-        android:id="@+id/makeDiscoverable"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
-        android:adjustViewBounds="false"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
-        android:scaleType="fitEnd"
-        android:src="@drawable/ic_phone_in_gray"
-        app:layout_constraintBottom_toTopOf="@id/bottomMenu"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playSound" />-->
 
     <!-- Bottom quick settings -->
     <LinearLayout
