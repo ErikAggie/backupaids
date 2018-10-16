@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 
@@ -29,13 +30,13 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
         Hz8000(8000),
         End(-1); // Another non-value to note that we're at the end
 
-        private final int mFrequencyIfAny;
+        private final int frequencyIfAny;
 
         SetupSteps(int frequency) {
-            mFrequencyIfAny = frequency;
+            frequencyIfAny = frequency;
         }
 
-        private int getFrequency() { return mFrequencyIfAny;}
+        private int getFrequency() { return frequencyIfAny;}
 
         private final static SetupSteps[] values = values();
         private SetupSteps next()
@@ -46,12 +47,12 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
 
     private static final String TAG = "PresetSetupActivity";
 
-    private SoundPreset mSoundPreset = new SoundPreset();
+    private SoundPreset soundPreset = new SoundPreset();
     private SetupSteps currentStep = SetupSteps.Start;
     private Fragment mCurrentFragment;
 
     public void setSoundPreset(SoundPreset soundPreset) {
-        mSoundPreset = soundPreset;
+        this.soundPreset = soundPreset;
     }
 
     @Override
@@ -131,7 +132,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
                     requestName();
                     return;
                 }
-                mSoundPreset.setName(input.getText().toString());
+                soundPreset.setName(input.getText().toString());
                 savePreset();
                 finish();
             }
@@ -148,11 +149,12 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     private void savePreset() {
-        SoundPresetManager.getInstance(this).addOrReplacePreset(this, mSoundPreset);
+        SoundPresetManager.getInstance(this).addOrReplacePreset(soundPreset);
+        Preferences.getInstance(this).setSelectedPreset(soundPreset.getName());
     }
 
     private void showVolumeFragment() {
-        int volume = mSoundPreset.getVolumeAdjust();
+        int volume = soundPreset.getVolumeAdjust();
         // If this is a new preset (volume = 0), don't set anything...the fragment
         // will use the current headset volume to start
         if ( volume == 0) {
@@ -162,18 +164,18 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     public void volumeAdjustmentComplete(int volumeLevel) {
-        mSoundPreset.setVolumeAdjust(volumeLevel);
+        soundPreset.setVolumeAdjust(volumeLevel);
         nextFragment();
     }
     
     private void showFrequencyFragment(SetupSteps step) {
         showFragment(
                 FrequencyAdjustFragment.newInstance(step.getFrequency(),
-                                                    mSoundPreset.getFrequencyAdjustment(step.getFrequency())));
+                                                    soundPreset.getFrequencyAdjustment(step.getFrequency())));
     }
 
     public void frequencyAdjustmentComplete(short amount) {
-        mSoundPreset.setFrequencyAdjustment(currentStep.getFrequency(), amount);
+        soundPreset.setFrequencyAdjustment(currentStep.getFrequency(), amount);
         nextFragment();
     }
 

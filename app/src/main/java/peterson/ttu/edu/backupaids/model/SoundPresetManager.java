@@ -27,22 +27,24 @@ import peterson.ttu.edu.backupaids.R;
 public class SoundPresetManager {
 
 
-    private static SoundPresetManager smInstance;
+    private static SoundPresetManager instance;
 
-    private final Map<String, SoundPreset> mPresets = new HashMap<>();
+    private final Context context;
+    private final Map<String, SoundPreset> presets = new HashMap<>();
 
     public static SoundPresetManager getInstance(Context context) {
-        if ( smInstance == null) {
+        if ( instance == null) {
             synchronized (SoundPresetManager.class) {
-                if ( smInstance == null) {
-                    smInstance = new SoundPresetManager(context);
+                if ( instance == null) {
+                    instance = new SoundPresetManager(context);
                 }
             }
         }
-        return smInstance;
+        return instance;
     }
 
     private SoundPresetManager(Context context) {
+        this.context = context;
         JsonReader jsonReader = null;
         try {
             InputStream inputStream = new FileInputStream(new File(context.getFilesDir(), context.getString(R.string.preset_file_name)));
@@ -72,20 +74,20 @@ public class SoundPresetManager {
                 return;
             }
             SoundPreset preset = new SoundPreset(jsonReader);
-            mPresets.put(preset.getName(), preset);
+            presets.put(preset.getName(), preset);
         }
         jsonReader.endArray();
     }
 
-    public void addOrReplacePreset(Context context, SoundPreset preset) {
-        mPresets.put(preset.getName(), preset);
-        savePresets(context);
+    public void addOrReplacePreset(SoundPreset preset) {
+        presets.put(preset.getName(), preset);
+        savePresets();
     }
 
     /**
      * Call this when you're ready to save changes to 1+ presets
      */
-    private void savePresets(Context context) {
+    private void savePresets() {
         JsonWriter jsonWriter = null;
         try {
             jsonWriter = new JsonWriter(
@@ -93,8 +95,8 @@ public class SoundPresetManager {
                                new File(context.getFilesDir(),
                                         context.getString(R.string.preset_file_name))));
             jsonWriter.beginArray();
-            for ( String presetName : mPresets.keySet()) {
-                mPresets.get(presetName).savePreset(jsonWriter);
+            for ( String presetName : presets.keySet()) {
+                presets.get(presetName).savePreset(jsonWriter);
             }
             jsonWriter.endArray();
         } catch ( IOException e) {
@@ -112,14 +114,18 @@ public class SoundPresetManager {
     }
 
     public String[] getSortedPresetNames() {
-        List<String> list = new ArrayList<>(mPresets.keySet());
+        List<String> list = new ArrayList<>(presets.keySet());
         Collections.sort(list);
         String[] array = new String[list.size()];
         return list.toArray(array);
     }
 
+    public boolean hasPreset(String name) {
+        return (presets.get(name) != null);
+    }
+
     public SoundPreset getPreset(int position) {
-        List<String> list = new ArrayList<>(mPresets.keySet());
+        List<String> list = new ArrayList<>(presets.keySet());
         Collections.sort(list);
         if ( list.size() <= position) {
             throw new RuntimeException("Non-existent preset position: " + position);
@@ -128,7 +134,7 @@ public class SoundPresetManager {
     }
 
     public SoundPreset getPreset(String name) {
-        SoundPreset original = mPresets.get(name);
+        SoundPreset original = presets.get(name);
         if ( original == null) {
             throw new RuntimeException("Asking for non-existent preset " + name);
         }

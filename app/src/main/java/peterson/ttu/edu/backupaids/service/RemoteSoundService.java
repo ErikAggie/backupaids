@@ -8,13 +8,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
-import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
@@ -36,7 +35,6 @@ public class RemoteSoundService extends BaseStreamService {
     private final static List<Listener> listeners = new ArrayList<>();
 
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
-    private static String preset;
 
     public static void registerListener(Listener listener) {
         listeners.add(listener);
@@ -44,14 +42,6 @@ public class RemoteSoundService extends BaseStreamService {
 
     public static void unregisterListener(Listener listener) {
         listeners.remove(listener);
-    }
-
-    public static String getCurrentPreset() {
-        return preset;
-    }
-
-    public static void setCurrentPreset(String newPreset) {
-        preset = newPreset;
     }
 
     public static boolean isCurrentlyStreaming() {
@@ -64,7 +54,7 @@ public class RemoteSoundService extends BaseStreamService {
 
     /**
      * Returns the current ConnectionMaker. If we aren't running, this will be null;
-     * @return
+     * @return The ConnectionMaker we're using
      */
     public static ConnectionMaker getConnectionMaker() {
         if ( instance == null) {
@@ -119,10 +109,7 @@ public class RemoteSoundService extends BaseStreamService {
 
     @Override
     protected SoundDestination createDestination(Socket socket) throws IOException {
-        SoundPreset soundPreset = null;
-        if ( preset != null && !preset.isEmpty()) {
-            soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
-        }
+        SoundPreset soundPreset = Preferences.getInstance(this).getSelectedPreset();
 
         return DestinationFactory.createLocalAudioDestination(soundPreset, this);
     }

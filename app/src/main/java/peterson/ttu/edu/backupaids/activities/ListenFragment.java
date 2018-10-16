@@ -10,11 +10,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,8 +19,8 @@ import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.ListenConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
-import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
@@ -101,14 +97,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         TextView ourPin = getView().findViewById(R.id.ourPinTextView);
         ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
 
-        updateSpinner();
-
-        // TODO: shouldn't this be handled by the preset manager (i.e. services can listen when needed)?
-        SoundPreset initialPreset = getCurrentSoundPreset();
-        if ( initialPreset != null) {
-            LocalSoundService.setCurrentPreset(initialPreset.getName());
-            RemoteSoundService.setCurrentPreset(initialPreset.getName());
-        }
+        updatePresetViewer();
 
         if ( RemoteSoundService.isCurrentlyStreaming()) {
             // Already streaming. Need to re-connect with this guy
@@ -173,6 +162,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void newPreset() {
+        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        if ( !Util.areHeadphonesActive(audioManager)) {
+            showPlaybackError(getString(R.string.headphones_needed));
+            return;
+        }
         startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
     }
 
@@ -193,15 +187,14 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
     }
 
-    private void updateSpinner() {
-        // TODO: update text with selected preset, if needed
-        // Use code here when popping up the list of presets
-//        SoundPresetManager presetManager = SoundPresetManager.getInstance(getContext());
-//        String[] presetNames = presetManager.getSortedPresetNames();
-//        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-//        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getContext(), R.layout.support_simple_spinner_dropdown_item, presetNames);
-//        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
-//        presetSpinner.setAdapter(arrayAdapter);
+    private void updatePresetViewer() {
+        TextView textForPresetChooser = getView().findViewById(R.id.textForPresetChooser);
+        SoundPreset preset = Preferences.getInstance(getContext()).getSelectedPreset();
+        if ( preset != null) {
+            textForPresetChooser.setText(preset.getName());
+        } else {
+            textForPresetChooser.setText(R.string.no_preset_selected);
+        }
     }
 
     private void updatePlayButton() {
@@ -252,16 +245,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
     }
 
-    private SoundPreset getCurrentSoundPreset() {
-        // TODO: Get the current selection (which should be saved!)
-//        Spinner presetSpinner = getView().findViewById(R.id.presetSpinner);
-//        int position = presetSpinner.getSelectedItemPosition();
-//        if ( position >= 0) {
-//            return SoundPresetManager.getInstance(getContext()).getPreset(position);
-//        }
-        return null;
-    }
-
     private void stopStreaming() {
         if ( connectionController != null) {
             connectionController.stop();
@@ -278,7 +261,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        updateSpinner();
+        updatePresetViewer();
     }
 
     private void showPlaybackError(final String reason) {

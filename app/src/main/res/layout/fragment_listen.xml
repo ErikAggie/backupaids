@@ -46,88 +46,69 @@
         android:contentDescription="@string/play_stop_playing_what_the_phone_hears" />
 
     <!-- Bottom quick settings -->
-    <LinearLayout
+    <TableLayout
         android:id="@+id/bottomMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#f5f5f5"
+        android:stretchColumns="*"
         app:layout_constraintTop_toBottomOf="@id/playSound"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:layout_weight="1"
-            android:gravity="center">
+        <TableRow>
             <ImageButton
                 android:id="@+id/micToUseButton"
-                android:layout_width="40dp"
+                android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:background="@android:color/transparent"
-                android:scaleType="fitEnd"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_phone_mic_blue"/>
-            <TextView
-                android:id="@+id/micToUseText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/using_phone_mic"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:layout_weight="1"
-            android:gravity="center">
             <ImageButton
                 android:id="@+id/makeDiscoverable"
-                android:layout_width="40dp"
+                android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:adjustViewBounds="false"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
-                android:scaleType="fitEnd"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_phone_in_gray"/>
-            <TextView
-                android:id="@+id/textForMakeDiscoverableButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/not_connected"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:layout_weight="1"
-            android:gravity="center">
             <ImageButton
                 android:id="@+id/presetChooser"
-                android:layout_width="40dp"
+                android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:adjustViewBounds="false"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
-                android:scaleType="fitEnd"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_equalizer"/>
+        </TableRow>
+        <TableRow>
+            <TextView
+                android:id="@+id/micToUseText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/using_phone_mic"
+                android:textAlignment="center"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+            <TextView
+                android:id="@+id/textForMakeDiscoverableButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/not_connected"
+                android:textAlignment="center"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
             <TextView
                 android:id="@+id/textForPresetChooser"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/create_preset"
+                android:text="@string/no_preset_selected"
+                android:textAlignment="center"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </LinearLayout>
+        </TableRow>
 
-    </LinearLayout>
+    </TableLayout>
 
 </android.support.constraint.ConstraintLayout>

@@ -5,8 +5,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
 import android.os.Build;
 import android.os.Process;
 import android.support.annotation.Nullable;
@@ -19,10 +17,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import peterson.ttu.edu.backupaids.R;
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.activities.TabbedMain;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
-import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -38,7 +36,6 @@ public class LocalSoundService extends BaseService {
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
 
     private static final AtomicBoolean running = new AtomicBoolean(false);
-    private static String preset;
 
     private boolean playing = true;
 
@@ -58,14 +55,6 @@ public class LocalSoundService extends BaseService {
 
     public static void unregisterListener(Listener listener) {
         listeners.remove(listener);
-    }
-
-    public static String getCurrentPreset() {
-        return preset;
-    }
-
-    public static void setCurrentPreset(String newPreset) {
-        preset = newPreset;
     }
 
     @Override
@@ -91,10 +80,7 @@ public class LocalSoundService extends BaseService {
 
         registerThisService();
 
-        SoundPreset soundPreset = null;
-        if ( preset != null && !preset.isEmpty()) {
-            soundPreset = SoundPresetManager.getInstance(this).getPreset(preset);
-        }
+        SoundPreset soundPreset = Preferences.getInstance(this).getSelectedPreset();
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, TabbedMain.class), 0);
 
@@ -102,6 +88,7 @@ public class LocalSoundService extends BaseService {
             // Create the notification channel needed to show this notification...
             NotificationChannel channel = new NotificationChannel(PLAYBACK_CHANNEL_NAME, PLAYBACK_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            assert notificationManager != null;
             notificationManager.createNotificationChannel(channel);
         }
 

@@ -6,6 +6,7 @@
     <string name="volume_with_value">Volume: %1$d</string>
 
     <string name="preset_file_name">Presetv1.txt</string>
+    <string name="preferences_file_name">Preferencesv1.txt</string>
     <string name="title_activity_send_sound">Send Sound (FM style)</string>
 
     <string name="our_pin">Our PIN: %1$d</string>
@@ -37,9 +38,10 @@
     <string name="connecting">Connecting...</string>
     <string name="connected">Connected!</string>
 
-    <string name="create_preset">Create preset</string>
+    <string name="no_preset_selected">No preset selected</string>
     <string name="edit_preset">$s (Edit/choose)</string>
 
-    <string name="headphones_not_connected">"Please insert headphones before listening. Otherwise you're likely to get a horrible screeching noise. :)"</string>
+    <string name="headphones_not_connected">Please insert/connect headphones before listening. Otherwise you\'ll get a horrible screeching noise. :)</string>
+    <string name="headphones_needed">Please plug in/connect headphones first.</string>
 
 </resources>
