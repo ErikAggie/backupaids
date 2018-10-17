@@ -11,6 +11,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.net.Socket;
 
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.util.Util;
 
 /**
@@ -32,14 +33,24 @@ public class SourceFactory {
                         AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT,
                         Util.INPUT_MIN_BUFFER_SIZE);
-        // Force use of the phone's microphones
-        // TODO: might want to change this later
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        for ( AudioDeviceInfo device : audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
-            if ( device.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) {
-                audioRecord.setPreferredDevice(device);
+
+        Preferences.MicToUse micToUse = Preferences.getInstance(context).getMicToUse();
+        switch (micToUse) {
+            case PHONE_MIC:
+                // Force use of the phone's microphones
+                AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                for ( AudioDeviceInfo device : audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
+                    if ( device.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) {
+                        audioRecord.setPreferredDevice(device);
+                        break;
+                    }
+                }
                 break;
-            }
+            case HEADSET_MIC:
+                // Nothing to do; this ought to be the default
+                break;
+            default:
+                throw new RuntimeException("Unknown mic type " + micToUse);
         }
         Log.i(TAG, "Audio device is " + audioRecord.getPreferredDevice());
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {

@@ -76,12 +76,14 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         View fragmentView = inflater.inflate(R.layout.fragment_listen, container, false);
 
 
-        // Set up our button's onClickEvents (why can't they target this automatically???
-        // TODO: update with the new preset button
-        //Button newPresetButton = fragmentView.findViewById(R.id.newPresetButton);
-        //newPresetButton.setOnClickListener(this);
         ImageButton playButton = fragmentView.findViewById(R.id.playSound);
         playButton.setOnClickListener(this);
+
+        ImageButton micToUseButton = fragmentView.findViewById(R.id.micToUseButton);
+        micToUseButton.setOnClickListener(this);
+        TextView micToUseText = fragmentView.findViewById(R.id.micToUseText);
+        micToUseText.setOnClickListener(this);
+
         ImageButton makeDiscoverableButton = fragmentView.findViewById(R.id.makeDiscoverable);
         makeDiscoverableButton.setOnClickListener(this);
         ImageButton presetChooserButton = fragmentView.findViewById(R.id.presetChooser);
@@ -106,6 +108,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         // We could already be playing, so check on that...
         updatePlayButton();
+        updateMicToUseButton();
         updateMakeDiscoverableButton();
     }
 
@@ -137,6 +140,10 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case R.id.playSound:
                 playLocalSound();
                 break;
+            case R.id.micToUseButton:
+            case R.id.micToUseText:
+                switchMic();
+                break;
             case R.id.presetChooser:
                 newPreset();
                 break;
@@ -159,6 +166,24 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             // Start playing!
             getActivity().startService(new Intent(getContext(), LocalSoundService.class));
         }
+    }
+
+    private void switchMic() {
+        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences.MicToUse micToUse = preferences.getMicToUse();
+
+        switch(micToUse) {
+            case PHONE_MIC:
+                preferences.setMicToUse(Preferences.MicToUse.HEADSET_MIC);
+                break;
+            case HEADSET_MIC:
+                preferences.setMicToUse(Preferences.MicToUse.PHONE_MIC);
+                break;
+            default:
+                throw new RuntimeException("Unknown mic type " + micToUse);
+        }
+
+        updateMicToUseButton();
     }
 
     private void newPreset() {
@@ -203,6 +228,26 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             playButton.setImageResource(R.drawable.ic_power_button_green);
         } else {
             playButton.setImageResource(R.drawable.ic_power_button_blue);
+        }
+    }
+
+    private void updateMicToUseButton() {
+        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences.MicToUse micToUse = preferences.getMicToUse();
+        ImageButton micToUseButton = getView().findViewById(R.id.micToUseButton);
+        TextView micToUseText = getView().findViewById(R.id.micToUseText);
+
+        switch(micToUse) {
+            case PHONE_MIC:
+                micToUseButton.setImageResource(R.drawable.ic_phone_mic_blue);
+                micToUseText.setText(R.string.using_phone_mic);
+                break;
+            case HEADSET_MIC:
+                micToUseButton.setImageResource(R.drawable.ic_headset_blue);
+                micToUseText.setText(R.string.using_headset_mic);
+                break;
+            default:
+                throw new RuntimeException("Unknown mic type " + micToUse);
         }
     }
 

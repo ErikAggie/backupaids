@@ -62,14 +62,14 @@
             <ImageButton
                 android:id="@+id/micToUseButton"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:background="@android:color/transparent"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_phone_mic_blue"/>
             <ImageButton
                 android:id="@+id/makeDiscoverable"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:adjustViewBounds="false"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
@@ -78,7 +78,7 @@
             <ImageButton
                 android:id="@+id/presetChooser"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:adjustViewBounds="false"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
