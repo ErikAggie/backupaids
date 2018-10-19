@@ -113,6 +113,10 @@ public class SoundPresetManager {
         }
     }
 
+    public int getNumberOfPresets() {
+        return presets.size();
+    }
+
     public String[] getSortedPresetNames() {
         List<String> list = new ArrayList<>(presets.keySet());
         Collections.sort(list);

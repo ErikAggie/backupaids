@@ -1,16 +1,25 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,12 +30,15 @@ import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 import peterson.ttu.edu.backupaids.util.Util;
 
 public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
+
+    private static final String TAG = "ListenFragment";
 
     private Runnable todoOnServiceStopped;
 
@@ -86,8 +98,13 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         ImageButton makeDiscoverableButton = fragmentView.findViewById(R.id.makeDiscoverable);
         makeDiscoverableButton.setOnClickListener(this);
+        TextView makeDiscoverableText = fragmentView.findViewById(R.id.textForMakeDiscoverableButton);
+        makeDiscoverableText.setOnClickListener(this);
+
         ImageButton presetChooserButton = fragmentView.findViewById(R.id.presetChooser);
         presetChooserButton.setOnClickListener(this);
+        TextView presetChooserText = fragmentView.findViewById(R.id.textForPresetChooser);
+        presetChooserText.setOnClickListener(this);
 
         return fragmentView;
     }
@@ -145,9 +162,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 switchMic();
                 break;
             case R.id.presetChooser:
-                newPreset();
+            case R.id.textForPresetChooser:
+                editPresets();
                 break;
             case R.id.makeDiscoverable:
+            case R.id.textForMakeDiscoverableButton:
                 makeDiscoverable();
                 break;
             default:
@@ -186,13 +205,54 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         updateMicToUseButton();
     }
 
-    private void newPreset() {
+    private void editPresets() {
+        if (SoundPresetManager.getInstance(getContext()).getNumberOfPresets() <= 0) {
+            // We need to make a new preset
+            createNewPreset();
+            return;
+        }
+
+        // Show the current presets, with edit/delete buttons (and a new one)
+        // Some of the code here came from https://stackoverflow.com/questions/23464232/how-would-you-create-a-popover-view-in-android-like-facebook-comments
+        LayoutInflater layoutInflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View inflatedView = layoutInflater.inflate(R.layout.preset_popup, null,false);
+        RecyclerView presetPopupRecyclerView = inflatedView.findViewById(R.id.presetPopupRecyclerView);
+        presetPopupRecyclerView.setAdapter(new PresetListAdapter());
+        presetPopupRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+
+        PopupWindow popupWindow = new PopupWindow(inflatedView, (int)(size.x*.5), (int)(size.y*.5));
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
+
+        ImageButton presetButton = getView().findViewById(R.id.presetChooser);
+        int[] position = new int[2];
+        presetButton.getLocationOnScreen(position);
+        Log.i(TAG, "Location is " + position[0] + ", " + position[1]);
+
+        popupWindow.showAtLocation(presetButton, Gravity.CENTER, 0, 0);
+
+
+        /*Display display = getActivity().getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+
+        PopupWindow popWindow = new PopupWindow(inflatedView, size.x - 50,size.y - 500, true );*/
+    }
+
+    private void createNewPreset() {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
         if ( !Util.areHeadphonesActive(audioManager)) {
             showPlaybackError(getString(R.string.headphones_needed));
             return;
         }
         startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
+        // TODO: figure out how to get the result; if a new preset was finished, select it
     }
 
     private void makeDiscoverable() {

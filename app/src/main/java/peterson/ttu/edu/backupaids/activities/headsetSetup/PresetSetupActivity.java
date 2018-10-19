@@ -107,7 +107,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     private void setupComplete() {
         // TODO: add something here when we're editing a preset...
         /*if ( mEditingAPreset) {
-            savePreset();
+            presetComplete();
             finish();
         } else {*/
             requestName();
@@ -133,7 +133,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
                     return;
                 }
                 soundPreset.setName(input.getText().toString());
-                savePreset();
+                presetComplete();
                 finish();
             }
         });
@@ -148,7 +148,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
         builder.show();
     }
 
-    private void savePreset() {
+    private void presetComplete() {
         SoundPresetManager.getInstance(this).addOrReplacePreset(soundPreset);
         Preferences.getInstance(this).setSelectedPreset(soundPreset.getName());
     }
