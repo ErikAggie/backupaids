@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.media.AudioManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -19,7 +18,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -216,26 +217,34 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         // Some of the code here came from https://stackoverflow.com/questions/23464232/how-would-you-create-a-popover-view-in-android-like-facebook-comments
         LayoutInflater layoutInflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final View inflatedView = layoutInflater.inflate(R.layout.preset_popup, null,false);
-        RecyclerView presetPopupRecyclerView = inflatedView.findViewById(R.id.presetPopupRecyclerView);
-        presetPopupRecyclerView.setAdapter(new PresetListAdapter());
-        presetPopupRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        ListView presetPopupListView = inflatedView.findViewById(R.id.presetPopupListView);
+        presetPopupListView.setAdapter(
+                new PresetListAdapter(getContext(),
+                        R.layout.preset_popup_list_item,
+                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
 
 
         Display display = getActivity().getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
 
-        PopupWindow popupWindow = new PopupWindow(inflatedView, (int)(size.x*.5), (int)(size.y*.5));
+        Log.i(TAG, "Measured width: " + inflatedView.getMeasuredWidth());
+        Log.i(TAG, "Minimum width " + inflatedView.getMinimumWidth());
+
+        int width = (int)(Math.min(size.x, size.y) * .8);
+
+        PopupWindow popupWindow = new PopupWindow(inflatedView, width, width);
         popupWindow.setFocusable(true);
         popupWindow.setOutsideTouchable(true);
         popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
 
-        ImageButton presetButton = getView().findViewById(R.id.presetChooser);
+        TableLayout bottomPanel = getView().findViewById(R.id.bottomMenu);
+        bottomPanel.getTop();
         int[] position = new int[2];
-        presetButton.getLocationOnScreen(position);
+        bottomPanel.getLocationOnScreen(position);
         Log.i(TAG, "Location is " + position[0] + ", " + position[1]);
 
-        popupWindow.showAtLocation(presetButton, Gravity.CENTER, 0, 0);
+        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.RIGHT, 0, size.y-bottomPanel.getTop());
 
 
         /*Display display = getActivity().getWindowManager().getDefaultDisplay();
