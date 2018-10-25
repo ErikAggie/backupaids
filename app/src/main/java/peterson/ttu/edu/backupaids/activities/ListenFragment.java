@@ -499,11 +499,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void editPresetButtonPushed(SoundPreset soundPreset) {
-        // TODO: Editing a preset...
-    }
-
-    @Override
     public void deletePresetButtonPushed(PopupWindow popupWindow, SoundPreset soundPreset) {
         SoundPresetManager.getInstance(getContext()).deletePreset(soundPreset);
         updatePresetViewer();

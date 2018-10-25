@@ -9,26 +9,14 @@
         android:id="@+id/presetPopupItemName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="24sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/presetPopupEditButton"
+        app:layout_constraintRight_toLeftOf="@id/presetPopupDeleteButton"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault"/>
-
-    <ImageButton
-        android:id="@+id/presetPopupEditButton"
-        android:layout_width="40dp"
-        android:layout_height="32dp"
-        android:scaleType="fitCenter"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_edit_blue"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/presetPopupItemName"
-        app:layout_constraintRight_toLeftOf="@id/presetPopupDeleteButton"/>
 
     <ImageButton
         android:id="@+id/presetPopupDeleteButton"
@@ -39,6 +27,6 @@
         android:src="@drawable/ic_delete_blue"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/presetPopupEditButton"
+        app:layout_constraintLeft_toRightOf="@id/presetPopupItemName"
         app:layout_constraintRight_toRightOf="parent"/>
 </android.support.constraint.ConstraintLayout>

@@ -55,14 +55,6 @@ public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
             }
         });
 
-        ImageButton editButton = view.findViewById(R.id.presetPopupEditButton);
-        editButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buttonListener.editPresetButtonPushed(soundPreset);
-            }
-        });
-
         ImageButton deleteButton = view.findViewById(R.id.presetPopupDeleteButton);
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,7 +67,6 @@ public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
     }
 
     public interface ButtonListener {
-        void editPresetButtonPushed(SoundPreset soundPreset);
         void deletePresetButtonPushed(PopupWindow popupWindow, SoundPreset soundPreset);
     }
 }
