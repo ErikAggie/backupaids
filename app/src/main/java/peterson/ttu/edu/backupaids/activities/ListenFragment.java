@@ -17,6 +17,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.PopupWindow;
@@ -37,7 +38,7 @@ import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 import peterson.ttu.edu.backupaids.util.Util;
 
-public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
+public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener, Preferences.PresetUpdateListener, PresetListAdapter.ButtonListener {
 
     private static final String TAG = "ListenFragment";
 
@@ -88,6 +89,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onCreateView(inflater, container, savedInstanceState);
         View fragmentView = inflater.inflate(R.layout.fragment_listen, container, false);
 
+        Preferences.getInstance(getContext()).addPresetUpdateListener(this);
 
         ImageButton playButton = fragmentView.findViewById(R.id.playSound);
         playButton.setOnClickListener(this);
@@ -135,6 +137,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     public void onDestroyView() {
         stopStreaming();
         stopPlaying();
+
+        Preferences.getInstance(getContext()).removePresetUpdateListner(this);
+
         super.onDestroyView();
     }
 
@@ -217,41 +222,54 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         // Some of the code here came from https://stackoverflow.com/questions/23464232/how-would-you-create-a-popover-view-in-android-like-facebook-comments
         LayoutInflater layoutInflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final View inflatedView = layoutInflater.inflate(R.layout.preset_popup, null,false);
-        ListView presetPopupListView = inflatedView.findViewById(R.id.presetPopupListView);
-        presetPopupListView.setAdapter(
-                new PresetListAdapter(getContext(),
-                        R.layout.preset_popup_list_item,
-                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
-
 
         Display display = getActivity().getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
 
-        Log.i(TAG, "Measured width: " + inflatedView.getMeasuredWidth());
-        Log.i(TAG, "Minimum width " + inflatedView.getMinimumWidth());
+        // Make it square along the dimension of the
+        int sideLength = (int)(Math.min(size.x, size.y) * .8);
 
-        int width = (int)(Math.min(size.x, size.y) * .8);
-
-        PopupWindow popupWindow = new PopupWindow(inflatedView, width, width);
+        final PopupWindow popupWindow = new PopupWindow(inflatedView, sideLength, sideLength);
         popupWindow.setFocusable(true);
         popupWindow.setOutsideTouchable(true);
         popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
+
+        ListView presetPopupListView = inflatedView.findViewById(R.id.presetPopupListView);
+        presetPopupListView.setAdapter(
+                new PresetListAdapter(popupWindow,
+                        this,
+                        getContext(),
+                        R.layout.preset_popup_list_item,
+                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
+
+        Button closeButton = inflatedView.findViewById(R.id.presetPopupClose);
+        closeButton.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                    }
+                }
+        );
+
+        Button newPresetButton = inflatedView.findViewById(R.id.presetPopupNewPresetButton);
+        newPresetButton.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        createNewPreset();
+                    }
+                }
+        );
 
         TableLayout bottomPanel = getView().findViewById(R.id.bottomMenu);
         bottomPanel.getTop();
         int[] position = new int[2];
         bottomPanel.getLocationOnScreen(position);
-        Log.i(TAG, "Location is " + position[0] + ", " + position[1]);
 
         popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.RIGHT, 0, size.y-bottomPanel.getTop());
-
-
-        /*Display display = getActivity().getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-
-        PopupWindow popWindow = new PopupWindow(inflatedView, size.x - 50,size.y - 500, true );*/
     }
 
     private void createNewPreset() {
@@ -473,5 +491,30 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 connectionPopup.show(getFragmentManager(), "Connections");
             }
         });
+    }
+
+    @Override
+    public void selectedPresetUpdated(String newPresetName) {
+        updatePresetViewer();
+    }
+
+    @Override
+    public void editPresetButtonPushed(SoundPreset soundPreset) {
+        // TODO: Editing a preset...
+    }
+
+    @Override
+    public void deletePresetButtonPushed(PopupWindow popupWindow, SoundPreset soundPreset) {
+        SoundPresetManager.getInstance(getContext()).deletePreset(soundPreset);
+        updatePresetViewer();
+
+        // Replace the adapter since the preset list has changed
+        ListView presetListView = popupWindow.getContentView().findViewById(R.id.presetPopupListView);
+        presetListView.setAdapter(
+                new PresetListAdapter(popupWindow,
+                        this,
+                        getContext(),
+                        R.layout.preset_popup_list_item,
+                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
     }
 }

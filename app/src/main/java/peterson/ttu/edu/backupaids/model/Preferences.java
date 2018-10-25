@@ -12,13 +12,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
 
 public class Preferences {
     private static Preferences smInstance;
+    private final List<PresetUpdateListener> presetUpdateListeners = new ArrayList<>();
 
     private static final String SELECTED_PRESET = "SelectedPreset";
     private static final String MIC_TO_USE = "MicToUse";
@@ -46,6 +49,14 @@ public class Preferences {
     private Preferences(Context context) {
         this.context = context;
         readPreferences();
+    }
+
+    public void addPresetUpdateListener(PresetUpdateListener listener) {
+        presetUpdateListeners.add(listener);
+    }
+
+    public void removePresetUpdateListner(PresetUpdateListener listener) {
+        presetUpdateListeners.remove(listener);
     }
 
     private void readPreferences() {
@@ -155,11 +166,14 @@ public class Preferences {
     }
 
     public void setSelectedPreset(String selectedPreset) {
-        if ( selectedPreset.equals(this.selectedPreset)) {
+        if ( selectedPreset != null && selectedPreset.equals(this.selectedPreset)) {
             // No change made
             return;
         }
         this.selectedPreset = selectedPreset;
+        for ( PresetUpdateListener listener : presetUpdateListeners) {
+            listener.selectedPresetUpdated(selectedPreset);
+        }
         writePreferences();
     }
 
@@ -170,5 +184,9 @@ public class Preferences {
     public void setMicToUse(MicToUse micToUse) {
         this.micToUse = micToUse;
         writePreferences();
+    }
+
+    public interface PresetUpdateListener {
+        void selectedPresetUpdated(String newPresetName);
     }
 }

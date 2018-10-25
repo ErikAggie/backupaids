@@ -162,4 +162,18 @@ public class SoundPresetManager {
         // Make a copy so that any unsaved changes don't affect the "true" version
         return new SoundPreset(original);
     }
+
+    public void deletePreset(SoundPreset soundPreset) {
+        if (presets.remove(soundPreset.getName()) != null) {
+            savePresets();
+            Preferences preferences = Preferences.getInstance(context);
+            // Removal was successful
+            if ( presets.size() == 0) {
+                preferences.setSelectedPreset(null);
+            } else if ( preferences.getSelectedPreset() == null) {
+                // We just deleted the selected preset...
+                preferences.setSelectedPreset(getPreset(0).getName());
+            }
+        }
+    }
 }
