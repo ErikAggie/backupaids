@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -47,26 +46,19 @@ public class SoundPresetManager {
 
     private SoundPresetManager(Context context) {
         this.context = context;
-        JsonReader jsonReader = null;
-        try {
-            InputStream inputStream = new FileInputStream(new File(context.getFilesDir(), context.getString(R.string.preset_file_name)));
-            jsonReader = new JsonReader(new InputStreamReader(inputStream));
+        try (JsonReader jsonReader =
+                     new JsonReader(
+                             new InputStreamReader(
+                                     new FileInputStream(
+                                             new File(context.getFilesDir(), context.getString(R.string.preset_file_name)))));) {
+
             readAllPresets(jsonReader);
         } catch (FileNotFoundException e) {
             // Okay, just no presets
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: handle this better...
-        } finally {
-            if ( jsonReader != null) {
-                try {
-                    jsonReader.close();
-                } catch ( Exception e) {
-                    // We tried...
-                }
-            }
         }
-
     }
 
     private void readAllPresets(JsonReader jsonReader) throws IOException {
@@ -90,34 +82,24 @@ public class SoundPresetManager {
      * Call this when you're ready to save changes to 1+ presets
      */
     private void savePresets() {
-        JsonWriter jsonWriter = null;
-        try {
-            jsonWriter = new JsonWriter(
-                            new PrintWriter(
-                               new File(context.getFilesDir(),
-                                        context.getString(R.string.preset_file_name))));
+        try (JsonWriter jsonWriter = new JsonWriter(
+                new PrintWriter(
+                        new File(context.getFilesDir(),
+                                context.getString(R.string.preset_file_name))))) {
             jsonWriter.beginArray();
-            for ( String presetName : presets.keySet()) {
+            for (String presetName : presets.keySet()) {
                 presets.get(presetName).savePreset(jsonWriter);
             }
             jsonWriter.endArray();
-        } catch ( IOException e) {
+        } catch (IOException e) {
             // TODO: handle this better...
             e.printStackTrace();
-        } finally {
-            if ( jsonWriter != null) {
-                try {
-                    jsonWriter.close();
-                } catch ( IOException e) {
-                    // We tried...
-                }
-            }
         }
+        // We tried...
     }
 
     public List<SoundPreset> getAllSortedPresets() {
-        List<SoundPreset> presetList = new ArrayList<SoundPreset>();
-        presetList.addAll(presets.values());
+        List<SoundPreset> presetList = new ArrayList<>(presets.values());
 
         // Sort by preset name
         Collections.sort(presetList, new Comparator<SoundPreset>() {

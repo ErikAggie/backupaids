@@ -43,5 +43,7 @@
 
     <string name="headphones_not_connected">Please insert/connect headphones before listening. Otherwise you\'ll get a horrible screeching noise. :)</string>
     <string name="headphones_needed">Please plug in/connect headphones first.</string>
+    <string name="switch_between_phone_microphone_and_headset_microphone">Switch between phone microphone and headset microphone</string>
+    <string name="manage_sound_presets">Manage sound presets</string>
 
 </resources>

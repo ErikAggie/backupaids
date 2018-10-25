@@ -26,7 +26,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         STREAMING,
         RETRY,
         FAILED,
-        STOPPED;
+        STOPPED
     }
 
     protected final Context context;

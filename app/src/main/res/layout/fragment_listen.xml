@@ -65,7 +65,8 @@
                 android:layout_height="48dp"
                 android:background="@android:color/transparent"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_phone_mic_blue"/>
+                android:src="@drawable/ic_phone_mic_blue"
+                android:contentDescription="@string/switch_between_phone_microphone_and_headset_microphone"/>
             <ImageButton
                 android:id="@+id/makeDiscoverable"
                 android:layout_width="0dp"
@@ -81,7 +82,7 @@
                 android:layout_height="48dp"
                 android:adjustViewBounds="false"
                 android:background="@android:color/transparent"
-                android:contentDescription="@string/make_this_phone_discoverable_by_other_phones"
+                android:contentDescription="@string/manage_sound_presets"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_equalizer"/>
         </TableRow>

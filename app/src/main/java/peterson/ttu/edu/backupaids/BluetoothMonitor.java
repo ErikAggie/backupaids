@@ -1,17 +1,13 @@
 package peterson.ttu.edu.backupaids;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.util.Log;
-
-import java.util.List;
 
 /**
  * Monitors for Bluetooth connections (for recording from a Bluetooth source)

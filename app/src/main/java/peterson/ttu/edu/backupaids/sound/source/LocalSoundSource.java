@@ -2,8 +2,6 @@ package peterson.ttu.edu.backupaids.sound.source;
 
 import android.media.AudioRecord;
 
-import java.io.IOException;
-
 /**
  * Sound coming from a local source (phone mics or connected headset)
  */

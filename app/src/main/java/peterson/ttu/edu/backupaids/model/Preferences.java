@@ -60,12 +60,13 @@ public class Preferences {
     }
 
     private void readPreferences() {
-        JsonReader jsonReader = null;
-        try {
-            InputStream inputStream = new FileInputStream(new File(context.getFilesDir(), context.getString(R.string.preferences_file_name)));
-            jsonReader = new JsonReader(new InputStreamReader(inputStream));
+        try (JsonReader jsonReader =
+                     new JsonReader(
+                             new InputStreamReader(
+                                     new FileInputStream(
+                                             new File(context.getFilesDir(), context.getString(R.string.preferences_file_name)))))) {
             jsonReader.beginObject();
-            while ( jsonReader.hasNext()) {
+            while (jsonReader.hasNext()) {
                 readPreference(jsonReader);
             }
             jsonReader.endObject();
@@ -74,16 +75,7 @@ public class Preferences {
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: handle this better...
-        } finally {
-            if ( jsonReader != null) {
-                try {
-                    jsonReader.close();
-                } catch ( Exception e) {
-                    // We tried...
-                }
-            }
         }
-
     }
 
     private void readPreference(JsonReader jsonReader) throws IOException {
@@ -127,29 +119,19 @@ public class Preferences {
     }
 
     private void writePreferences() {
-        JsonWriter jsonWriter = null;
-        try {
-            jsonWriter = new JsonWriter(
-                    new PrintWriter(
-                            new File(context.getFilesDir(),
-                                    context.getString(R.string.preferences_file_name))));
+        try (JsonWriter jsonWriter = new JsonWriter(
+                new PrintWriter(
+                        new File(context.getFilesDir(),
+                                context.getString(R.string.preferences_file_name))))) {
             jsonWriter.beginObject();
-            if ( selectedPreset != null) {
+            if (selectedPreset != null) {
                 jsonWriter.name(SELECTED_PRESET).value(selectedPreset);
             }
             jsonWriter.name(MIC_TO_USE).value(intFromMicToUse(micToUse));
             jsonWriter.endObject();
-        } catch ( IOException e) {
+        } catch (IOException e) {
             // TODO: handle this better...
             e.printStackTrace();
-        } finally {
-            if ( jsonWriter != null) {
-                try {
-                    jsonWriter.close();
-                } catch ( IOException e) {
-                    // We tried...
-                }
-            }
         }
     }
 
