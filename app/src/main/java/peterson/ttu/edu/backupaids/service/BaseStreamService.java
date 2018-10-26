@@ -11,14 +11,20 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
+import peterson.ttu.edu.backupaids.network.InputStreamHandler;
+import peterson.ttu.edu.backupaids.network.OutputStreamHandler;
+import peterson.ttu.edu.backupaids.network.ReadyConnectionMaker;
+import peterson.ttu.edu.backupaids.util.ConnectionType;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 
-public abstract class BaseStreamService extends BaseService implements ConnectionMaker.SocketHandler {
+public abstract class BaseStreamService extends BaseService implements InputStreamHandler, OutputStreamHandler {
 
     private static final String TAG = "BaseStreamService";
 
@@ -58,7 +64,8 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
     protected void setUpService(Intent intent,
                                 String channelName,
-                                int foregroundId) {
+                                int foregroundId,
+                                ConnectionType connectionType) throws IOException {
         this.channelName = channelName;
         this.foregroundId = foregroundId;
 
@@ -70,19 +77,36 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         if (connectionNumber < 0) {
             throw new RuntimeException("Must provide a connection number!");
         }
-        connectionMaker = ConnectionMaker.getConnectionMaker(connectionNumber);
+        connectionMaker = ReadyConnectionMaker.getReadyConnectionMaker();
         if (connectionMaker == null) {
             throw new RuntimeException("Can't find connection maker for connection " + connectionNumber);
         }
 
         registerThisService();
 
-        // Calling this will in turn call handleSocket()
-        connectionMaker.readyForSocket(this);
+        switch(connectionType) {
+            case LISTEN:
+                connectionMaker.readyForInputStream(this);
+                break;
+            case SPEAK:
+                connectionMaker.readyForOutputStream(this);
+                break;
+            default:
+                throw new RuntimeException("Unknown connection type " + connectionType);
+        }
     }
 
     @Override
-    public void handleSocket(Socket socket) {
+    public void inputStreamReady(InputStream inputStream) {
+        startStreaming(inputStream, null);
+    }
+
+    @Override
+    public void outputStreamReady(OutputStream outputStream) {
+        startStreaming(null, outputStream);
+    }
+
+    private void startStreaming(InputStream inputStream, OutputStream outputStream) {
 
         thisServiceIsStreaming = true;
 
@@ -90,8 +114,10 @@ public abstract class BaseStreamService extends BaseService implements Connectio
         SoundDestination soundDestination = null;
 
         try {
-            soundSource = createSource(socket);
-            soundDestination = createDestination(socket);
+            // We're passing null to one of these, but unless there's a coding problem
+            // the source/destination will know what to expect
+            soundSource = createSource(inputStream);
+            soundDestination = createDestination(outputStream);
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size
@@ -125,8 +151,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             // Here's the playing loop!
             while (thisServiceIsStreaming) {
                 if ( soundDestination.hasStopped()) {
-                    // Not playing anymore, likely due to headphones being removed
-                    connectionMaker.disallowRetry();
                     break;
                 }
                 int amountRead = soundSource.read(audioBuffer);
@@ -137,7 +161,6 @@ public abstract class BaseStreamService extends BaseService implements Connectio
             }
         } catch ( ServiceSetupException e) {
             Log.w(TAG, "Service setup error: " + e.getMessage());
-            connectionMaker.disallowRetry();
             noteError(e.getMessage());
         } catch( IOException e) {
             Log.w(TAG, "Stopping playback/streaming: " + e.getMessage());
@@ -180,9 +203,9 @@ public abstract class BaseStreamService extends BaseService implements Connectio
 
     protected abstract void streamingStopped();
 
-    protected abstract SoundSource createSource(Socket socket) throws IOException;
+    protected abstract SoundSource createSource(InputStream inputStream) throws IOException;
 
-    protected abstract SoundDestination createDestination(Socket socket) throws IOException;
+    protected abstract SoundDestination createDestination(OutputStream outputStream) throws IOException;
 
     protected abstract void noteError(String error);
 }

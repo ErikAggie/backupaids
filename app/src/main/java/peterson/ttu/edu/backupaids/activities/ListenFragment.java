@@ -114,7 +114,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onViewCreated(view, savedInstanceState);
 
         TextView ourPin = getView().findViewById(R.id.ourPinTextView);
-        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
+        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.OUR_PIN));
 
         updatePresetViewer();
 

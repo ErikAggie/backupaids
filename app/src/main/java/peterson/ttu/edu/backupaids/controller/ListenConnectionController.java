@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
+import peterson.ttu.edu.backupaids.network.ConnectionMakerFactory;
 import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
@@ -24,15 +25,14 @@ public class ListenConnectionController extends ConnectionController implements 
             updateState(State.STREAMING);
             return connectionMaker;
         } else {
-            return new ConnectionMaker(context, this, ConnectionType.LISTEN);
+            return ConnectionMakerFactory.createWiFiConnectionMaker(context, this, ConnectionType.LISTEN);
         }
     }
 
     @Override
-    public void startService(int connectionNumber) {
+    public void startService() {
         RemoteSoundService.registerListener(this);
         Intent startIntent = new Intent(context, RemoteSoundService.class);
-        startIntent.putExtra(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
         activity.startService(startIntent);
     }
 

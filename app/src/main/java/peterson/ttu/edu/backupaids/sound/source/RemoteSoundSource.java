@@ -10,12 +10,10 @@ import java.net.Socket;
  */
 public class RemoteSoundSource implements SoundSource {
 
-    private final Socket socket;
     private final InputStream inputStream;
 
-    public RemoteSoundSource(Socket socket) throws IOException {
-        this.socket = socket;
-        inputStream = new BufferedInputStream(socket.getInputStream());
+    public RemoteSoundSource(InputStream inputStream) throws IOException {
+        this.inputStream = new BufferedInputStream(inputStream);
     }
 
     @Override
@@ -36,6 +34,6 @@ public class RemoteSoundSource implements SoundSource {
 
     @Override
     public void stop() throws IOException {
-        socket.close();
+        inputStream.close();
     }
 }

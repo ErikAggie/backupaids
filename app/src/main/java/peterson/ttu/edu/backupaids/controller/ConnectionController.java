@@ -10,21 +10,16 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
+import peterson.ttu.edu.backupaids.network.ConnectionListener;
 
-public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
+public abstract class ConnectionController implements ConnectionListener, PeerCallback {
 
     private static final String TAG = "ConnectionController";
-
-    private static final int LENGTH_TO_WAIT_FOR_RECONNECT = 3000; // 3 seconds
-    private static final int LENGTH_OF_REPEAT_FAILURE_TIMEOUT = 120000; // two minutes
-
-    private static final int MAX_FAILURES_IN_TWO_MINUTES = 2;
 
     public enum State {
         STARTUP,
         CONNECTING,
         STREAMING,
-        RETRY,
         FAILED,
         STOPPED
     }
@@ -38,10 +33,6 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     private volatile State state = State.STARTUP;
 
     private volatile boolean stopped = false;
-
-    private AtomicInteger numRecentFailures = new AtomicInteger(0);
-    private Timer repeatFailureTimer = new Timer();
-    private String savedApplicationName;
 
     protected ConnectionController(Context context, Activity activity, Listener listener) {
         this.context = context;
@@ -68,7 +59,6 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         stopped = true;
 
         discoverableCountdown.cancel();
-        repeatFailureTimer.cancel();
 
         stopService();
         connectionMaker.close();
@@ -133,14 +123,14 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void connectionReady(int connectionNumber) {
-        startService(connectionNumber);
+    public void connectionReady() {
+        startService();
         updateState(State.STREAMING);
     }
 
     protected abstract ConnectionMaker getConnectionMaker();
 
-    protected abstract void startService(int connectionNumber);
+    protected abstract void startService();
 
     @Override
     public void connectionFailed(IOException e) {
@@ -148,43 +138,12 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void connectionClosed(boolean allowRetry) {
+    public void connectionClosed() {
         if ( state == State.STOPPED) {
             // Duplicate
             return;
         }
-        int numFailures = numRecentFailures.incrementAndGet();
-        if ( !allowRetry || (numFailures > MAX_FAILURES_IN_TWO_MINUTES)) {
-            stop();
-        } else if ( savedApplicationName == null) {
-            updateState(State.RETRY);
-            // We are the listener, so the other device might try to reconnect.
-            // Set up a short timer to give him a chance to reconnect
-            Log.i(TAG, "Connection lost; giving sender time to reconnect...");
-            repeatFailureTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if ( state == State.STREAMING) {
-                        numRecentFailures.set(0);
-                    } else {
-                        stop();
-                    }
-                }
-            }, LENGTH_TO_WAIT_FOR_RECONNECT);
-        } else {
-            Log.i(TAG, "Attempting to reconnect...");
-            updateState(State.RETRY);
-            connectionMaker.makeConnection(savedApplicationName);
-
-            // Restart the timer
-            repeatFailureTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if ( state == State.STREAMING)
-                    numRecentFailures.set(0);
-                }
-            }, LENGTH_OF_REPEAT_FAILURE_TIMEOUT);
-        }
+        stop();
     }
 
     //----------------------------------------------------------------------------------
@@ -193,7 +152,6 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void approveConnection(String connectionName) {
-        savedApplicationName = connectionName;
         // No need to start the service yet (like it was done before this class came into being
         connectionMaker.makeConnection(connectionName);
     }

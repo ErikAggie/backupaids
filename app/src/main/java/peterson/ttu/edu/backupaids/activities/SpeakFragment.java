@@ -54,7 +54,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         //setContentView(R.layout.fragment_speak);
 
         TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
-        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
+        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.OUR_PIN));
 
         // Listen for Bluetooth connections (for recording)
         IntentFilter connectFilter = new IntentFilter();

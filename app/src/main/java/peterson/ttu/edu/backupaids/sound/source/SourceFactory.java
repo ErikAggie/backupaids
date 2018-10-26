@@ -9,6 +9,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 
 import peterson.ttu.edu.backupaids.model.Preferences;
@@ -85,8 +86,8 @@ public class SourceFactory {
      * Create a sound source for a socket
      * @param socket Socket we're getting sound from
      */
-    public static SoundSource createStreamSource(Socket socket) throws IOException {
-        return new RemoteSoundSource(socket);
+    public static SoundSource createStreamSource(InputStream inputStream) throws IOException {
+        return new RemoteSoundSource(inputStream);
     }
 
 
