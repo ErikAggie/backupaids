@@ -9,12 +9,10 @@ import java.net.Socket;
  */
 public class RemoteSoundDestination implements SoundDestination {
 
-    private final Socket socket;
     private final OutputStream outputStream;
 
-    public RemoteSoundDestination(Socket socket) throws IOException {
-        this.socket = socket;
-        outputStream = socket.getOutputStream();
+    public RemoteSoundDestination(OutputStream outputStream) throws IOException {
+        this.outputStream = outputStream;
     }
 
     @Override
@@ -34,6 +32,6 @@ public class RemoteSoundDestination implements SoundDestination {
 
     @Override
     public void stop() throws IOException {
-        socket.close();
+        outputStream.close();
     }
 }

@@ -73,15 +73,7 @@ public abstract class BaseStreamService extends BaseService implements InputStre
             return;
         }
 
-        int connectionNumber = intent.getIntExtra(CONNECTION_NUMBER_EXTRA, -1);
-        if (connectionNumber < 0) {
-            throw new RuntimeException("Must provide a connection number!");
-        }
         connectionMaker = ReadyConnectionMaker.getReadyConnectionMaker();
-        if (connectionMaker == null) {
-            throw new RuntimeException("Can't find connection maker for connection " + connectionNumber);
-        }
-
         registerThisService();
 
         switch(connectionType) {

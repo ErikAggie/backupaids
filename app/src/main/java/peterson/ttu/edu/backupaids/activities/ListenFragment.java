@@ -359,9 +359,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 textForMakeDiscoverableButton.setText(R.string.connected);
                 pinTextView.setVisibility(View.GONE);
                 break;
-            case RETRY:
-                Util.rotateImageButton(makeDiscoverableButton);
-                break;
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);

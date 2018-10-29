@@ -10,6 +10,7 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,10 +69,10 @@ public class DestinationFactory {
 
     /**
      * For sending sound to a remote headset
-     * @param socket Socket to write to
+     * @param outputStream Output stream to write to
      */
-    public static SoundDestination createRemoteSoundDestination(Socket socket) throws IOException {
-        return new RemoteSoundDestination(socket);
+    public static SoundDestination createRemoteSoundDestination(OutputStream outputStream) throws IOException {
+        return new RemoteSoundDestination(outputStream);
     }
 
 

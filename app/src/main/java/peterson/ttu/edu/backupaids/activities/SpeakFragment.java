@@ -147,9 +147,6 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                             playButton.setImageResource(R.drawable.ic_power_button_green);
                             playButton.setAnimation(null);
                             break;
-                        case RETRY:
-                            Util.rotateImageButton(playButton);
-                            break;
                         case STOPPED:
                         case FAILED:
                             playButton.setImageResource(R.drawable.ic_refresh_gray);

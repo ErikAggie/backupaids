@@ -2,8 +2,11 @@ package peterson.ttu.edu.backupaids.service;
 
 import android.content.Intent;
 import android.media.AudioManager;
+import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +20,13 @@ import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
+import peterson.ttu.edu.backupaids.util.ConnectionType;
 
 /**
  * Service for streaming sound to another device
  */
 public class StreamSoundService extends BaseStreamService {
+    private static final String TAG = "StreamSoundService";
 
     private static final int FOREGROUND_ID = 1235;
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
@@ -91,7 +96,11 @@ public class StreamSoundService extends BaseStreamService {
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
             audioManager.startBluetoothSco();
         }
-        setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
+        try {
+            setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID, ConnectionType.SPEAK);
+        } catch ( IOException e) {
+            Log.w(TAG, "Unable to start streaming sound to another device: " + e.getMessage());
+        }
     }
 
     @Override
@@ -106,13 +115,13 @@ public class StreamSoundService extends BaseStreamService {
     }
 
     @Override
-    protected SoundSource createSource(Socket socket) throws IOException{
+    protected SoundSource createSource(InputStream inputStream) throws IOException {
         return SourceFactory.createMicAudioRecord();
     }
 
     @Override
-    protected SoundDestination createDestination(Socket socket) throws IOException{
-        return DestinationFactory.createRemoteSoundDestination(socket);
+    protected SoundDestination createDestination(OutputStream outputStream) throws IOException {
+        return DestinationFactory.createRemoteSoundDestination(outputStream);
     }
 
     @Override

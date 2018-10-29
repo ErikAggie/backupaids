@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
+import peterson.ttu.edu.backupaids.network.ConnectionMakerFactory;
 import peterson.ttu.edu.backupaids.service.BaseStreamService;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
@@ -24,15 +25,14 @@ public class SpeakConnectionController extends ConnectionController implements S
             updateState(State.STREAMING);
             return connectionMaker;
         } else {
-            return new ConnectionMaker(context, this, ConnectionType.SPEAK);
+            return ConnectionMakerFactory.createWiFiConnectionMaker(context, this, ConnectionType.SPEAK);
         }
     }
 
     @Override
-    public void startService(int connectionNumber) {
+    protected void startService() {
         StreamSoundService.registerListener(this);
         Intent startIntent = new Intent(context, StreamSoundService.class);
-        startIntent.putExtra(BaseStreamService.CONNECTION_NUMBER_EXTRA, connectionNumber);
         activity.startService(startIntent);
     }
 
