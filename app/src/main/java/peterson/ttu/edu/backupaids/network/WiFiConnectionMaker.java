@@ -78,7 +78,7 @@ public class WiFiConnectionMaker extends BroadcastReceiver
      *
      * @param context Context (Activity) to use for registration
      */
-    public WiFiConnectionMaker(final Context context, ConnectionListener connectionListener, ConnectionType mode) {
+    /* package */ WiFiConnectionMaker(final Context context, ConnectionListener connectionListener, ConnectionType mode) {
         this.context = context;
         this.connectionListener = connectionListener;
         this.mode = mode;

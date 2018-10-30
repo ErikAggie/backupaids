@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
+import java.io.IOException;
+
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.network.ConnectionMakerFactory;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
@@ -11,12 +13,12 @@ import peterson.ttu.edu.backupaids.util.ConnectionType;
 
 public class SpeakConnectionController extends ConnectionController implements StreamSoundService.Listener {
 
-    public SpeakConnectionController(Context context, Activity activity, Listener listener) {
+    public SpeakConnectionController(Context context, Activity activity, Listener listener) throws IOException {
         super(context, activity, listener);
     }
 
     @Override
-    protected ConnectionMaker getConnectionMaker() {
+    protected ConnectionMaker getConnectionMaker() throws IOException {
         if ( StreamSoundService.isCurrentlyStreaming()) {
             // We're already connected; so just hook up with what's there
             ConnectionMaker connectionMaker = StreamSoundService.getConnectionMaker();

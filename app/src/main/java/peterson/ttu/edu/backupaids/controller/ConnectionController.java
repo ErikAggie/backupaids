@@ -34,7 +34,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
 
     private volatile boolean stopped = false;
 
-    protected ConnectionController(Context context, Activity activity, Listener listener) {
+    protected ConnectionController(Context context, Activity activity, Listener listener) throws IOException {
         this.context = context;
         this.activity = activity;
         this.listener = listener;
@@ -128,7 +128,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
         updateState(State.STREAMING);
     }
 
-    protected abstract ConnectionMaker getConnectionMaker();
+    protected abstract ConnectionMaker getConnectionMaker() throws IOException;
 
     protected abstract void startService();
 

@@ -1,6 +1,8 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,6 +24,8 @@ import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.ListenConnectionController;
@@ -30,6 +34,7 @@ import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
 import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
+import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
@@ -38,6 +43,8 @@ import peterson.ttu.edu.backupaids.util.Util;
 public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener, Preferences.PresetUpdateListener, PresetListAdapter.ButtonListener {
 
     private static final String TAG = "ListenFragment";
+    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_NEW_PRESET = 2;
 
     private Runnable todoOnServiceStopped;
 
@@ -120,7 +127,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         if ( RemoteSoundService.isCurrentlyStreaming()) {
             // Already streaming. Need to re-connect with this guy
-            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
+            startConnectionController();
         }
 
         // We could already be playing, so check on that...
@@ -275,25 +282,37 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             showPlaybackError(getString(R.string.headphones_needed));
             return;
         }
-        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
-        // TODO: figure out how to get the result; if a new preset was finished, select it
+        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), REQUEST_NEW_PRESET);
     }
 
     private void makeDiscoverable() {
-        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
 
         if ( connectionController != null) {
             stopStreaming();
         } else {
-            if ( !Util.areHeadphonesActive(audioManager)) {
-                // No headphones=no reason to try to stream (would just be annoying if we waited
-                // until we connected to notice this...)
-                showPlaybackError(getString(R.string.headphones_not_connected));
-                return;
-            }
+            startConnectionController();
+        }
+    }
+
+    private void startConnectionController() {
+        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        if ( !Util.areHeadphonesActive(audioManager)) {
+            // No headphones=no reason to try to stream (would just be annoying if we waited
+            // until we connected to notice this...)
+            showPlaybackError(getString(R.string.headphones_not_connected));
+            return;
+        }
+        try {
             connectionController = new ListenConnectionController(getContext(), getActivity(), this);
             Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+        } catch ( BluetoothNotEnabledException ex) {
+            // Bluetooth isn't on. Ask the user to turn it on...
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } catch (IOException ex) {
+            showPlaybackError(ex.getMessage());
         }
+
     }
 
     private void updatePresetViewer() {
@@ -387,7 +406,21 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        updatePresetViewer();
+        switch ( requestCode) {
+            case REQUEST_ENABLE_BT:
+                if ( resultCode == Activity.RESULT_OK) {
+                    // Restart the controller
+                    startConnectionController();
+                } else {
+                    Toast.makeText(getContext(), "Unable to connect without Bluetooth", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case REQUEST_NEW_PRESET:
+                updatePresetViewer();
+                break;
+            default:
+                throw new RuntimeException("Unknown ListenFragment activity request: " + requestCode);
+        }
     }
 
     private void showPlaybackError(final String reason) {

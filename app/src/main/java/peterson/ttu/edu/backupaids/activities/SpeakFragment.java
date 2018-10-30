@@ -1,8 +1,11 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -15,16 +18,21 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
+import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
+
+    private static final int REQUEST_ENABLE_BT = 1;
 
     private ConnectionController connectionController;
     private ConnectionPopupFragment connectionPopup;
@@ -71,10 +79,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
             // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
-            if (!StreamSoundService.isCurrentlyStreaming()) {
-                Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
-            }
+            startConnectionController();
         } else {
             if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
                 stopTryingToConnect();
@@ -96,6 +101,23 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         super.onDestroyView();
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case REQUEST_ENABLE_BT:
+                if ( resultCode == Activity.RESULT_OK) {
+                    // Restart the controller
+                    startConnectionController();
+                } else {
+                    Toast.makeText(getContext(), "Unable to connect without Bluetooth", Toast.LENGTH_LONG).show();
+                }
+                break;
+            default:
+                throw new RuntimeException("Unknown SpeakFragment request code: " + requestCode);
+        }
+    }
+
     //----------------------------------------------------------------------------------------------
     // UI events
     //----------------------------------------------------------------------------------------------
@@ -113,9 +135,24 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     private void sendSound() {
         if ( connectionController == null) {
-            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            startConnectionController();
         } else {
             connectionController.stop();
+        }
+    }
+
+    private void startConnectionController() {
+        try {
+            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            if (!StreamSoundService.isCurrentlyStreaming()) {
+                Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+            }
+        } catch (BluetoothNotEnabledException ex) {
+            // Bluetooth isn't running. Ask the user to start it
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } catch ( IOException ex) {
+            Toast.makeText(getContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
