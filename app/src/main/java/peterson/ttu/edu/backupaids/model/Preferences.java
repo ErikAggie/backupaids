@@ -1,21 +1,21 @@
 package peterson.ttu.edu.backupaids.model;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.JsonReader;
+import android.util.JsonToken;
 import android.util.JsonWriter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
 
@@ -26,6 +26,11 @@ public class Preferences {
     private static final String SELECTED_PRESET = "SelectedPreset";
     private static final String MIC_TO_USE = "MicToUse";
 
+    /**
+     * This is Bluetooth connections we've made, not the full list from the phone...
+     */
+    private static final String BLUETOOTH_PEER_NAME = "BluetoothPeerName";
+
     public enum MicToUse {
         PHONE_MIC,
         HEADSET_MIC;
@@ -34,8 +39,9 @@ public class Preferences {
     private final Context context;
     private String selectedPreset;
     private MicToUse micToUse = MicToUse.PHONE_MIC;
+    private final List<String> bluetoothConnectionList = new ArrayList<>();
 
-    public static Preferences getInstance(Context context) {
+    public static Preferences getInstance(@NonNull Context context) {
         if ( smInstance == null) {
             synchronized (Preferences.class) {
                 if ( smInstance == null) {
@@ -46,7 +52,7 @@ public class Preferences {
         return smInstance;
     }
 
-    private Preferences(Context context) {
+    private Preferences(@NonNull Context context) {
         this.context = context;
         readPreferences();
     }
@@ -66,8 +72,19 @@ public class Preferences {
                                      new FileInputStream(
                                              new File(context.getFilesDir(), context.getString(R.string.preferences_file_name)))))) {
             jsonReader.beginObject();
-            while (jsonReader.hasNext()) {
-                readPreference(jsonReader);
+            if ( jsonReader.hasNext()) {
+                jsonReader.nextName();
+                selectedPreset = jsonReader.nextString();
+                if (selectedPreset.isEmpty()) {
+                    selectedPreset = null;
+                }
+            }
+            if ( jsonReader.hasNext()) {
+                jsonReader.nextName();
+                micToUse = micToUseFromInt(jsonReader.nextInt());
+            }
+            if ( jsonReader.hasNext()) {
+                readBluetoothConnectionList(jsonReader);
             }
             jsonReader.endObject();
         } catch (FileNotFoundException e) {
@@ -77,18 +94,15 @@ public class Preferences {
             // TODO: handle this better...
         }
     }
-
-    private void readPreference(JsonReader jsonReader) throws IOException {
-        switch(jsonReader.nextName()) {
-            case SELECTED_PRESET:
-                selectedPreset = jsonReader.nextString();
-                break;
-            case MIC_TO_USE:
-                micToUse = micToUseFromInt(jsonReader.nextInt());
-                break;
-            default:
-                // Nothing to do, really. It'll get destroyed the next time we save...
+    private void readBluetoothConnectionList(JsonReader jsonReader) throws IOException {
+        jsonReader.beginArray();
+        while(jsonReader.hasNext()) {
+            if ( jsonReader.peek().equals(JsonToken.END_DOCUMENT)) {
+                return;
+            }
+            bluetoothConnectionList.add(jsonReader.nextString());
         }
+        jsonReader.endArray();
     }
 
     private MicToUse micToUseFromInt(int micToUse) {
@@ -124,8 +138,16 @@ public class Preferences {
                         new File(context.getFilesDir(),
                                 context.getString(R.string.preferences_file_name))))) {
             jsonWriter.beginObject();
-            if (selectedPreset != null) {
+            if ( selectedPreset == null) {
+                jsonWriter.name(SELECTED_PRESET).value("");
+            } else {
                 jsonWriter.name(SELECTED_PRESET).value(selectedPreset);
+            }
+            if ( !bluetoothConnectionList.isEmpty()) {
+                jsonWriter.beginArray();
+                for ( String bluetoothConnection : bluetoothConnectionList) {
+                    jsonWriter.name(BLUETOOTH_PEER_NAME).value(bluetoothConnection);
+                }
             }
             jsonWriter.name(MIC_TO_USE).value(intFromMicToUse(micToUse));
             jsonWriter.endObject();
@@ -170,5 +192,20 @@ public class Preferences {
 
     public interface PresetUpdateListener {
         void selectedPresetUpdated(String newPresetName);
+    }
+
+    public List<String> getBluetoothConnectionList() {
+        return Collections.unmodifiableList(bluetoothConnectionList);
+    }
+
+    public void removeBluetoothConnection(String bluetoothConnection) {
+        bluetoothConnectionList.remove(bluetoothConnection);
+        writePreferences();
+    }
+
+    public void addBluetoothConnection(String bluetoothConnection) {
+        bluetoothConnectionList.add(bluetoothConnection);
+        Collections.sort(bluetoothConnectionList);
+        writePreferences();
     }
 }
