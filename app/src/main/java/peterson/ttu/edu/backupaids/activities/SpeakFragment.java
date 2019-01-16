@@ -1,5 +1,6 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -7,9 +8,11 @@ import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,6 +48,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
+
         // Apparently we'll think we're visible at first...
         setUserVisibleHint(false);
         View fragmentView = inflater.inflate(R.layout.fragment_speak, container, false);
@@ -78,6 +82,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
+            requestPermissions(new String[] {Manifest.permission.ACCESS_COARSE_LOCATION}, 201);
+
             // If we're already streaming (i.e. we've been woken up), find the existing connection manager
             startConnectionController();
         } else {

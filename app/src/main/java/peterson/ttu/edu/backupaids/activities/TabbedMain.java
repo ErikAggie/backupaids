@@ -13,6 +13,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,8 +25,13 @@ import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class TabbedMain extends AppCompatActivity {
 
+    private static final String TAG = "TabbedMain";
+
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    public static final int REQUEST_COARSE_LOCATION_PERMISSION = 201;
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
+
+    private TabLayout tabLayout;
 
 
     @Override
@@ -33,8 +39,13 @@ public class TabbedMain extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed_main);
 
+        // TODO: show something before asking for permissions...
+
         // Request audio recording permission. The app is useless without it, so ask up-front
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
+
+        // We use the music stream, so make sure the user can adjust the volume for us correctly
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -44,7 +55,7 @@ public class TabbedMain extends AppCompatActivity {
         ViewPager viewPager = (ViewPager) findViewById(R.id.container);
         viewPager.setAdapter(sectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
 
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
@@ -58,21 +69,27 @@ public class TabbedMain extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean permissionToRecordAccepted = false;
+
+        // If the permission isn't granted, we need to exit
+        // TODO: should probably say something to the user :)
+        if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            finish();
+        }
         switch (requestCode){
             case REQUEST_RECORD_AUDIO_PERMISSION:
-                permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, "Record audio permission request denied. Exiting...");
+                    finish();
+                    return;
+                }
+                break;
+            case REQUEST_COARSE_LOCATION_PERMISSION:
+                if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, "Location request denied.");
+                    tabLayout.getTabAt(0).select();
+                }
                 break;
         }
-        if (!permissionToRecordAccepted ) {
-            finish();
-            return;
-        }
-
-        // Getting here means permission is granted!
-
-        // We use the music stream, so make sure the user can adjust the volume for us correctly
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     @Override
