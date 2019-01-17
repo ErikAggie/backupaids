@@ -5,6 +5,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,8 +113,8 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     }
 
     @Override
-    public void foundAPeer(String peerName) {
-        listener.askAboutConnection(peerName, this);
+    public void foundPeers(List<String> peerNames) {
+        listener.askAboutConnections(peerNames, this);
     }
 
 
@@ -164,6 +165,6 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     public interface Listener {
         void stateChanged(State state);
         void failed(String reason);
-        void askAboutConnection(String connectionName, PeerCallback callback);
+        void askAboutConnections(List<String> connectionNames, PeerCallback callback);
     }
 }

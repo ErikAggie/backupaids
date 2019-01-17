@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -381,7 +383,9 @@ public class WiFiConnectionMaker extends BroadcastReceiver
 
         if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
             // We already know the IP and can connect directly!
-            connectionListener.foundAPeer(remoteAppInstanceName);
+            List<String> peerNames = new ArrayList<>();
+            peerNames.add(remoteAppInstanceName);
+            connectionListener.foundPeers(peerNames);
             return;
         }
 
@@ -421,7 +425,9 @@ public class WiFiConnectionMaker extends BroadcastReceiver
                 savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
 
                 // We have all we need to connect at this point. NOW inform the activity
-                connectionListener.foundAPeer(buddyName);
+                List<String> peerNames = new ArrayList<>();
+                peerNames.add(buddyName);
+                connectionListener.foundPeers(peerNames);
                 break;
             }
         }

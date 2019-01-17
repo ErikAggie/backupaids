@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -281,29 +282,51 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     @Override
-    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
-        if ( connectionPopup != null) {
-            connectionPopup.dismiss();
-        }
-        connectionPopup = new ConnectionPopupFragment();
-        connectionPopup.setListener(new ConnectionPopupFragment.OnFragmentInteractionListener() {
-            @Override
-            public void connectionConfirmed() {
-                callback.approveConnection(connectionName);
-            }
+    public void askAboutConnections(final List<String> connectionNames, final PeerCallback callback) {
+        CharSequence[] connectionNamesAsArray = new CharSequence[connectionNames.size()];
+        connectionNames.toArray(connectionNamesAsArray);
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Select device to connect to");
+        builder.setItems(connectionNamesAsArray, new DialogInterface.OnClickListener() {
             @Override
-            public void cancelled() {
-                callback.denyConnection(connectionName);
-                if (connectionPopup != null) {
-                    connectionPopup.dismiss();
-                    connectionPopup = null;
-                }
+            public void onClick(DialogInterface dialogInterface, int i) {
+                callback.approveConnection(connectionNames.get(i));
             }
         });
-        connectionPopup.setTargetFragment(this, 1);
-        connectionPopup.setConnection(connectionName);
-        connectionPopup.show(getFragmentManager(), "Connections");
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                TabbedMain activity = (TabbedMain) getActivity();
+                activity.showListenTab();
+            }
+        });
+        builder.show();
+
+        // Leftovers from the WiFi settings
+
+//        if ( connectionPopup != null) {
+//            connectionPopup.dismiss();
+//        }
+//        connectionPopup = new ConnectionPopupFragment();
+//        connectionPopup.setListener(new ConnectionPopupFragment.OnFragmentInteractionListener() {
+//            @Override
+//            public void connectionConfirmed() {
+//                callback.approveConnection(connectionName);
+//            }
+//
+//            @Override
+//            public void cancelled() {
+//                callback.denyConnection(connectionName);
+//                if (connectionPopup != null) {
+//                    connectionPopup.dismiss();
+//                    connectionPopup = null;
+//                }
+//            }
+//        });
+//        connectionPopup.setTargetFragment(this, 1);
+//        connectionPopup.setConnection(connectionName);
+//        connectionPopup.show(getFragmentManager(), "Connections");
 
     }
 }

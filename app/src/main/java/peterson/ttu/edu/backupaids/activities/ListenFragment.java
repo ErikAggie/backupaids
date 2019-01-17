@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.List;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
@@ -489,35 +490,36 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                }
-                connectionPopup = new ConnectionPopupFragment();
-                connectionPopup.setListener(
-                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
-                            @Override
-                            public void connectionConfirmed() {
-                                callback.approveConnection(connectionName);
-                            }
-
-                            @Override
-                            public void cancelled() {
-                                callback.denyConnection(connectionName);
-                                if (connectionPopup != null) {
-                                    connectionPopup.dismiss();
-                                    connectionPopup = null;
-                                }
-                            }
-                        });
-                connectionPopup.setTargetFragment(ListenFragment.this, 1);
-                connectionPopup.setConnection(connectionName);
-                connectionPopup.show(getFragmentManager(), "Connections");
-            }
-        });
+    public void askAboutConnections(final List<String> connectionNames, final PeerCallback callback) {
+        // Won't get called for Bluetooth...
+//        getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                if ( connectionPopup != null) {
+//                    connectionPopup.dismiss();
+//                }
+//                connectionPopup = new ConnectionPopupFragment();
+//                connectionPopup.setListener(
+//                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
+//                            @Override
+//                            public void connectionConfirmed() {
+//                                callback.approveConnection(connectionName);
+//                            }
+//
+//                            @Override
+//                            public void cancelled() {
+//                                callback.denyConnection(connectionName);
+//                                if (connectionPopup != null) {
+//                                    connectionPopup.dismiss();
+//                                    connectionPopup = null;
+//                                }
+//                            }
+//                        });
+//                connectionPopup.setTargetFragment(ListenFragment.this, 1);
+//                connectionPopup.setConnection(connectionName);
+//                connectionPopup.show(getFragmentManager(), "Connections");
+//            }
+//        });
     }
 
     @Override

@@ -10,6 +10,11 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import peterson.ttu.edu.backupaids.util.ConnectionType;
@@ -19,12 +24,17 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 
     private final Context context;
 
+    private final Map<String, BluetoothDevice> bluetoothDeviceMap = new HashMap<>();
+
     private final BluetoothAdapter bluetoothAdapter;
+
+    private ConnectionListener connectionListener;
 
     // TODO: allow user to pass along a previous connection
 
     /* package */ BluetoothConnectionMaker(@NonNull Context context, ConnectionListener connectionListener, ConnectionType connectionType) throws IOException {
         this.context = context;
+        this.connectionListener = connectionListener;
 
         // Make sure we support Bluetooth and that it's turned on
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -59,6 +69,8 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 //        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
 //        context.startActivity(discoverableIntent);
 
+        bluetoothDeviceMap.clear();
+
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
@@ -69,11 +81,24 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
                 switch ( intent.getAction()) {
                     case BluetoothDevice.ACTION_FOUND:
                         BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        if ( device == null || device.getName() == null) {
+                            break;
+                        }
                         Log.i(TAG, "Found " + device.getName());
+                        if ( bluetoothDeviceMap.containsKey(device.getName())) {
+                            Log.e(TAG, "Duplicated Bluetooth name: " + device.getName());
+                        }
+                        bluetoothDeviceMap.put(device.getName(), device);
                         break;
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                         Log.i(TAG, "Discovery finished!");
                         context.unregisterReceiver(this);
+                        if ( !bluetoothDeviceMap.isEmpty()) {
+                            bluetoothDeviceMap.keySet();
+                            List<String> nameSet = new ArrayList<>(bluetoothDeviceMap.keySet());
+                            Collections.sort(nameSet);
+                            connectionListener.foundPeers(nameSet);
+                        }
                         break;
                     default:
                         Log.w(TAG, "Got action " + action);
