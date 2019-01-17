@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,10 +83,29 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
-            requestPermissions(new String[] {Manifest.permission.ACCESS_COARSE_LOCATION}, 201);
+            if (ContextCompat.checkSelfPermission(getActivity(), TabbedMain.Permission.REQUEST_COARSE_LOCATION_PERMISSION.getName())
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted
+                Activity activity = getActivity();
+                if ( !(activity instanceof TabbedMain)) {
+                    throw new RuntimeException("Must be under a TabbedMain!");
+                }
+                final TabbedMain tabbedMain = ((TabbedMain) activity);
+                tabbedMain.requestPermission(TabbedMain.Permission.REQUEST_COARSE_LOCATION_PERMISSION, new TabbedMain.PermissionCallback() {
+                    @Override
+                    public void permissionGranted() {
+                        startConnectionController();
+                    }
 
-            // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-            startConnectionController();
+                    @Override
+                    public void permissionDenied() {
+                        tabbedMain.showListenTab();
+                    }
+                });
+            } else {
+                // If we're already streaming (i.e. we've been woken up), find the existing connection manager
+                startConnectionController();
+            }
         } else {
             if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
                 stopTryingToConnect();

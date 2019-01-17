@@ -1,11 +1,15 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.PagerAdapter;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
 import android.support.v4.app.Fragment;
@@ -20,6 +24,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
@@ -27,8 +34,40 @@ public class TabbedMain extends AppCompatActivity {
 
     private static final String TAG = "TabbedMain";
 
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
-    public static final int REQUEST_COARSE_LOCATION_PERMISSION = 201;
+    public enum Permission {
+        REQUEST_RECORD_AUDIO_PERMISSION(200,
+                Manifest.permission.RECORD_AUDIO,
+                "This app needs to access your microphone in order to listen to your surroundings. " +
+                        "This app will not store or send audio data without your permission. " +
+                        "Please say \"Allow\" on the following screen."),
+        REQUEST_COARSE_LOCATION_PERMISSION(201,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                "In order to find other devices Android requires the use of your general location. " +
+                        "This app will not store or share your location; it's purely to connect to another device. " +
+                        "If that's okay with you, please say \"Allow\" on the following screen.");
+
+        private final int id;
+        private final String name;
+        private final String message;
+
+        Permission(int id, String name, String message) {
+            this.id = id;
+            this.name = name;
+            this.message = message;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    /* package */ interface PermissionCallback {
+        void permissionGranted();
+        void permissionDenied();
+    }
+
+    private Map<Integer, PermissionCallback> permissionCallbackMap = new HashMap<>();
+
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
 
     private TabLayout tabLayout;
@@ -39,10 +78,23 @@ public class TabbedMain extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed_main);
 
-        // TODO: show something before asking for permissions...
+        // Without the "record audio" permission this app is useless...
+        if (ContextCompat.checkSelfPermission(this, Permission.REQUEST_RECORD_AUDIO_PERMISSION.getName())
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermission(Permission.REQUEST_RECORD_AUDIO_PERMISSION, new PermissionCallback() {
+                @Override
+                public void permissionGranted() {
+                    // Nothing to do
+                }
 
-        // Request audio recording permission. The app is useless without it, so ask up-front
-        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
+                @Override
+                public void permissionDenied() {
+                    // Have to exit
+                    Log.e(TAG, "User denied record audio permission. Can't continue");
+                    finish();
+                }
+            });
+        }
 
         // We use the music stream, so make sure the user can adjust the volume for us correctly
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -66,29 +118,50 @@ public class TabbedMain extends AppCompatActivity {
 
     }
 
+    /* package */ void requestPermission(final Permission permission, @NonNull final PermissionCallback callback) {
+        // 1) Show a dialog telling the user what this is
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(permission.message)
+                .setTitle(getString(R.string.app_name) + " needs your permission");
+
+        DialogInterface.OnClickListener okButtonListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // 2) Ask for the permission and set the callback for it
+                permissionCallbackMap.put(permission.id, callback);
+                ActivityCompat.requestPermissions(TabbedMain.this, new String[] {permission.name}, permission.id);
+
+            }
+        };
+        builder.setPositiveButton("OK", okButtonListener);
+        builder.create().show();
+    }
+
+    /**
+     * Switch to the listen tab
+     */
+    /* package */ void showListenTab() {
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.getTabAt(0).select();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        // If the permission isn't granted, we need to exit
-        // TODO: should probably say something to the user :)
-        if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            finish();
+        PermissionCallback callback = permissionCallbackMap.remove(requestCode);
+        if ( callback == null) {
+            return;
         }
-        switch (requestCode){
-            case REQUEST_RECORD_AUDIO_PERMISSION:
-                if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Log.e(TAG, "Record audio permission request denied. Exiting...");
-                    finish();
-                    return;
-                }
+
+        switch ( grantResults[0]) {
+            case PackageManager.PERMISSION_GRANTED:
+                callback.permissionGranted();
                 break;
-            case REQUEST_COARSE_LOCATION_PERMISSION:
-                if ( grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Log.e(TAG, "Location request denied.");
-                    tabLayout.getTabAt(0).select();
-                }
-                break;
+            case PackageManager.PERMISSION_DENIED:
+                callback.permissionDenied();
+            default:
+                Log.e(TAG, "Unexpected permission response for " + requestCode + ": " + grantResults[0]);
         }
     }
 
