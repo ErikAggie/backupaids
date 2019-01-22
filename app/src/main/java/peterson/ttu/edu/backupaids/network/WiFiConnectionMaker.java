@@ -383,9 +383,7 @@ public class WiFiConnectionMaker extends BroadcastReceiver
 
         if ( savedIPs.containsKey(remoteAppInstanceName) && savedIPs.get(remoteAppInstanceName) != null) {
             // We already know the IP and can connect directly!
-            List<String> peerNames = new ArrayList<>();
-            peerNames.add(remoteAppInstanceName);
-            connectionListener.foundPeers(peerNames);
+            connectionListener.foundAPeer(remoteAppInstanceName);
             return;
         }
 
@@ -425,9 +423,7 @@ public class WiFiConnectionMaker extends BroadcastReceiver
                 savedIPs.put(buddyName, wifiP2pInfo.groupOwnerAddress);
 
                 // We have all we need to connect at this point. NOW inform the activity
-                List<String> peerNames = new ArrayList<>();
-                peerNames.add(buddyName);
-                connectionListener.foundPeers(peerNames);
+                connectionListener.foundAPeer(buddyName);
                 break;
             }
         }

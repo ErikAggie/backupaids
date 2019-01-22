@@ -11,7 +11,9 @@ public interface ConnectionListener {
     void servicesStarted();
     void servicesStopped();
     void servicePublishingFailed();
-    void foundPeers(List<String> peerNames);
+    void discoveryStarted();
+    void foundAPeer(String peerName);
+    void discoveryFinished();
     void findingPeerFailed(IOException e);
     void connectionReady() throws IOException;
     void connectionFailed(IOException e);

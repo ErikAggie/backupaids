@@ -490,8 +490,21 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void askAboutConnections(final List<String> connectionNames, final PeerCallback callback) {
+    public void connectionCheckStarted() {
+        // Won't happen since we won't be trying to discover another service
+    }
+
+    @Override
+    public void askAboutConnection(final String connectionNames, final PeerCallback callback) {
         // Won't get called for Bluetooth...
+    }
+
+    @Override
+    public void connectionCheckFinished() {
+        // Won't happen for Bluetooth
+    }
+
+    // Leftovers from the WiFi connection
 //        getActivity().runOnUiThread(new Runnable() {
 //            @Override
 //            public void run() {
@@ -520,7 +533,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 //                connectionPopup.show(getFragmentManager(), "Connections");
 //            }
 //        });
-    }
 
     @Override
     public void selectedPresetUpdated(String newPresetName) {

@@ -10,10 +10,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,19 +83,15 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
                         }
                         Log.i(TAG, "Found " + device.getName());
                         if ( bluetoothDeviceMap.containsKey(device.getName())) {
-                            Log.e(TAG, "Duplicated Bluetooth name: " + device.getName());
+                            Log.w(TAG, "Duplicated Bluetooth name: " + device.getName());
                         }
                         bluetoothDeviceMap.put(device.getName(), device);
+                        connectionListener.foundAPeer(device.getName());
                         break;
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                         Log.i(TAG, "Discovery finished!");
                         context.unregisterReceiver(this);
-                        if ( !bluetoothDeviceMap.isEmpty()) {
-                            bluetoothDeviceMap.keySet();
-                            List<String> nameSet = new ArrayList<>(bluetoothDeviceMap.keySet());
-                            Collections.sort(nameSet);
-                            connectionListener.foundPeers(nameSet);
-                        }
+                        connectionListener.discoveryFinished();
                         break;
                     default:
                         Log.w(TAG, "Got action " + action);
@@ -108,21 +101,21 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
         };
 
         context.registerReceiver(receiver, filter);
-        boolean didItStart = bluetoothAdapter.startDiscovery();
-        if ( !didItStart) {
+        if ( bluetoothAdapter.startDiscovery()) {
+            Log.i(TAG, "Scanning for devices...");
+            connectionListener.discoveryStarted();
+        } else {
             Log.w(TAG, "Discovery process didn't start!");
         }
-        Log.i(TAG, "Scanning for devices...");
     }
 
     @Override
     public void changeConnectionListener(ConnectionListener connectionListener) {
-
     }
 
     @Override
     public void close() {
-
+        bluetoothAdapter.cancelDiscovery();
     }
 
     @Override

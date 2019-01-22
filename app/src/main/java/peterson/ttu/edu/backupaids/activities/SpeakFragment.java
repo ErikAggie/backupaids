@@ -18,12 +18,12 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -41,6 +41,10 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     private ConnectionController connectionController;
     private ConnectionPopupFragment connectionPopup;
+
+    private AlertDialog connectionAlertDialog;
+    private PeerCallback peerCallback;
+    private ArrayAdapter<String> connectionNamesAsArray;
 
     //----------------------------------------------------------------------------------------------
     // Lifecycle methods
@@ -137,7 +141,16 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     // Restart the controller
                     startConnectionController();
                 } else {
-                    Toast.makeText(getContext(), "Unable to connect without Bluetooth", Toast.LENGTH_LONG).show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    builder.setTitle("Cannot connect without Bluetooth");
+                    builder.setMessage("Please turn on Bluetooth before attempting to connect to another device. ");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            TabbedMain activity = (TabbedMain) getActivity();
+                            activity.showListenTab();
+                        }
+                    });
                 }
                 break;
             default:
@@ -171,15 +184,21 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private void startConnectionController() {
         try {
             connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
-            if (!StreamSoundService.isCurrentlyStreaming()) {
-                Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
-            }
         } catch (BluetoothNotEnabledException ex) {
             // Bluetooth isn't running. Ask the user to start it
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } catch ( IOException ex) {
-            Toast.makeText(getContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle("Error trying to connect");
+            builder.setMessage("Error trying to connect: " + ex.getMessage());
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    TabbedMain activity = (TabbedMain) getActivity();
+                    activity.showListenTab();
+                }
+            });
         }
     }
 
@@ -239,7 +258,17 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                         }
                         break;
                     case FAILED:
-                        Toast.makeText(getContext(), "Connection failed. Try again in a few seconds.", Toast.LENGTH_LONG).show();
+                        new AlertDialog.Builder(getContext())
+                                .setTitle("Connection failed")
+                                .setMessage("Connection failed. Try again in a few seconds")
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // Do nothing...
+                                    }
+                                })
+                                .show();
                         // Don't have to stop since we'll get a STOPPED state shortly...
                         break;
                     case STOPPED:
@@ -276,32 +305,64 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                         .show();
             }
         });
-
-        // This isn't likely (at present--September, 2018--this is only for headphone not present--not a problem here
-        Toast.makeText(getContext(), "Connection to the other device failed.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void askAboutConnections(final List<String> connectionNames, final PeerCallback callback) {
-        CharSequence[] connectionNamesAsArray = new CharSequence[connectionNames.size()];
-        connectionNames.toArray(connectionNamesAsArray);
+    public void connectionCheckStarted() {
+        if ( connectionAlertDialog != null) {
+            connectionAlertDialog.dismiss();
+            connectionAlertDialog = null;
+            peerCallback = null;
+            connectionNamesAsArray = null;
+        }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Select device to connect to");
-        builder.setItems(connectionNamesAsArray, new DialogInterface.OnClickListener() {
+        builder.setTitle("Scanning for devices...");
+        connectionNamesAsArray = new ArrayAdapter<String>(getContext(), android.R.layout.select_dialog_multichoice);
+        builder.setAdapter(connectionNamesAsArray, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                callback.approveConnection(connectionNames.get(i));
+                if ( peerCallback != null) {
+                    peerCallback.approveConnection(connectionNamesAsArray.getItem(i));
+                }
+                connectionAlertDialog.dismiss();
+                connectionAlertDialog = null;
+                connectionNamesAsArray = null;
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                connectionAlertDialog = null;
+                connectionNamesAsArray = null;
+                peerCallback = null;
                 TabbedMain activity = (TabbedMain) getActivity();
                 activity.showListenTab();
             }
         });
-        builder.show();
+        connectionAlertDialog = builder.create();
+        connectionAlertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                if ( peerCallback != null) {
+                    connectionController.stop();
+                }
+            }
+        });
+        connectionAlertDialog.show();
+    }
+
+    @Override
+    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ( connectionAlertDialog == null) {
+                    connectionNamesAsArray.add(connectionName);
+                    peerCallback = callback;
+                }
+            }
+        });
 
         // Leftovers from the WiFi settings
 
@@ -328,5 +389,38 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 //        connectionPopup.setConnection(connectionName);
 //        connectionPopup.show(getFragmentManager(), "Connections");
 
+    }
+
+    @Override
+    public void connectionCheckFinished() {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ( connectionNamesAsArray == null) {
+                    return;
+                }
+                if ( connectionNamesAsArray.isEmpty()) {
+                    connectionAlertDialog.dismiss();
+                    connectionAlertDialog = null;
+                    connectionNamesAsArray = null;
+                    peerCallback = null;
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    builder.setTitle("No devices found!");
+                    builder.setMessage("No devices found. " +
+                            "Please ensure that the other device is on the \"Listen\" tab and that the " +
+                            "connection icon (bottom center) is blue--touch it otherwise.");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            TabbedMain activity = (TabbedMain) getActivity();
+                            activity.showListenTab();
+                        }
+                    });
+                    builder.show();
+                } else {
+                    connectionAlertDialog.setTitle("Please select a device");
+                }
+            }
+        });
     }
 }

@@ -113,10 +113,19 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     }
 
     @Override
-    public void foundPeers(List<String> peerNames) {
-        listener.askAboutConnections(peerNames, this);
+    public void discoveryStarted() {
+        listener.connectionCheckStarted();
     }
 
+    @Override
+    public void foundAPeer(String peerName) {
+        listener.askAboutConnection(peerName, this);
+    }
+
+    @Override
+    public void discoveryFinished() {
+        listener.connectionCheckFinished();
+    }
 
     @Override
     public void findingPeerFailed(IOException e) {
@@ -165,6 +174,8 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     public interface Listener {
         void stateChanged(State state);
         void failed(String reason);
-        void askAboutConnections(List<String> connectionNames, PeerCallback callback);
+        void connectionCheckStarted();
+        void askAboutConnection(String connectionName, PeerCallback callback);
+        void connectionCheckFinished();
     }
 }
