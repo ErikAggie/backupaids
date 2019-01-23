@@ -357,7 +357,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if ( connectionAlertDialog == null) {
+                if ( connectionNamesAsArray != null) {
                     connectionNamesAsArray.add(connectionName);
                     peerCallback = callback;
                 }
