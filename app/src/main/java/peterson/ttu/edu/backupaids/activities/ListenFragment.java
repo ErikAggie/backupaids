@@ -305,7 +305,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         }
         try {
             connectionController = new ListenConnectionController(getContext(), getActivity(), this);
-            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+            connectionController.start();
         } catch ( BluetoothNotEnabledException ex) {
             // Bluetooth isn't on. Ask the user to turn it on...
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);

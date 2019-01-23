@@ -27,7 +27,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
 
     protected final Context context;
     protected final Activity activity;
-    protected final ConnectionMaker connectionMaker;
+    protected ConnectionMaker connectionMaker;
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
@@ -39,18 +39,11 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
         this.context = context;
         this.activity = activity;
         this.listener = listener;
+    }
 
+    public synchronized ConnectionController start() throws IOException{
         connectionMaker = getConnectionMaker();
-        discoverableCountdown.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if ( state == State.CONNECTING) {
-                    // Took too long to connect
-                    stop();
-                }
-            }
-        }, 180000); // 3 minutes
-
+        return this;
     }
 
     public synchronized void stop() {
@@ -125,6 +118,18 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     @Override
     public void discoveryFinished() {
         listener.connectionCheckFinished();
+    }
+
+    @Override
+    public void nowDiscoverable() {
+        updateState(State.CONNECTING);
+    }
+
+    @Override
+    public void noLongerDiscoverable() {
+        if ( state == State.CONNECTING) {
+            updateState(State.STOPPED);
+        }
     }
 
     @Override

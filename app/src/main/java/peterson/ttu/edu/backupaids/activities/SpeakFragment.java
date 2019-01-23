@@ -184,6 +184,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private void startConnectionController() {
         try {
             connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            connectionController.start();
         } catch (BluetoothNotEnabledException ex) {
             // Bluetooth isn't running. Ask the user to start it
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);

@@ -1,7 +1,6 @@
 package peterson.ttu.edu.backupaids.network;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Interface for connection events
@@ -14,6 +13,8 @@ public interface ConnectionListener {
     void discoveryStarted();
     void foundAPeer(String peerName);
     void discoveryFinished();
+    void nowDiscoverable();
+    void noLongerDiscoverable();
     void findingPeerFailed(IOException e);
     void connectionReady() throws IOException;
     void connectionFailed(IOException e);

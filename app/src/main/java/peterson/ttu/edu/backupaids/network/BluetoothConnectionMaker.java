@@ -13,11 +13,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 
 public class BluetoothConnectionMaker implements ConnectionMaker {
     private static final String TAG = "BTConnectionMaker";
+    private static final int BLUETOOTH_VISIBILITY_TIMEOUT = 120;
 
     private final Context context;
 
@@ -44,6 +48,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             throw new BluetoothNotEnabledException("Bluetooth is not enabled; kindly ask the user to enable Bluetooth.");
         }
 
+        // TODO: compare this to our list of saved connections
         // Get the list of paired devices and compare it to our saved list
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 
@@ -55,17 +60,14 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
         }
 
         // TODO: only do this if the user didn't request a specific connection...
-        // TODO: and only if speaking...
-        discoverConnections();
+        if ( connectionType == ConnectionType.SPEAK) {
+            discoverConnections();
+        } else {
+            makeUsDiscoverable();
+        }
     }
 
     private void discoverConnections() {
-
-        // Make us discoverable...
-//        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-//        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-//        context.startActivity(discoverableIntent);
-
         bluetoothDeviceMap.clear();
 
         IntentFilter filter = new IntentFilter();
@@ -107,6 +109,22 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
         } else {
             Log.w(TAG, "Discovery process didn't start!");
         }
+    }
+
+    private void makeUsDiscoverable() {
+        // Make us discoverable...
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BLUETOOTH_VISIBILITY_TIMEOUT);
+        context.startActivity(discoverableIntent);
+        connectionListener.nowDiscoverable();
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                connectionListener.noLongerDiscoverable();
+            }
+        }, BLUETOOTH_VISIBILITY_TIMEOUT * 1000);
+
     }
 
     @Override
