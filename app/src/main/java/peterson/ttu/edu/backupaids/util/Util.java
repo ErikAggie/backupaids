@@ -25,6 +25,9 @@ public class Util {
     public static final String LISTEN_PORT_STRING = "ListenPort";
     public static final String PIN_NUMBER_STRING = "PinNumber";
 
+    // Generated from https://www.uuidgenerator.net/
+    public static final String UUID_STRING = "7aaaeccb-070b-454e-9640-ab8f0f38eff4";
+
     public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
     public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
 
