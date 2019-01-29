@@ -65,6 +65,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     protected synchronized void updateState(State state) {
         if ( state != this.state || state == State.STOPPED) {
             // A change...
+            Log.d(TAG, "Connection state: " + state);
             this.state = state;
             listener.stateChanged(state);
         }

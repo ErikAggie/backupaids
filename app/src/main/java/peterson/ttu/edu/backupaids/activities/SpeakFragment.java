@@ -325,6 +325,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             public void onClick(DialogInterface dialogInterface, int i) {
                 if ( peerCallback != null) {
                     peerCallback.approveConnection(connectionNamesAsArray.getItem(i));
+                    peerCallback = null;
                 }
                 connectionAlertDialog.dismiss();
                 connectionAlertDialog = null;
