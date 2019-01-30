@@ -358,7 +358,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     private void updateMakeDiscoverableButton() {
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
         TextView textForMakeDiscoverableButton = getView().findViewById(R.id.textForMakeDiscoverableButton);
-        TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
+
+        // Left in case we someday bring back WiFi connections...
+        //TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
         if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
             textForMakeDiscoverableButton.setText(R.string.not_connected);
@@ -371,20 +373,20 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_blue);
                 Util.rotateImageButton(makeDiscoverableButton);
                 textForMakeDiscoverableButton.setText(R.string.connecting);
-                pinTextView.setVisibility(View.VISIBLE);
+                //pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_green);
                 makeDiscoverableButton.setAnimation(null);
                 textForMakeDiscoverableButton.setText(R.string.connected);
-                pinTextView.setVisibility(View.GONE);
+                //pinTextView.setVisibility(View.GONE);
                 break;
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
                 makeDiscoverableButton.setAnimation(null);
                 textForMakeDiscoverableButton.setText(R.string.not_connected);
-                pinTextView.setVisibility(View.GONE);
+                //pinTextView.setVisibility(View.GONE);
                 break;
             default:
                 throw new RuntimeException("Unknown connection state " + connectionController.getState() + "!");
