@@ -120,7 +120,7 @@ public class RemoteSoundService extends BaseStreamService {
     protected SoundDestination createDestination(OutputStream outputStream) throws IOException {
         SoundPreset soundPreset = Preferences.getInstance(this).getSelectedPreset();
 
-        return DestinationFactory.createLocalAudioDestination(soundPreset, this);
+        return DestinationFactory.createLocalAudioDestination(soundPreset, this, true);
     }
 
     @Override

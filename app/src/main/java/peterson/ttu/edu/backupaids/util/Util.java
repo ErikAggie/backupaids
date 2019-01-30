@@ -34,11 +34,16 @@ public class Util {
 
     public static final String CONNECTION_NAME_EXTRA = "ConnectionName";
 
-    public static final int SAMPLE_RATE = 44100;
+    public static final int LOCAL_SAMPLE_RATE = 44100;
+    public static final int REMOTE_SAMPLE_RATE = 22050;
 
-    public static final int INPUT_MIN_BUFFER_SIZE =
-            AudioRecord.getMinBufferSize(Util.SAMPLE_RATE,
+    public static final int LOCAL_MIN_BUFFER_SIZE =
+            AudioRecord.getMinBufferSize(LOCAL_SAMPLE_RATE,
                     AudioFormat.CHANNEL_IN_STEREO,
+                    AudioFormat.ENCODING_PCM_16BIT);
+    public static final int REMOTE_MIN_BUFFER_SIZE =
+            AudioRecord.getMinBufferSize(REMOTE_SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
 
 

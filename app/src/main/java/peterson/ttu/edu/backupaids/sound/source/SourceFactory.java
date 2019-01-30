@@ -10,7 +10,6 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 
 import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.util.Util;
@@ -30,10 +29,10 @@ public class SourceFactory {
     public static SoundSource createCamcorderAudioRecord(Context context) throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                        Util.SAMPLE_RATE,
+                        Util.LOCAL_SAMPLE_RATE,
                         AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT,
-                        Util.INPUT_MIN_BUFFER_SIZE);
+                        Util.LOCAL_MIN_BUFFER_SIZE);
 
         Preferences.MicToUse micToUse = Preferences.getInstance(context).getMicToUse();
         switch (micToUse) {
@@ -70,21 +69,23 @@ public class SourceFactory {
     public static SoundSource createMicAudioRecord() throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.MIC,
-                        Util.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_STEREO,
+                        Util.REMOTE_SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT,
-                        Util.INPUT_MIN_BUFFER_SIZE);
+                        Util.REMOTE_MIN_BUFFER_SIZE);
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");
         }
+        AudioFormat format = audioRecord.getFormat();
+        Log.i(TAG, "Audio encoding: " + format.getEncoding());
+        Log.i(TAG, "Sample rate: " + format.getSampleRate());
         return new LocalSoundSource(audioRecord);
     }
 
-
     /**
      * Create a sound source for a socket
-     * @param socket Socket we're getting sound from
+     * @param inputStream Source of the sound
      */
     public static SoundSource createStreamSource(InputStream inputStream) throws IOException {
         return new RemoteSoundSource(inputStream);

@@ -13,7 +13,6 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 
 import peterson.ttu.edu.backupaids.network.InputStreamHandler;
 import peterson.ttu.edu.backupaids.network.OutputStreamHandler;
@@ -113,7 +112,7 @@ public abstract class BaseStreamService extends BaseService implements InputStre
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size
-            byte[] audioBuffer = new byte[Util.INPUT_MIN_BUFFER_SIZE];
+            byte[] audioBuffer = new byte[Util.LOCAL_MIN_BUFFER_SIZE];
 
             Log.i(TAG, "Ready to send/receive!");
 
