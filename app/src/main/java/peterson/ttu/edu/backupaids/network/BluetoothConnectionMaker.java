@@ -22,6 +22,9 @@ import java.util.UUID;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
+import peterson.ttu.edu.backupaids.model.DeviceInfo;
+import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
+import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 import peterson.ttu.edu.backupaids.util.Util;
 
@@ -159,6 +162,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             waitingSocket = serverDevice.createRfcommSocketToServiceRecord(UUID.fromString(Util.UUID_STRING));
             ReadyConnectionMaker.setReadyConnectionMaker(BluetoothConnectionMaker.this);
             waitingSocket.connect();
+            DeviceInfoManager.getInstance(context).addDevice(new DeviceInfo(serverDevice.getName(), serverDevice.getAddress()));
             connectionListener.connectionReady();
         } catch ( IOException e) {
             connectionListener.connectionFailed(e);
@@ -229,8 +233,9 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
                         // No need to listen further
                         serverSocket.close();
                         serverSocket = null;
-                        Log.i(TAG, "Accepted connection from " + waitingSocket.getRemoteDevice().getName());
-                        // TODO: do some sort of security verification (send a code phrase first, perhaps)
+                        BluetoothDevice remoteDevice = waitingSocket.getRemoteDevice();
+                        Log.i(TAG, "Accepted connection from " + remoteDevice.getName());
+                        DeviceInfoManager.getInstance(context).addDevice(new DeviceInfo(remoteDevice.getName(), remoteDevice.getAddress()));
                         try {
                             ReadyConnectionMaker.setReadyConnectionMaker(BluetoothConnectionMaker.this);
                             connectionListener.connectionReady();

@@ -1,11 +1,13 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.bluetooth.BluetoothClass;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.JsonWriter;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,7 +41,6 @@ public class Preferences {
     private final Context context;
     private String selectedPreset;
     private MicToUse micToUse = MicToUse.PHONE_MIC;
-    private final List<String> bluetoothConnectionList = new ArrayList<>();
 
     public static Preferences getInstance(@NonNull Context context) {
         if ( smInstance == null) {
@@ -83,9 +84,6 @@ public class Preferences {
                 jsonReader.nextName();
                 micToUse = micToUseFromInt(jsonReader.nextInt());
             }
-            if ( jsonReader.hasNext()) {
-                readBluetoothConnectionList(jsonReader);
-            }
             jsonReader.endObject();
         } catch (FileNotFoundException e) {
             // Okay, just no presets
@@ -93,16 +91,6 @@ public class Preferences {
             e.printStackTrace();
             // TODO: handle this better...
         }
-    }
-    private void readBluetoothConnectionList(JsonReader jsonReader) throws IOException {
-        jsonReader.beginArray();
-        while(jsonReader.hasNext()) {
-            if ( jsonReader.peek().equals(JsonToken.END_DOCUMENT)) {
-                return;
-            }
-            bluetoothConnectionList.add(jsonReader.nextString());
-        }
-        jsonReader.endArray();
     }
 
     private MicToUse micToUseFromInt(int micToUse) {
@@ -142,12 +130,6 @@ public class Preferences {
                 jsonWriter.name(SELECTED_PRESET).value("");
             } else {
                 jsonWriter.name(SELECTED_PRESET).value(selectedPreset);
-            }
-            if ( !bluetoothConnectionList.isEmpty()) {
-                jsonWriter.beginArray();
-                for ( String bluetoothConnection : bluetoothConnectionList) {
-                    jsonWriter.name(BLUETOOTH_PEER_NAME).value(bluetoothConnection);
-                }
             }
             jsonWriter.name(MIC_TO_USE).value(intFromMicToUse(micToUse));
             jsonWriter.endObject();
@@ -192,20 +174,5 @@ public class Preferences {
 
     public interface PresetUpdateListener {
         void selectedPresetUpdated(String newPresetName);
-    }
-
-    public List<String> getBluetoothConnectionList() {
-        return Collections.unmodifiableList(bluetoothConnectionList);
-    }
-
-    public void removeBluetoothConnection(String bluetoothConnection) {
-        bluetoothConnectionList.remove(bluetoothConnection);
-        writePreferences();
-    }
-
-    public void addBluetoothConnection(String bluetoothConnection) {
-        bluetoothConnectionList.add(bluetoothConnection);
-        Collections.sort(bluetoothConnectionList);
-        writePreferences();
     }
 }

@@ -6,6 +6,7 @@
     <string name="volume_with_value">Volume: %1$d</string>
 
     <string name="preset_file_name">Presetv1.txt</string>
+    <string name="device_info_file_name">Deviceinfov1.txt</string>
     <string name="preferences_file_name">Preferencesv1.txt</string>
     <string name="title_activity_send_sound">Send Sound (FM style)</string>
 
