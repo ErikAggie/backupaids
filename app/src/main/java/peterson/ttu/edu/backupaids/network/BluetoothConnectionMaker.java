@@ -60,17 +60,6 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             throw new BluetoothNotEnabledException("Bluetooth is not enabled; kindly ask the user to enable Bluetooth.");
         }
 
-        // TODO: compare this to our list of saved connections
-        // Get the list of paired devices and compare it to our saved list
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                Log.i(TAG, "Paired device: " + device.getName() + ", " + device.getAddress() + ", " + device.getBluetoothClass());
-            }
-        }
-
         // TODO: only do this if the user didn't request a specific connection...
         if ( connectionType == ConnectionType.SPEAK) {
             discoverConnections();

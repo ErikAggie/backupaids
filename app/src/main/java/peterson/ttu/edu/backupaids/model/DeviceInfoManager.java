@@ -1,5 +1,7 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import peterson.ttu.edu.backupaids.R;
 
@@ -53,6 +56,30 @@ public class DeviceInfoManager {
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: handle this better...
+        }
+
+        if ( deviceInfoList.isEmpty()) {
+            return;
+        }
+
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> pairedDeviceList = bluetoothAdapter.getBondedDevices();
+
+        // Check to make sure that the devices we have are still paired
+        // Copy the list just to be safe since we may alter it...
+        List<DeviceInfo> copyOfDeviceInfoList = new ArrayList<>(deviceInfoList);
+        for ( DeviceInfo deviceInfo : copyOfDeviceInfoList) {
+            boolean found = false;
+            for ( BluetoothDevice pairedDevice : pairedDeviceList) {
+                if ( pairedDevice.getAddress().equals(deviceInfo.getAddress())) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found) {
+                Log.i(TAG, "Removing no-longer-paired device " + deviceInfo.getName());
+                deletePreset(deviceInfo);
+            }
         }
     }
 

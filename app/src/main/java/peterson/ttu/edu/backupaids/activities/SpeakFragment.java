@@ -30,6 +30,7 @@ import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
+import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
 import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
@@ -108,8 +109,15 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     }
                 });
             } else {
-                // If we're already streaming (i.e. we've been woken up), find the existing connection manager
-                startConnectionController();
+                DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
+
+                // TODO: if we're already streaming, we may need to short-circuit this...
+                if ( deviceInfoManager.hasDevices()) {
+                    // Display devices
+                } else {
+                    // First time here.  Go ahead and try to make a connection
+                    startConnectionController();
+                }
             }
         } else {
             if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
