@@ -3,6 +3,7 @@ package peterson.ttu.edu.backupaids.model;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.JsonWriter;
@@ -78,7 +79,7 @@ public class DeviceInfoManager {
             }
             if ( !found) {
                 Log.i(TAG, "Removing no-longer-paired device " + deviceInfo.getName());
-                deletePreset(deviceInfo);
+                deleteDevice(deviceInfo);
             }
         }
     }
@@ -96,19 +97,8 @@ public class DeviceInfoManager {
         Collections.sort(deviceInfoList);
     }
 
-    public void addDevice(DeviceInfo deviceInfo) {
-        if ( deviceInfoList.contains(deviceInfo)) {
-            Log.d(TAG, "Device already known: " + deviceInfo.getName());
-            return;
-        }
-        Log.d(TAG, "Saving device " + deviceInfo.getName());
-        deviceInfoList.add(deviceInfo);
-        Collections.sort(deviceInfoList);
-        saveDeviceList();
-    }
-
     /**
-     * Call this when you're ready to save changes to 1+ presets
+     * Call this when you're ready to save changes
      */
     private void saveDeviceList() {
         try (JsonWriter jsonWriter = new JsonWriter(
@@ -127,11 +117,52 @@ public class DeviceInfoManager {
         // We tried...
     }
 
+    /**
+     * Find the BluetoothDevice for a saved DeviceInfo
+     * @param deviceInfo
+     * @return
+     */
+    public static BluetoothDevice findBluetoothDevice(@NonNull DeviceInfo deviceInfo) {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> pairedDeviceList = bluetoothAdapter.getBondedDevices();
+
+        for ( BluetoothDevice bluetoothDevice : pairedDeviceList) {
+            if ( bluetoothDevice.getAddress().equals(deviceInfo.getAddress())) {
+                return bluetoothDevice;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the current list of connections
+     * @return The current list of connections
+     */
+    public List<DeviceInfo> getCurrentList() {
+        return Collections.unmodifiableList(deviceInfoList);
+    }
+
+    /**
+     * Add a new device
+     *
+     * @param deviceInfo Device to add
+     */
+    public void addDevice(DeviceInfo deviceInfo) {
+        if ( deviceInfoList.contains(deviceInfo)) {
+            Log.d(TAG, "Device already known: " + deviceInfo.getName());
+            return;
+        }
+        Log.d(TAG, "Saving device " + deviceInfo.getName());
+        deviceInfoList.add(deviceInfo);
+        Collections.sort(deviceInfoList);
+        saveDeviceList();
+    }
+
     public boolean hasDevices() {
         return !deviceInfoList.isEmpty();
     }
 
-    public void deletePreset(DeviceInfo deviceInfo) {
+    public void deleteDevice(DeviceInfo deviceInfo) {
         deviceInfoList.remove(deviceInfo);
         saveDeviceList();
     }

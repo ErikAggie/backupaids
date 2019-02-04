@@ -5,36 +5,45 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.List;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
+import peterson.ttu.edu.backupaids.model.DeviceInfo;
 import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
+import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
-import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
 
@@ -100,7 +109,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                 tabbedMain.requestPermission(TabbedMain.Permission.REQUEST_COARSE_LOCATION_PERMISSION, new TabbedMain.PermissionCallback() {
                     @Override
                     public void permissionGranted() {
-                        startConnectionController();
+                        presentConnectionChoice();
                     }
 
                     @Override
@@ -109,21 +118,57 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     }
                 });
             } else {
-                DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
-
                 // TODO: if we're already streaming, we may need to short-circuit this...
-                if ( deviceInfoManager.hasDevices()) {
-                    // Display devices
-                } else {
-                    // First time here.  Go ahead and try to make a connection
-                    startConnectionController();
-                }
+                presentConnectionChoice();
             }
         } else {
             if ( connectionController != null && connectionController.getState() != ConnectionController.State.STREAMING) {
                 stopTryingToConnect();
             }
         }
+    }
+
+    private void presentConnectionChoice() {
+        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
+
+        if ( deviceInfoManager.hasDevices()) {
+            displayConnectionChoices();
+        } else {
+            // No saved connections, so start looking for one...
+            startConnectionController(null);
+        }
+
+    }
+
+    private void displayConnectionChoices() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Pick a Connection");
+        final List<DeviceInfo> deviceInfoList = DeviceInfoManager.getInstance(getContext()).getCurrentList();
+        String[] listNames = new String[deviceInfoList.size()];
+        for ( int i=0; i<deviceInfoList.size(); i++) {
+            listNames[i] = deviceInfoList.get(i).getName();
+        }
+        builder.setItems(listNames, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startConnectionController(deviceInfoList.get(which));
+            }
+        });
+        builder.setPositiveButton("New", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                startConnectionController(null);
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                TabbedMain activity = (TabbedMain) getActivity();
+                activity.showListenTab();
+            }
+        });
+        builder.show();
     }
 
     private void stopTryingToConnect() {
@@ -146,8 +191,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         switch(requestCode) {
             case REQUEST_ENABLE_BT:
                 if ( resultCode == Activity.RESULT_OK) {
-                    // Restart the controller
-                    startConnectionController();
+                    presentConnectionChoice();
                 } else {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                     builder.setTitle("Cannot connect without Bluetooth");
@@ -174,24 +218,24 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void onClick(View view) {
         switch ( view.getId()) {
             case R.id.sendSoundStartButton:
-                sendSound();
+                if ( connectionController == null) {
+                    displayConnectionChoices();
+                } else {
+                    connectionController.stop();
+                }
                 break;
             default:
                 throw new RuntimeException("Unexpected button push!");
         }
     }
 
-    private void sendSound() {
-        if ( connectionController == null) {
-            startConnectionController();
-        } else {
-            connectionController.stop();
-        }
-    }
-
-    private void startConnectionController() {
+    private void startConnectionController(DeviceInfo deviceInfo) {
         try {
-            connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            if ( deviceInfo != null) {
+                connectionController = new SpeakConnectionController(getContext(), getActivity(), this, deviceInfo);
+            } else {
+                connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+            }
             connectionController.start();
         } catch (BluetoothNotEnabledException ex) {
             // Bluetooth isn't running. Ask the user to start it

@@ -75,10 +75,16 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             if ( existingDevice == null) {
                 discoverConnections();
             } else {
-
+                BluetoothDevice bluetoothDevice = DeviceInfoManager.findBluetoothDevice(existingDevice);
+                if ( bluetoothDevice == null) {
+                    throw new IOException("Couldn't find bluetooth device for " + existingDevice.getName());
+                }
+                makeConnection(bluetoothDevice);
             }
         } else {
-            makeUsDiscoverable();
+            if ( existingDevice == null) {
+                makeUsDiscoverable();
+            }
             listenForConnections();
         }
     }

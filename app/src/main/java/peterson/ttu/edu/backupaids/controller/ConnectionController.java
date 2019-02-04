@@ -55,7 +55,9 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
         discoverableCountdown.cancel();
 
         stopService();
-        connectionMaker.close();
+        if ( connectionMaker != null) {
+            connectionMaker.close();
+        }
         updateState(State.STOPPED);
 
     }

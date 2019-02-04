@@ -34,6 +34,7 @@ public class ListenConnectionController extends ConnectionController implements 
             return ConnectionMakerFactory.createConnectionMaker(context, this, ConnectionType.LISTEN);
         } else {
             // Just listen
+            updateState(State.CONNECTING);
             return ConnectionMakerFactory.createConnectionMakerNoDiscovery(context, this, ConnectionType.LISTEN);
         }
     }
