@@ -25,13 +25,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.List;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.ListenConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
+import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
 import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
@@ -128,7 +128,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         if ( RemoteSoundService.isCurrentlyStreaming()) {
             // Already streaming. Need to re-connect with this guy
-            startConnectionController();
+            startConnectionController(false);
         }
 
         // We could already be playing, so check on that...
@@ -178,7 +178,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 break;
             case R.id.makeDiscoverable:
             case R.id.textForMakeDiscoverableButton:
-                makeDiscoverable();
+                listenForConnections();
                 break;
             default:
                 throw new RuntimeException("Unexpected button push!");
@@ -286,16 +286,63 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), REQUEST_NEW_PRESET);
     }
 
-    private void makeDiscoverable() {
+    private void listenForConnections() {
 
         if ( connectionController != null) {
             stopStreaming();
-        } else {
-            startConnectionController();
+            return;
         }
+
+        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
+        if ( !deviceInfoManager.hasDevices()) {
+            // No devices==connect for the first time
+            startConnectionController(true);
+            return;
+        }
+
+        // Show the current presets, with edit/delete buttons (and a new one)
+        // Some of the code here came from https://stackoverflow.com/questions/23464232/how-would-you-create-a-popover-view-in-android-like-facebook-comments
+        LayoutInflater layoutInflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View inflatedView = layoutInflater.inflate(R.layout.new_old_connection_popup, null,false);
+
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+
+        // Make it square along the dimension of the
+        //int sideLength = (int)(Math.min(size.x, size.y) * .8);
+
+        final PopupWindow popupWindow = new PopupWindow(inflatedView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
+
+        Button reconnectButton = inflatedView.findViewById(R.id.reconnectButton);
+        reconnectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionController(false);
+            }
+        });
+
+        Button newConnectionButton = inflatedView.findViewById(R.id.newConnectionButton);
+        newConnectionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionController(true);
+            }
+        });
+
+        TableLayout bottomPanel = getView().findViewById(R.id.bottomMenu);
+        int[] position = new int[2];
+        bottomPanel.getLocationOnScreen(position);
+
+        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.CENTER_HORIZONTAL, 0, size.y-bottomPanel.getTop());
     }
 
-    private void startConnectionController() {
+    private void startConnectionController(boolean makeVisible) {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
         if ( !Util.areHeadphonesActive(audioManager)) {
             // No headphones=no reason to try to stream (would just be annoying if we waited
@@ -304,7 +351,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             return;
         }
         try {
-            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
+            connectionController = new ListenConnectionController(getContext(), getActivity(), this, makeVisible);
             connectionController.start();
         } catch ( BluetoothNotEnabledException ex) {
             // Bluetooth isn't on. Ask the user to turn it on...
@@ -413,7 +460,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case REQUEST_ENABLE_BT:
                 if ( resultCode == Activity.RESULT_OK) {
                     // Restart the controller
-                    startConnectionController();
+                    startConnectionController(true);
                 } else {
                     Toast.makeText(getContext(), "Unable to connect without Bluetooth", Toast.LENGTH_LONG).show();
                 }

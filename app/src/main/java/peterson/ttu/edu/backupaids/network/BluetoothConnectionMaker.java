@@ -43,9 +43,20 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket waitingSocket;
 
-    // TODO: allow user to pass along a previous connection
-
-    /* package */ BluetoothConnectionMaker(@NonNull Context context, ConnectionListener connectionListener, ConnectionType connectionType) throws IOException {
+    /**
+     * Constructor. Package-private since this should be factory-built
+     * @param context Context
+     * @param connectionListener Connection listener
+     * @param connectionType Speak or listen
+     * @param existingDevice If non-null, signals a desire to reconnect. For listening, this is just
+     *                       an indication that we want to listen for pairing requests (i.e. listen
+     *                       for socket connections but don't make us discoverable)
+     * @throws IOException
+     */
+    /* package */ BluetoothConnectionMaker(@NonNull Context context,
+                                           @NonNull ConnectionListener connectionListener,
+                                           @NonNull ConnectionType connectionType,
+                                           DeviceInfo existingDevice) throws IOException {
         this.context = context;
         this.connectionListener = connectionListener;
 
@@ -60,9 +71,12 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             throw new BluetoothNotEnabledException("Bluetooth is not enabled; kindly ask the user to enable Bluetooth.");
         }
 
-        // TODO: only do this if the user didn't request a specific connection...
         if ( connectionType == ConnectionType.SPEAK) {
-            discoverConnections();
+            if ( existingDevice == null) {
+                discoverConnections();
+            } else {
+
+            }
         } else {
             makeUsDiscoverable();
             listenForConnections();
@@ -143,9 +157,14 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
     public void makeConnection(String remoteAppInstanceName) {
         bluetoothAdapter.cancelDiscovery();
         BluetoothDevice serverDevice = bluetoothDeviceMap.get(remoteAppInstanceName);
-        if ( serverDevice == null) {
+        if (serverDevice == null) {
             throw new RuntimeException("Attempt to connect to a device we didn't find!");
         }
+
+        makeConnection(serverDevice);
+    }
+
+    private void makeConnection(BluetoothDevice serverDevice) {
 
         try {
             waitingSocket = serverDevice.createRfcommSocketToServiceRecord(UUID.fromString(Util.UUID_STRING));
