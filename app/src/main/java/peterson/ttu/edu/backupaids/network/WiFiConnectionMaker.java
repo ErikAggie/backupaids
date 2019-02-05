@@ -18,12 +18,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 import peterson.ttu.edu.backupaids.util.Util;
@@ -180,7 +177,7 @@ public class WiFiConnectionMaker extends BroadcastReceiver
             @Override
             public void onFailure(int arg0) {
                 Log.e(TAG, "Failed to set up listener: " + arg0);
-                connectionListener.servicePublishingFailed();
+                connectionListener.connectionDiscoveryFailed();
             }
         });
     }

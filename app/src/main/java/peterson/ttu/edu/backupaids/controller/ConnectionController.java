@@ -104,8 +104,8 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     }
 
     @Override
-    public void servicePublishingFailed() {
-        failed("Unable to set up a connection. Please be sure that WiFi is on. Otherwise this usually gets fixed if you try again in a few seconds.");
+    public void connectionDiscoveryFailed() {
+        failed("Unable to set up a connection. Be sure the \"speak\" phone is looking for new connections while the \"listen\" phone is listening for new connections.");
     }
 
     @Override

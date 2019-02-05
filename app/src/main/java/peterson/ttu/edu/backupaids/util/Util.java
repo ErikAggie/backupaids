@@ -31,9 +31,6 @@ public class Util {
     public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
     public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
 
-
-    public static final String CONNECTION_NAME_EXTRA = "ConnectionName";
-
     public static final int LOCAL_SAMPLE_RATE = 44100;
     public static final int REMOTE_SAMPLE_RATE = 11025;
 

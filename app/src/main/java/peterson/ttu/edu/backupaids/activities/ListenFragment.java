@@ -46,6 +46,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     private static final String TAG = "ListenFragment";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_NEW_PRESET = 2;
+    private static final int REQUEST_BT_DISCOVERABLE = 3;
+
+    private static final int BLUETOOTH_VISIBILITY_TIMEOUT = 120;
 
     private Runnable todoOnServiceStopped;
 
@@ -287,6 +290,13 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void listenForConnections() {
+        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        if ( !Util.areHeadphonesActive(audioManager)) {
+            // No headphones=no reason to try to stream (would just be annoying if we waited
+            // until we connected to notice this...)
+            showPlaybackError(getString(R.string.headphones_not_connected));
+            return;
+        }
 
         if ( connectionController != null) {
             stopStreaming();
@@ -331,7 +341,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
-                startConnectionController(true);
+                makeUsDiscoverable();
             }
         });
 
@@ -340,6 +350,12 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         bottomPanel.getLocationOnScreen(position);
 
         popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.CENTER_HORIZONTAL, 0, size.y-bottomPanel.getTop());
+    }
+
+    private void makeUsDiscoverable() {
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BLUETOOTH_VISIBILITY_TIMEOUT);
+        startActivityForResult(discoverableIntent, REQUEST_BT_DISCOVERABLE);
     }
 
     private void startConnectionController(boolean makeVisible) {
@@ -468,6 +484,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             case REQUEST_NEW_PRESET:
                 updatePresetViewer();
                 break;
+            case REQUEST_BT_DISCOVERABLE:
+                if ( resultCode != Activity.RESULT_CANCELED) {
+                    startConnectionController(true);
+                }
+                break;
             default:
                 throw new RuntimeException("Unknown ListenFragment activity request: " + requestCode);
         }
@@ -552,36 +573,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     public void connectionCheckFinished() {
         // Won't happen for Bluetooth
     }
-
-    // Leftovers from the WiFi connection
-//        getActivity().runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                if ( connectionPopup != null) {
-//                    connectionPopup.dismiss();
-//                }
-//                connectionPopup = new ConnectionPopupFragment();
-//                connectionPopup.setListener(
-//                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
-//                            @Override
-//                            public void connectionConfirmed() {
-//                                callback.approveConnection(connectionName);
-//                            }
-//
-//                            @Override
-//                            public void cancelled() {
-//                                callback.denyConnection(connectionName);
-//                                if (connectionPopup != null) {
-//                                    connectionPopup.dismiss();
-//                                    connectionPopup = null;
-//                                }
-//                            }
-//                        });
-//                connectionPopup.setTargetFragment(ListenFragment.this, 1);
-//                connectionPopup.setConnection(connectionName);
-//                connectionPopup.show(getFragmentManager(), "Connections");
-//            }
-//        });
 
     @Override
     public void selectedPresetUpdated(String newPresetName) {

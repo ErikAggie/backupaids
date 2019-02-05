@@ -9,7 +9,7 @@ public interface ConnectionListener {
 
     void servicesStarted();
     void servicesStopped();
-    void servicePublishingFailed();
+    void connectionDiscoveryFailed();
     void discoveryStarted();
     void foundAPeer(String peerName);
     void discoveryFinished();

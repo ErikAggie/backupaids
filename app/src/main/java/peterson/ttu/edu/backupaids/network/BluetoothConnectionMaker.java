@@ -12,25 +12,18 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
 
 import peterson.ttu.edu.backupaids.R;
-import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.model.DeviceInfo;
 import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
-import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
 import peterson.ttu.edu.backupaids.util.Util;
 
 public class BluetoothConnectionMaker implements ConnectionMaker {
     private static final String TAG = "BTConnectionMaker";
-    private static final int BLUETOOTH_VISIBILITY_TIMEOUT = 120;
 
     private final Context context;
 
@@ -42,6 +35,8 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket waitingSocket;
+
+
 
     /**
      * Constructor. Package-private since this should be factory-built
@@ -83,7 +78,9 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             }
         } else {
             if ( existingDevice == null) {
-                makeUsDiscoverable();
+                // Listen for discoverable updates
+                connectionListener.nowDiscoverable();
+                listenForDiscoveryEnding();
             }
             listenForConnections();
         }
@@ -130,23 +127,42 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             connectionListener.discoveryStarted();
         } else {
             Log.w(TAG, "Discovery process didn't start!");
+            //
+            connectionListener.connectionDiscoveryFailed();
         }
     }
 
-    private void makeUsDiscoverable() {
-        // Make us discoverable...
-        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BLUETOOTH_VISIBILITY_TIMEOUT);
-        context.startActivity(discoverableIntent);
-        connectionListener.nowDiscoverable();
+    private void listenForDiscoveryEnding() {
 
-        new Timer().schedule(new TimerTask() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        final BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
-            public void run() {
-                connectionListener.noLongerDiscoverable();
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                switch ( intent.getAction()) {
+                    case BluetoothDevice.ACTION_ACL_CONNECTED:
+                        Log.i(TAG, "Connected!");
+                        context.unregisterReceiver(this);
+                        break;
+                    case BluetoothAdapter.ACTION_SCAN_MODE_CHANGED:
+                        int scanMode = intent.getIntExtra(BluetoothAdapter.EXTRA_SCAN_MODE, -1000);
+                        Log.i(TAG, "Scan mode now " + scanMode);
+                        if ( scanMode == BluetoothAdapter.SCAN_MODE_CONNECTABLE) {
+                            // We are no longer discoverable
+                            context.unregisterReceiver(this);
+                            connectionListener.connectionDiscoveryFailed();
+                        }
+                        break;
+                    default:
+                        Log.w(TAG, "Got action " + action);
+                        break;
+                }
             }
-        }, BLUETOOTH_VISIBILITY_TIMEOUT * 1000);
+        };
 
+        context.registerReceiver(receiver, filter);
     }
 
     @Override
