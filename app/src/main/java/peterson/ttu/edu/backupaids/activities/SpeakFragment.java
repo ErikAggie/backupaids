@@ -89,7 +89,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         connectFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         connectFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-        getActivity().registerReceiver(BluetoothMonitor.createIfNeeded(getContext()), connectFilter);
+        getActivity().registerReceiver(BluetoothMonitor.createIfNeeded(getContext().getApplicationContext()), connectFilter);
 
         updatePlayButton(view);
     }
@@ -129,7 +129,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     private void presentConnectionChoice() {
-        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
+        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext().getApplicationContext());
 
         if ( deviceInfoManager.hasDevices()) {
             displayConnectionChoices();
@@ -143,7 +143,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private void displayConnectionChoices() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Pick a Connection");
-        final List<DeviceInfo> deviceInfoList = DeviceInfoManager.getInstance(getContext()).getCurrentList();
+        final List<DeviceInfo> deviceInfoList = DeviceInfoManager.getInstance(getContext().getApplicationContext()).getCurrentList();
         String[] listNames = new String[deviceInfoList.size()];
         for ( int i=0; i<deviceInfoList.size(); i++) {
             listNames[i] = deviceInfoList.get(i).getName();
@@ -180,7 +180,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void onDestroyView() {
-        getActivity().unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext()));
+        getActivity().unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext().getApplicationContext()));
         stopTryingToConnect();
         super.onDestroyView();
     }
@@ -232,9 +232,9 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private void startConnectionController(DeviceInfo deviceInfo) {
         try {
             if ( deviceInfo != null) {
-                connectionController = new SpeakConnectionController(getContext(), getActivity(), this, deviceInfo);
+                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this, deviceInfo);
             } else {
-                connectionController = new SpeakConnectionController(getContext(), getActivity(), this);
+                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this);
             }
             connectionController.start();
         } catch (BluetoothNotEnabledException ex) {

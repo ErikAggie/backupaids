@@ -48,7 +48,7 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
         }
     };
 
-    public LocalSoundDestination(Context context, AudioTrack audioTrack, AudioAttributes audioAttributes) {
+    /*package*/ LocalSoundDestination(Context context, AudioTrack audioTrack, AudioAttributes audioAttributes) {
         this.context = context;
         this.audioTrack = audioTrack;
         this.audioAttributes = audioAttributes;

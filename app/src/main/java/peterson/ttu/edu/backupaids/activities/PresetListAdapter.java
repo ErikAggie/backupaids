@@ -50,7 +50,7 @@ public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
         nameView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Preferences.getInstance(getContext()).setSelectedPreset(soundPreset.getName());
+                Preferences.getInstance(getContext().getApplicationContext()).setSelectedPreset(soundPreset.getName());
                 popupWindow.dismiss();
             }
         });

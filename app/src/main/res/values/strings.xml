@@ -46,5 +46,11 @@
     <string name="headphones_needed">Please plug in/connect headphones first.</string>
     <string name="switch_between_phone_microphone_and_headset_microphone">Switch between phone microphone and headset microphone</string>
     <string name="manage_sound_presets">Manage sound presets</string>
+    <string name="listen">Listen</string>
+    <string name="speak">Speak</string>
+    <string name="reconnect">Reconnect</string>
+    <string name="new_connection">New Connection</string>
+    <string name="closeX">X</string>
+    <string name="delete_this_preset">Delete this preset</string>
 
 </resources>

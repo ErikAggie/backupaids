@@ -25,6 +25,7 @@
         android:scaleType="fitCenter"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_delete_blue"
+        android:contentDescription="@string/delete_this_preset"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@id/presetPopupItemName"

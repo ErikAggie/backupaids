@@ -97,7 +97,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onCreateView(inflater, container, savedInstanceState);
         View fragmentView = inflater.inflate(R.layout.fragment_listen, container, false);
 
-        Preferences.getInstance(getContext()).addPresetUpdateListener(this);
+        Preferences.getInstance(getContext().getApplicationContext()).addPresetUpdateListener(this);
 
         ImageButton playButton = fragmentView.findViewById(R.id.playSound);
         playButton.setOnClickListener(this);
@@ -146,7 +146,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         stopStreaming();
         stopPlaying();
 
-        Preferences.getInstance(getContext()).removePresetUpdateListner(this);
+        Preferences.getInstance(getContext().getApplicationContext()).removePresetUpdateListner(this);
 
         super.onDestroyView();
     }
@@ -202,7 +202,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void switchMic() {
-        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences preferences = Preferences.getInstance(getContext().getApplicationContext());
         Preferences.MicToUse micToUse = preferences.getMicToUse();
 
         switch(micToUse) {
@@ -220,7 +220,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void editPresets() {
-        if (SoundPresetManager.getInstance(getContext()).getNumberOfPresets() <= 0) {
+        if (SoundPresetManager.getInstance(getContext().getApplicationContext()).getNumberOfPresets() <= 0) {
             // We need to make a new preset
             createNewPreset();
             return;
@@ -303,7 +303,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             return;
         }
 
-        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext());
+        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext().getApplicationContext());
         if ( !deviceInfoManager.hasDevices()) {
             // No devices==connect for the first time
             startConnectionController(true);
@@ -367,7 +367,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             return;
         }
         try {
-            connectionController = new ListenConnectionController(getContext(), getActivity(), this, makeVisible);
+            connectionController = new ListenConnectionController(getContext().getApplicationContext(), getActivity(), this, makeVisible);
             connectionController.start();
         } catch ( BluetoothNotEnabledException ex) {
             // Bluetooth isn't on. Ask the user to turn it on...
@@ -381,7 +381,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void updatePresetViewer() {
         TextView textForPresetChooser = getView().findViewById(R.id.textForPresetChooser);
-        SoundPreset preset = Preferences.getInstance(getContext()).getSelectedPreset();
+        SoundPreset preset = Preferences.getInstance(getContext().getApplicationContext()).getSelectedPreset();
         if ( preset != null) {
             textForPresetChooser.setText(preset.getName());
         } else {
@@ -399,7 +399,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void updateMicToUseButton() {
-        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences preferences = Preferences.getInstance(getContext().getApplicationContext());
         Preferences.MicToUse micToUse = preferences.getMicToUse();
         ImageButton micToUseButton = getView().findViewById(R.id.micToUseButton);
         TextView micToUseText = getView().findViewById(R.id.micToUseText);
@@ -581,7 +581,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void deletePresetButtonPushed(PopupWindow popupWindow, SoundPreset soundPreset) {
-        SoundPresetManager.getInstance(getContext()).deletePreset(soundPreset);
+        SoundPresetManager.getInstance(getContext().getApplicationContext()).deletePreset(soundPreset);
         updatePresetViewer();
 
         // Replace the adapter since the preset list has changed
@@ -591,6 +591,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                         this,
                         getContext(),
                         R.layout.preset_popup_list_item,
-                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
+                        SoundPresetManager.getInstance(getContext().getApplicationContext()).getAllSortedPresets()));
     }
 }
