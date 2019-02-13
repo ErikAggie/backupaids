@@ -148,7 +148,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
 
     /**
      * SeekBar has changed something
-     * @param seekBar Seekbar
+     * @param seekBar SeekBar in question
      * @param i New value
      * @param b Not used
      */
@@ -170,7 +170,7 @@ public class FrequencyAdjustFragment extends DialogFragment implements View.OnCl
         }
 
         byte[] tone = new byte[100000];
-        int amountRead = 0;
+        int amountRead;
         try
         {
             BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(Util.FREQUENCIES_TO_SOUND_IDS.get(mBandFrequency)));

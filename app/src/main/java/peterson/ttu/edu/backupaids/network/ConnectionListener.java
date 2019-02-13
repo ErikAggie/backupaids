@@ -14,9 +14,8 @@ public interface ConnectionListener {
     void foundAPeer(String peerName);
     void discoveryFinished();
     void nowDiscoverable();
-    void noLongerDiscoverable();
     void findingPeerFailed(IOException e);
-    void connectionReady() throws IOException;
+    void connectionReady();
     void connectionFailed(IOException e);
     void connectionClosed();
 }

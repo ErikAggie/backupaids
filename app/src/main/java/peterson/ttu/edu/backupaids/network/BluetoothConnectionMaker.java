@@ -31,7 +31,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 
     private final BluetoothAdapter bluetoothAdapter;
 
-    private ConnectionListener connectionListener;
+    private final ConnectionListener connectionListener;
 
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket waitingSocket;
@@ -46,7 +46,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
      * @param existingDevice If non-null, signals a desire to reconnect. For listening, this is just
      *                       an indication that we want to listen for pairing requests (i.e. listen
      *                       for socket connections but don't make us discoverable)
-     * @throws IOException
+     * @throws IOException If the device doesn't support Bluetooth or some other exception
      */
     /* package */ BluetoothConnectionMaker(@NonNull Context context,
                                            @NonNull ConnectionListener connectionListener,
@@ -63,7 +63,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
         if (!bluetoothAdapter.isEnabled()) {
             // This exception is designed to have the caller (or, rather, the UI element behind the controller)
             // request Bluetooth be enabled, after which they should start the process again
-            throw new BluetoothNotEnabledException("Bluetooth is not enabled; kindly ask the user to enable Bluetooth.");
+            throw new BluetoothNotEnabledException();
         }
 
         if ( connectionType == ConnectionType.SPEAK) {
@@ -265,14 +265,13 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
                         serverSocket = null;
                         BluetoothDevice remoteDevice = waitingSocket.getRemoteDevice();
                         Log.i(TAG, "Accepted connection from " + remoteDevice.getName());
+
+                        // Add this device so we can quickly connect to it later
                         DeviceInfoManager.getInstance(context).addDevice(new DeviceInfo(remoteDevice.getName(), remoteDevice.getAddress()));
-                        try {
-                            ReadyConnectionMaker.setReadyConnectionMaker(BluetoothConnectionMaker.this);
-                            connectionListener.connectionReady();
-                        } catch ( IOException e) {
-                            // Nothing to do here, since all we (might have) done is close the socket
-                            Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
-                        }
+
+                        // Connection is ready to use
+                        ReadyConnectionMaker.setReadyConnectionMaker(BluetoothConnectionMaker.this);
+                        connectionListener.connectionReady();
                     }
                 } catch (IOException e) {
                     Log.w(TAG, "Connection listening stopped: " + e.getMessage(), e);

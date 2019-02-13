@@ -1,5 +1,6 @@
 package peterson.ttu.edu.backupaids.sound.destination;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
     private static final String TAG = "LocalSoundDestination";
 
     private static AudioFocusRequest audioFocusRequest;
+    @SuppressLint("StaticFieldLeak")
     private static LocalSoundDestination requestingSoundDestination;
 
     private final Context context;
@@ -65,7 +67,7 @@ public class LocalSoundDestination implements SoundDestination, AudioManager.OnA
         // We wait until now to check for headphones because it might take a while to get here
         // (e.g. connecting to a phone takes a few seconds, so we don't want to assume headphones
         // are attached immediately)
-        if ( !Util.areHeadphonesActive(audioManager)) {
+        if (Util.noHeadphonesConnected(audioManager)) {
             throw new ServiceSetupException(context.getString(R.string.headphones_not_connected));
         }
 

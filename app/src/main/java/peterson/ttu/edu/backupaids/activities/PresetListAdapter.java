@@ -20,7 +20,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 /**
  * Inspired by https://stackoverflow.com/questions/8166497/custom-adapter-for-list-view
  */
-public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
+/* package */ class PresetListAdapter extends ArrayAdapter<SoundPreset> {
 
     private final ButtonListener buttonListener;
     private final PopupWindow popupWindow;

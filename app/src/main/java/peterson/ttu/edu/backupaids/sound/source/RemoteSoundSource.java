@@ -3,7 +3,6 @@ package peterson.ttu.edu.backupaids.sound.source;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 
 /**
  * Class for getting sound from a socket
@@ -12,7 +11,7 @@ public class RemoteSoundSource implements SoundSource {
 
     private final InputStream inputStream;
 
-    public RemoteSoundSource(InputStream inputStream) throws IOException {
+    public RemoteSoundSource(InputStream inputStream) {
         this.inputStream = new BufferedInputStream(inputStream);
     }
 

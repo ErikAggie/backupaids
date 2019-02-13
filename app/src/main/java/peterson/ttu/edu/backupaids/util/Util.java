@@ -26,6 +26,7 @@ public class Util {
     public static final String PIN_NUMBER_STRING = "PinNumber";
 
     // Generated from https://www.uuidgenerator.net/
+    @SuppressWarnings("SpellCheckingInspection")
     public static final String UUID_STRING = "7aaaeccb-070b-454e-9640-ab8f0f38eff4";
 
     public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
@@ -83,8 +84,13 @@ public class Util {
         button.startAnimation(anim);
     }
 
-
-    public static boolean areHeadphonesActive(AudioManager audioManager) {
+    /**
+     * Check to see if no headphones are connected
+     *
+     * @param audioManager AudioManager to use to check
+     * @return True if no headphones are connected; false otherwise
+     */
+    public static boolean noHeadphonesConnected(AudioManager audioManager) {
         AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
         for ( AudioDeviceInfo audioDevice : audioDevices) {
             switch(audioDevice.getType()) {
@@ -94,10 +100,10 @@ public class Util {
                 case AudioDeviceInfo.TYPE_USB_HEADSET:
                 case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
                 case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-                    return true;
+                    return false;
             }
         }
-        return false;
+        return true;
     }
 
 }

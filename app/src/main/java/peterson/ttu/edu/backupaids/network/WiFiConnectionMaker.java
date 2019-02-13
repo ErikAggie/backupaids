@@ -325,13 +325,10 @@ public class WiFiConnectionMaker extends BroadcastReceiver
                         }
                         Log.i(TAG, "Accepted connection from " + waitingSocket.getInetAddress().getCanonicalHostName());
                         // TODO: do some sort of security verification (send a code phrase first, perhaps)
-                        try {
-                            ReadyConnectionMaker.setReadyConnectionMaker(WiFiConnectionMaker.this);
-                            connectionListener.connectionReady();
-                        } catch ( IOException e) {
-                            // Nothing to do here, since all we (might have) done is close the socket
-                            Log.w(TAG, "Connection closed/failed: " + e.getMessage(), e);
-                        }
+
+                        // Ready to hand off the connection
+                        ReadyConnectionMaker.setReadyConnectionMaker(WiFiConnectionMaker.this);
+                        connectionListener.connectionReady();
                     }
                 } catch (IOException e) {
                     Log.w(TAG, "Connection listening stopped: " + e.getMessage(), e);

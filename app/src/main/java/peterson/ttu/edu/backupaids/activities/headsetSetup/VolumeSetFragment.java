@@ -196,7 +196,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         }
 
         byte[] tone = new byte[100000];
-        int amountRead = 0;
+        int amountRead;
         try
         {
             BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(R.raw.all_freqs));

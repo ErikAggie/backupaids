@@ -76,7 +76,7 @@ public class DestinationFactory {
      * For sending sound to a remote headset
      * @param outputStream Output stream to write to
      */
-    public static SoundDestination createRemoteSoundDestination(OutputStream outputStream) throws IOException {
+    public static SoundDestination createRemoteSoundDestination(OutputStream outputStream) {
         return new RemoteSoundDestination(outputStream);
     }
 

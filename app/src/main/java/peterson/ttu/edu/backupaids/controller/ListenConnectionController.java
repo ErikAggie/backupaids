@@ -7,7 +7,6 @@ import android.support.annotation.NonNull;
 
 import java.io.IOException;
 
-import peterson.ttu.edu.backupaids.model.DeviceInfo;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.network.ConnectionMakerFactory;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;

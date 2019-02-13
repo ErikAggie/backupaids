@@ -7,7 +7,6 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,7 +85,7 @@ public class StreamSoundService extends BaseStreamService {
 
     /**
      * Start looking for connections.
-     * @param intent
+     * @param intent Intent arriving
      */
     @Override
     protected void onHandleIntent(Intent intent) {

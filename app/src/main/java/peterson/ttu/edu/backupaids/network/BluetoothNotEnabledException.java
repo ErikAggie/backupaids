@@ -7,7 +7,7 @@ import java.io.IOException;
  */
 public class BluetoothNotEnabledException extends IOException {
 
-    /* package */ BluetoothNotEnabledException(String message) {
-        super(message);
+    /* package */ BluetoothNotEnabledException() {
+        super("Bluetooth is not enabled; kindly ask the user to enable Bluetooth.");
     }
 }

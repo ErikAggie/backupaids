@@ -15,11 +15,11 @@ public class ConnectionMakerFactory {
 
     /**
      * Create a ConnectionMaker and look for a new connection
-     * @param context
-     * @param connectionListener
-     * @param connectionType
-     * @return
-     * @throws IOException
+     * @param context Context to use here
+     * @param connectionListener Listener for events
+     * @param connectionType Listen/speak
+     * @return The new ConnectionMaker
+     * @throws IOException If there's an error creating the ConnectionMaker
      */
     public static ConnectionMaker createConnectionMaker(@NonNull Context context,
                                                         @NonNull ConnectionListener connectionListener,
@@ -32,11 +32,11 @@ public class ConnectionMakerFactory {
     /**
      * Create a ConnectionMaker where we want to listen but not make ourselves discoverable
      *
-     * @param context
-     * @param connectionListener
-     * @param connectionType
-     * @return
-     * @throws IOException
+     * @param context Context to use
+     * @param connectionListener Listener for events
+     * @param connectionType Listen/speak
+     * @return New ConnectionMaker
+     * @throws IOException If there's an error creating the ConnectionMaker
      */
     public static ConnectionMaker createConnectionMakerNoDiscovery(@NonNull Context context,
                                                                    @NonNull ConnectionListener connectionListener,
@@ -47,12 +47,12 @@ public class ConnectionMakerFactory {
 
     /**
      * Create a ConnectionMaker and have it connect to an existing connection
-     * @param context
-     * @param connectionListener
-     * @param connectionType
-     * @param deviceInfo
-     * @return
-     * @throws IOException
+     * @param context Context to use
+     * @param connectionListener Listener for events
+     * @param connectionType Listen/speak
+     * @param deviceInfo Device to connect to
+     * @return New ConnectionMaker
+     * @throws IOException If there's an error creating the ConnectionMaker
      */
     public static ConnectionMaker createConnectionMakerExistingConnection(@NonNull Context context,
                                                                           @NonNull ConnectionListener connectionListener,

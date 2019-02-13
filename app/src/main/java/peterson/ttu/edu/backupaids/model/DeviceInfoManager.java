@@ -1,5 +1,6 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -17,7 +18,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -27,6 +27,7 @@ public class DeviceInfoManager {
 
     private static final String TAG = "DeviceInfoManager";
 
+    @SuppressLint("StaticFieldLeak")
     private static DeviceInfoManager instance;
 
     private final Context context;
@@ -49,7 +50,7 @@ public class DeviceInfoManager {
                      new JsonReader(
                              new InputStreamReader(
                                      new FileInputStream(
-                                             new File(context.getFilesDir(), context.getString(R.string.device_info_file_name)))));) {
+                                             new File(context.getFilesDir(), context.getString(R.string.device_info_file_name)))))) {
 
             readAllPresets(jsonReader);
         } catch (FileNotFoundException e) {
@@ -119,8 +120,8 @@ public class DeviceInfoManager {
 
     /**
      * Find the BluetoothDevice for a saved DeviceInfo
-     * @param deviceInfo
-     * @return
+     * @param deviceInfo Device to find
+     * @return Device, if found; null otherwise
      */
     public static BluetoothDevice findBluetoothDevice(@NonNull DeviceInfo deviceInfo) {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -162,7 +163,7 @@ public class DeviceInfoManager {
         return !deviceInfoList.isEmpty();
     }
 
-    public void deleteDevice(DeviceInfo deviceInfo) {
+    private void deleteDevice(DeviceInfo deviceInfo) {
         deviceInfoList.remove(deviceInfo);
         saveDeviceList();
     }

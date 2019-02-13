@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.PagerAdapter;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
@@ -18,14 +17,12 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
@@ -66,7 +63,7 @@ public class TabbedMain extends AppCompatActivity {
         void permissionDenied();
     }
 
-    private Map<Integer, PermissionCallback> permissionCallbackMap = new HashMap<>();
+    private final SparseArray<PermissionCallback> permissionCallbackMap = new SparseArray<>();
 
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
 
@@ -149,10 +146,11 @@ public class TabbedMain extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        PermissionCallback callback = permissionCallbackMap.remove(requestCode);
+        PermissionCallback callback = permissionCallbackMap.get(requestCode);
         if ( callback == null) {
             return;
         }
+        permissionCallbackMap.delete(requestCode);
 
         switch ( grantResults[0]) {
             case PackageManager.PERMISSION_GRANTED:
@@ -215,8 +213,7 @@ public class TabbedMain extends AppCompatActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_tabbed_main, container, false);
-            return rootView;
+            return inflater.inflate(R.layout.fragment_tabbed_main, container, false);
         }
     }
 
@@ -224,9 +221,9 @@ public class TabbedMain extends AppCompatActivity {
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+    /*package*/ class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-        public SectionsPagerAdapter(FragmentManager fm) {
+        /*package*/ public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 

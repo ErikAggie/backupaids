@@ -87,7 +87,7 @@ public class SourceFactory {
      * Create a sound source for a socket
      * @param inputStream Source of the sound
      */
-    public static SoundSource createStreamSource(InputStream inputStream) throws IOException {
+    public static SoundSource createStreamSource(InputStream inputStream) {
         return new RemoteSoundSource(inputStream);
     }
 

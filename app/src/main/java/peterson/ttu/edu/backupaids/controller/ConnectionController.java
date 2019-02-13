@@ -5,10 +5,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.network.ConnectionListener;
@@ -27,7 +24,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
 
     protected final Context context;
     protected final Activity activity;
-    protected ConnectionMaker connectionMaker;
+    private ConnectionMaker connectionMaker;
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
@@ -35,15 +32,14 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
 
     private volatile boolean stopped = false;
 
-    protected ConnectionController(Context context, Activity activity, Listener listener) throws IOException {
+    protected ConnectionController(Context context, Activity activity, Listener listener) {
         this.context = context;
         this.activity = activity;
         this.listener = listener;
     }
 
-    public synchronized ConnectionController start() throws IOException{
+    public synchronized void start() throws IOException{
         connectionMaker = getConnectionMaker();
-        return this;
     }
 
     public synchronized void stop() {
@@ -126,13 +122,6 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     @Override
     public void nowDiscoverable() {
         updateState(State.CONNECTING);
-    }
-
-    @Override
-    public void noLongerDiscoverable() {
-        if ( state == State.CONNECTING) {
-            updateState(State.STOPPED);
-        }
     }
 
     @Override

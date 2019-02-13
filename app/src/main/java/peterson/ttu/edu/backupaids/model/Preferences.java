@@ -1,13 +1,11 @@
 package peterson.ttu.edu.backupaids.model;
 
-import android.bluetooth.BluetoothClass;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.JsonReader;
-import android.util.JsonToken;
 import android.util.JsonWriter;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,12 +14,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import peterson.ttu.edu.backupaids.R;
 
 public class Preferences {
+    @SuppressLint("StaticFieldLeak")
     private static Preferences smInstance;
     private final List<PresetUpdateListener> presetUpdateListeners = new ArrayList<>();
 
@@ -35,7 +33,7 @@ public class Preferences {
 
     public enum MicToUse {
         PHONE_MIC,
-        HEADSET_MIC;
+        HEADSET_MIC
     }
 
     private final Context context;
@@ -62,7 +60,7 @@ public class Preferences {
         presetUpdateListeners.add(listener);
     }
 
-    public void removePresetUpdateListner(PresetUpdateListener listener) {
+    public void removePresetUpdateListener(PresetUpdateListener listener) {
         presetUpdateListeners.remove(listener);
     }
 

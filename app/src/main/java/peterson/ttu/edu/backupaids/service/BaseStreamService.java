@@ -27,8 +27,6 @@ public abstract class BaseStreamService extends BaseService implements InputStre
 
     private static final String TAG = "BaseStreamService";
 
-    public static final String CONNECTION_NUMBER_EXTRA = "ConnectionNumber";
-
     protected ConnectionMaker connectionMaker;
 
     private boolean thisServiceIsStreaming;
@@ -175,11 +173,7 @@ public abstract class BaseStreamService extends BaseService implements InputStre
         }
     }
 
-    protected void stopStreaming() {
-        stopStreaming(false);
-    }
-
-    private void stopStreaming(boolean failed) {
+    private void stopStreaming() {
         if ( streamingStopped) {
             // Already stopped
             return;

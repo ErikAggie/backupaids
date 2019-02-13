@@ -1,5 +1,6 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -27,6 +28,7 @@ import peterson.ttu.edu.backupaids.R;
 public class SoundPresetManager {
 
 
+    @SuppressLint("StaticFieldLeak")
     private static SoundPresetManager instance;
 
     private final Context context;
@@ -49,7 +51,7 @@ public class SoundPresetManager {
                      new JsonReader(
                              new InputStreamReader(
                                      new FileInputStream(
-                                             new File(context.getFilesDir(), context.getString(R.string.preset_file_name)))));) {
+                                             new File(context.getFilesDir(), context.getString(R.string.preset_file_name)))))) {
 
             readAllPresets(jsonReader);
         } catch (FileNotFoundException e) {
@@ -126,13 +128,13 @@ public class SoundPresetManager {
         return (presets.get(name) != null);
     }
 
-    public SoundPreset getPreset(int position) {
+    private SoundPreset getFirstPreset() {
         List<String> list = new ArrayList<>(presets.keySet());
         Collections.sort(list);
-        if ( list.size() <= position) {
-            throw new RuntimeException("Non-existent preset position: " + position);
+        if ( list.size() <= 0) {
+            throw new RuntimeException("Empty set of presets");
         }
-        return getPreset(list.get(position));
+        return getPreset(list.get(0));
     }
 
     public SoundPreset getPreset(String name) {
@@ -153,7 +155,7 @@ public class SoundPresetManager {
                 preferences.setSelectedPreset(null);
             } else if ( preferences.getSelectedPreset() == null) {
                 // We just deleted the selected preset...
-                preferences.setSelectedPreset(getPreset(0).getName());
+                preferences.setSelectedPreset(getFirstPreset().getName());
             }
         }
     }

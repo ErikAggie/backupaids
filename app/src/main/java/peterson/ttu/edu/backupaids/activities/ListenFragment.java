@@ -146,7 +146,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         stopStreaming();
         stopPlaying();
 
-        Preferences.getInstance(getContext().getApplicationContext()).removePresetUpdateListner(this);
+        Preferences.getInstance(getContext().getApplicationContext()).removePresetUpdateListener(this);
 
         super.onDestroyView();
     }
@@ -277,12 +277,12 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         int[] position = new int[2];
         bottomPanel.getLocationOnScreen(position);
 
-        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.RIGHT, 0, size.y-bottomPanel.getTop());
+        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.END, 0, size.y-bottomPanel.getTop());
     }
 
     private void createNewPreset() {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
-        if ( !Util.areHeadphonesActive(audioManager)) {
+        if (Util.noHeadphonesConnected(audioManager)) {
             showPlaybackError(getString(R.string.headphones_needed));
             return;
         }
@@ -291,7 +291,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void listenForConnections() {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
-        if ( !Util.areHeadphonesActive(audioManager)) {
+        if (Util.noHeadphonesConnected(audioManager)) {
             // No headphones=no reason to try to stream (would just be annoying if we waited
             // until we connected to notice this...)
             showPlaybackError(getString(R.string.headphones_not_connected));
@@ -306,6 +306,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext().getApplicationContext());
         if ( !deviceInfoManager.hasDevices()) {
             // No devices==connect for the first time
+            makeUsDiscoverable();
             startConnectionController(true);
             return;
         }
@@ -360,7 +361,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void startConnectionController(boolean makeVisible) {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
-        if ( !Util.areHeadphonesActive(audioManager)) {
+        if (Util.noHeadphonesConnected(audioManager)) {
             // No headphones=no reason to try to stream (would just be annoying if we waited
             // until we connected to notice this...)
             showPlaybackError(getString(R.string.headphones_not_connected));

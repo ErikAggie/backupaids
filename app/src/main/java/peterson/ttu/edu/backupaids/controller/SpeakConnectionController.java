@@ -16,11 +16,11 @@ public class SpeakConnectionController extends ConnectionController implements S
 
     private DeviceInfo deviceInfo;
 
-    public SpeakConnectionController(Context context, Activity activity, Listener listener) throws IOException {
+    public SpeakConnectionController(Context context, Activity activity, Listener listener) {
         super(context, activity, listener);
     }
 
-    public SpeakConnectionController(Context context, Activity activity, Listener listener, DeviceInfo deviceInfo) throws IOException {
+    public SpeakConnectionController(Context context, Activity activity, Listener listener, DeviceInfo deviceInfo) {
         super(context, activity, listener);
         this.deviceInfo = deviceInfo;
     }

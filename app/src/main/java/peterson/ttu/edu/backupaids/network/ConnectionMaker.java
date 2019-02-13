@@ -9,7 +9,7 @@ public interface ConnectionMaker {
     /**
      * Change who notifications go to (such as when we're resumed and are re-connecting to a running
      * service).
-     * @param connectionListener
+     * @param connectionListener Listener for callbacks
      */
     void changeConnectionListener(ConnectionListener connectionListener);
 
@@ -20,7 +20,7 @@ public interface ConnectionMaker {
 
     /**
      * Make a connection to a specified receiver
-     * @param remoteAppInstanceName
+     * @param remoteAppInstanceName Who to connect to
      */
     void makeConnection(String remoteAppInstanceName);
 

@@ -1,32 +1,23 @@
 package peterson.ttu.edu.backupaids.activities;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.view.Display;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,7 +31,6 @@ import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
 import peterson.ttu.edu.backupaids.model.DeviceInfo;
 import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
-import peterson.ttu.edu.backupaids.model.SoundPresetManager;
 import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
@@ -371,7 +361,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Scanning for devices...");
-        connectionNamesAsArray = new ArrayAdapter<String>(getContext(), android.R.layout.select_dialog_multichoice);
+        connectionNamesAsArray = new ArrayAdapter<>(getContext(), android.R.layout.select_dialog_multichoice);
         builder.setAdapter(connectionNamesAsArray, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {

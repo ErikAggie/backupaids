@@ -2,7 +2,6 @@ package peterson.ttu.edu.backupaids.sound.destination;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 
 /**
  * Class for sending sound data over a socket
@@ -11,7 +10,7 @@ public class RemoteSoundDestination implements SoundDestination {
 
     private final OutputStream outputStream;
 
-    public RemoteSoundDestination(OutputStream outputStream) throws IOException {
+    public RemoteSoundDestination(OutputStream outputStream) {
         this.outputStream = outputStream;
     }
 
