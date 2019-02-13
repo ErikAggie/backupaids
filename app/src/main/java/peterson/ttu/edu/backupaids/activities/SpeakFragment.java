@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,10 +33,13 @@ import peterson.ttu.edu.backupaids.controller.SpeakConnectionController;
 import peterson.ttu.edu.backupaids.model.DeviceInfo;
 import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
 import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
+import peterson.ttu.edu.backupaids.service.StreamSoundService;
 import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 
 public class SpeakFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener {
+
+    private static final String TAG = "SpeakFragment";
 
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -69,6 +73,17 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (StreamSoundService.isCurrentlyStreaming()) {
+            connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this);
+            try {
+                connectionController.start();
+            } catch (IOException e) {
+                // Shouldn't happen...
+                Log.e(TAG, e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
         //setContentView(R.layout.fragment_speak);
 
         TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
@@ -88,7 +103,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if ( isVisibleToUser) {
-            if (ContextCompat.checkSelfPermission(getActivity(), TabbedMain.Permission.REQUEST_COARSE_LOCATION_PERMISSION.getName())
+            if ( getContext() == null) {
+                // Still getting started up...
+                return;
+            }
+            if (ContextCompat.checkSelfPermission(getContext().getApplicationContext(), TabbedMain.Permission.REQUEST_COARSE_LOCATION_PERMISSION.getName())
                     != PackageManager.PERMISSION_GRANTED) {
                 // Permission is not granted
                 Activity activity = getActivity();
@@ -108,7 +127,6 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     }
                 });
             } else {
-                // TODO: if we're already streaming, we may need to short-circuit this...
                 presentConnectionChoice();
             }
         } else {
