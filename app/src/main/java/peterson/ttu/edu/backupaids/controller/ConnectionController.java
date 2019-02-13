@@ -43,6 +43,7 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     }
 
     public synchronized void stop() {
+        updateState(State.STOPPED);
         if ( stopped) {
             return;
         }
@@ -54,8 +55,6 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
         if ( connectionMaker != null) {
             connectionMaker.close();
         }
-        updateState(State.STOPPED);
-
     }
 
     protected abstract void stopService();

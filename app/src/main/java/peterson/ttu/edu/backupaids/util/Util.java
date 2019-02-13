@@ -33,7 +33,7 @@ public class Util {
     public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
 
     public static final int LOCAL_SAMPLE_RATE = 44100;
-    public static final int REMOTE_SAMPLE_RATE = 11025;
+    public static final int REMOTE_SAMPLE_RATE = 22050;
 
     public static final int LOCAL_MIN_BUFFER_SIZE =
             AudioRecord.getMinBufferSize(LOCAL_SAMPLE_RATE,
