@@ -2,9 +2,11 @@ package peterson.ttu.edu.backupaids.service;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -19,6 +21,7 @@ import peterson.ttu.edu.backupaids.sound.destination.DestinationFactory;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
 import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
+import peterson.ttu.edu.backupaids.util.ConnectionType;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -87,7 +90,12 @@ public class RemoteSoundService extends BaseStreamService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID);
+        try {
+            setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID, ConnectionType.LISTEN);
+        } catch ( IOException e) {
+            // Not sure what to do here besides log
+            Log.e(TAG, "Error setting up services: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -103,15 +111,15 @@ public class RemoteSoundService extends BaseStreamService {
     }
 
     @Override
-    protected SoundSource createSource(Socket socket) throws IOException {
-        return SourceFactory.createStreamSource(socket);
+    protected SoundSource createSource(InputStream inputStream) throws IOException {
+        return SourceFactory.createStreamSource(inputStream);
     }
 
     @Override
-    protected SoundDestination createDestination(Socket socket) throws IOException {
+    protected SoundDestination createDestination(OutputStream outputStream) throws IOException {
         SoundPreset soundPreset = Preferences.getInstance(this).getSelectedPreset();
 
-        return DestinationFactory.createLocalAudioDestination(soundPreset, this);
+        return DestinationFactory.createLocalAudioDestination(soundPreset, this, true);
     }
 
     @Override

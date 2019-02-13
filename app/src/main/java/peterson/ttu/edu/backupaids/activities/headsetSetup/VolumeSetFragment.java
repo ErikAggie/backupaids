@@ -196,7 +196,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         }
 
         byte[] tone = new byte[100000];
-        int amountRead = 0;
+        int amountRead;
         try
         {
             BufferedInputStream inputStream = new BufferedInputStream(getResources().openRawResource(R.raw.all_freqs));
@@ -208,7 +208,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
 
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.LOCAL_SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
                 .setBufferSizeInBytes(tone.length)
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();

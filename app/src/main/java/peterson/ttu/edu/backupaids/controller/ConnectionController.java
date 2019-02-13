@@ -6,32 +6,25 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
+import peterson.ttu.edu.backupaids.network.ConnectionListener;
 
-public abstract class ConnectionController implements ConnectionMaker.ConnectionListener, PeerCallback {
+public abstract class ConnectionController implements ConnectionListener, PeerCallback {
 
     private static final String TAG = "ConnectionController";
-
-    private static final int LENGTH_TO_WAIT_FOR_RECONNECT = 3000; // 3 seconds
-    private static final int LENGTH_OF_REPEAT_FAILURE_TIMEOUT = 120000; // two minutes
-
-    private static final int MAX_FAILURES_IN_TWO_MINUTES = 2;
 
     public enum State {
         STARTUP,
         CONNECTING,
         STREAMING,
-        RETRY,
         FAILED,
         STOPPED
     }
 
     protected final Context context;
     protected final Activity activity;
-    protected final ConnectionMaker connectionMaker;
+    private ConnectionMaker connectionMaker;
     private final Listener listener;
 
     private final Timer discoverableCountdown = new Timer();
@@ -39,41 +32,29 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     private volatile boolean stopped = false;
 
-    private AtomicInteger numRecentFailures = new AtomicInteger(0);
-    private Timer repeatFailureTimer = new Timer();
-    private String savedApplicationName;
-
     protected ConnectionController(Context context, Activity activity, Listener listener) {
         this.context = context;
         this.activity = activity;
         this.listener = listener;
+    }
 
+    public synchronized void start() throws IOException{
         connectionMaker = getConnectionMaker();
-        discoverableCountdown.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if ( state == State.CONNECTING) {
-                    // Took too long to connect
-                    stop();
-                }
-            }
-        }, 180000); // 3 minutes
-
     }
 
     public synchronized void stop() {
+        updateState(State.STOPPED);
         if ( stopped) {
             return;
         }
         stopped = true;
 
         discoverableCountdown.cancel();
-        repeatFailureTimer.cancel();
 
         stopService();
-        connectionMaker.close();
-        updateState(State.STOPPED);
-
+        if ( connectionMaker != null) {
+            connectionMaker.close();
+        }
     }
 
     protected abstract void stopService();
@@ -81,6 +62,7 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     protected synchronized void updateState(State state) {
         if ( state != this.state || state == State.STOPPED) {
             // A change...
+            Log.d(TAG, "Connection state: " + state);
             this.state = state;
             listener.stateChanged(state);
         }
@@ -117,8 +99,13 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void servicePublishingFailed() {
-        failed("Unable to set up a connection. Please be sure that WiFi is on. Otherwise this usually gets fixed if you try again in a few seconds.");
+    public void connectionDiscoveryFailed() {
+        failed("Unable to set up a connection. Be sure the \"speak\" phone is looking for new connections while the \"listen\" phone is listening for new connections.");
+    }
+
+    @Override
+    public void discoveryStarted() {
+        listener.connectionCheckStarted();
     }
 
     @Override
@@ -126,6 +113,15 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
         listener.askAboutConnection(peerName, this);
     }
 
+    @Override
+    public void discoveryFinished() {
+        listener.connectionCheckFinished();
+    }
+
+    @Override
+    public void nowDiscoverable() {
+        updateState(State.CONNECTING);
+    }
 
     @Override
     public void findingPeerFailed(IOException e) {
@@ -133,14 +129,14 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void connectionReady(int connectionNumber) {
-        startService(connectionNumber);
+    public void connectionReady() {
+        startService();
         updateState(State.STREAMING);
     }
 
-    protected abstract ConnectionMaker getConnectionMaker();
+    protected abstract ConnectionMaker getConnectionMaker() throws IOException;
 
-    protected abstract void startService(int connectionNumber);
+    protected abstract void startService();
 
     @Override
     public void connectionFailed(IOException e) {
@@ -148,43 +144,12 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     }
 
     @Override
-    public void connectionClosed(boolean allowRetry) {
+    public void connectionClosed() {
         if ( state == State.STOPPED) {
             // Duplicate
             return;
         }
-        int numFailures = numRecentFailures.incrementAndGet();
-        if ( !allowRetry || (numFailures > MAX_FAILURES_IN_TWO_MINUTES)) {
-            stop();
-        } else if ( savedApplicationName == null) {
-            updateState(State.RETRY);
-            // We are the listener, so the other device might try to reconnect.
-            // Set up a short timer to give him a chance to reconnect
-            Log.i(TAG, "Connection lost; giving sender time to reconnect...");
-            repeatFailureTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if ( state == State.STREAMING) {
-                        numRecentFailures.set(0);
-                    } else {
-                        stop();
-                    }
-                }
-            }, LENGTH_TO_WAIT_FOR_RECONNECT);
-        } else {
-            Log.i(TAG, "Attempting to reconnect...");
-            updateState(State.RETRY);
-            connectionMaker.makeConnection(savedApplicationName);
-
-            // Restart the timer
-            repeatFailureTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if ( state == State.STREAMING)
-                    numRecentFailures.set(0);
-                }
-            }, LENGTH_OF_REPEAT_FAILURE_TIMEOUT);
-        }
+        stop();
     }
 
     //----------------------------------------------------------------------------------
@@ -193,7 +158,6 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
 
     @Override
     public void approveConnection(String connectionName) {
-        savedApplicationName = connectionName;
         // No need to start the service yet (like it was done before this class came into being
         connectionMaker.makeConnection(connectionName);
     }
@@ -206,6 +170,8 @@ public abstract class ConnectionController implements ConnectionMaker.Connection
     public interface Listener {
         void stateChanged(State state);
         void failed(String reason);
+        void connectionCheckStarted();
         void askAboutConnection(String connectionName, PeerCallback callback);
+        void connectionCheckFinished();
     }
 }

@@ -62,10 +62,6 @@ public class BluetoothMonitor extends BroadcastReceiver {
         Log.d(TAG, "Received " + action);
     }
 
-    public static BluetoothMonitor getInstance() {
-        return smInstance;
-    }
-
     public static BluetoothMonitor createIfNeeded(Context context) {
         if ( smInstance == null) {
             synchronized (BluetoothMonitor.class) {

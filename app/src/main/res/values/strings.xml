@@ -5,19 +5,13 @@
     <string name="next_step_for_button"><![CDATA[Next Step >]]></string>
     <string name="volume_with_value">Volume: %1$d</string>
 
-    <string name="preset_file_name">Presetv1.txt</string>
-    <string name="preferences_file_name">Preferencesv1.txt</string>
-    <string name="title_activity_send_sound">Send Sound (FM style)</string>
+    <string name="preset_file_name">Preset_v1.txt</string>
+    <string name="device_info_file_name">DeviceInfo_v1.txt</string>
+    <string name="preferences_file_name">Preferences_v1.txt</string>
 
     <string name="our_pin">Our PIN: %1$d</string>
-    <string name="preset">Preset:</string>
-    <string name="new_preset">New Preset</string>
     <string name="play_stop_playing_what_the_phone_hears">Play/stop playing what the phone hears</string>
-    <string name="allow_another_phone_to_send_audio">Listen to another phone:</string>
     <string name="make_this_phone_discoverable_by_other_phones">Connect to another phone</string>
-    <string name="send_audio_to_another_phone">Send audio to another phone:</string>
-    <string name="start_sending_audio_to_another_phones">Start sending audio to another phones</string>
-    <string name="send_to">Send to:</string>
     <string name="start_stop_sending_audio">Start/stop sending audio</string>
     <string name="adjust_the_volume_until_you_can_hear_tone_s_comfortably">Adjust the volume until you can hear tone(s) comfortably.</string>
     <string name="play_stop_playing_the_sounds">Play/stop playing the sounds</string>
@@ -25,11 +19,7 @@
     <string name="decrease_volume">Decrease volume</string>
     <string name="play_stop_playing_the_tone">Play/stop playing the tone</string>
     <string name="title_activity_tabbed_main">Hearing Phone</string>
-    <string name="tab_text_1">Tab 1</string>
-    <string name="tab_text_2">Tab 2</string>
-    <string name="tab_text_3">Tab 3</string>
     <string name="action_settings">Settings</string>
-    <string name="section_format">Hello World from section: %1$d</string>
 
     <string name="using_phone_mic">Using phone mic</string>
     <string name="using_headset_mic">Using headset mic</string>
@@ -39,11 +29,17 @@
     <string name="connected">Connected!</string>
 
     <string name="no_preset_selected">No preset selected</string>
-    <string name="edit_preset">$s (Edit/choose)</string>
 
     <string name="headphones_not_connected">Please insert/connect headphones before listening. Otherwise you\'ll get a horrible screeching noise. :)</string>
     <string name="headphones_needed">Please plug in/connect headphones first.</string>
     <string name="switch_between_phone_microphone_and_headset_microphone">Switch between phone microphone and headset microphone</string>
     <string name="manage_sound_presets">Manage sound presets</string>
+    <string name="listen">Listen</string>
+    <string name="speak">Speak</string>
+    <string name="reconnect">Reconnect</string>
+    <string name="new_connection">New Connection</string>
+    <string name="closeX">X</string>
+    <string name="delete_this_preset">Delete this preset</string>
+    <string name="new_preset">New Preset</string>
 
 </resources>

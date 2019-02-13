@@ -1,6 +1,8 @@
 package peterson.ttu.edu.backupaids.activities;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,14 +24,18 @@ import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.controller.ConnectionController;
 import peterson.ttu.edu.backupaids.controller.ListenConnectionController;
 import peterson.ttu.edu.backupaids.controller.PeerCallback;
 import peterson.ttu.edu.backupaids.activities.headsetSetup.PresetSetupActivity;
+import peterson.ttu.edu.backupaids.model.DeviceInfoManager;
 import peterson.ttu.edu.backupaids.model.Preferences;
 import peterson.ttu.edu.backupaids.model.SoundPreset;
 import peterson.ttu.edu.backupaids.model.SoundPresetManager;
+import peterson.ttu.edu.backupaids.network.BluetoothNotEnabledException;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.service.LocalSoundService;
 import peterson.ttu.edu.backupaids.service.RemoteSoundService;
@@ -38,6 +44,11 @@ import peterson.ttu.edu.backupaids.util.Util;
 public class ListenFragment extends Fragment implements View.OnClickListener, ConnectionController.Listener, Preferences.PresetUpdateListener, PresetListAdapter.ButtonListener {
 
     private static final String TAG = "ListenFragment";
+    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_NEW_PRESET = 2;
+    private static final int REQUEST_BT_DISCOVERABLE = 3;
+
+    private static final int BLUETOOTH_VISIBILITY_TIMEOUT = 120;
 
     private Runnable todoOnServiceStopped;
 
@@ -86,7 +97,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onCreateView(inflater, container, savedInstanceState);
         View fragmentView = inflater.inflate(R.layout.fragment_listen, container, false);
 
-        Preferences.getInstance(getContext()).addPresetUpdateListener(this);
+        Preferences.getInstance(getContext().getApplicationContext()).addPresetUpdateListener(this);
 
         ImageButton playButton = fragmentView.findViewById(R.id.playSound);
         playButton.setOnClickListener(this);
@@ -114,13 +125,13 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         super.onViewCreated(view, savedInstanceState);
 
         TextView ourPin = getView().findViewById(R.id.ourPinTextView);
-        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.getPin()));
+        ourPin.setText(getString(R.string.our_pin, ConnectionMaker.OUR_PIN));
 
         updatePresetViewer();
 
         if ( RemoteSoundService.isCurrentlyStreaming()) {
             // Already streaming. Need to re-connect with this guy
-            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
+            startConnectionController(false);
         }
 
         // We could already be playing, so check on that...
@@ -135,7 +146,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         stopStreaming();
         stopPlaying();
 
-        Preferences.getInstance(getContext()).removePresetUpdateListner(this);
+        Preferences.getInstance(getContext().getApplicationContext()).removePresetUpdateListener(this);
 
         super.onDestroyView();
     }
@@ -170,7 +181,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 break;
             case R.id.makeDiscoverable:
             case R.id.textForMakeDiscoverableButton:
-                makeDiscoverable();
+                listenForConnections();
                 break;
             default:
                 throw new RuntimeException("Unexpected button push!");
@@ -191,7 +202,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void switchMic() {
-        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences preferences = Preferences.getInstance(getContext().getApplicationContext());
         Preferences.MicToUse micToUse = preferences.getMicToUse();
 
         switch(micToUse) {
@@ -209,7 +220,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void editPresets() {
-        if (SoundPresetManager.getInstance(getContext()).getNumberOfPresets() <= 0) {
+        if (SoundPresetManager.getInstance(getContext().getApplicationContext()).getNumberOfPresets() <= 0) {
             // We need to make a new preset
             createNewPreset();
             return;
@@ -266,39 +277,112 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         int[] position = new int[2];
         bottomPanel.getLocationOnScreen(position);
 
-        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.RIGHT, 0, size.y-bottomPanel.getTop());
+        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.END, 0, size.y-bottomPanel.getTop());
     }
 
     private void createNewPreset() {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
-        if ( !Util.areHeadphonesActive(audioManager)) {
+        if (Util.noHeadphonesConnected(audioManager)) {
             showPlaybackError(getString(R.string.headphones_needed));
             return;
         }
-        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), 0);
-        // TODO: figure out how to get the result; if a new preset was finished, select it
+        startActivityForResult(new Intent(getContext(), PresetSetupActivity.class), REQUEST_NEW_PRESET);
     }
 
-    private void makeDiscoverable() {
+    private void listenForConnections() {
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        if (Util.noHeadphonesConnected(audioManager)) {
+            // No headphones=no reason to try to stream (would just be annoying if we waited
+            // until we connected to notice this...)
+            showPlaybackError(getString(R.string.headphones_not_connected));
+            return;
+        }
 
         if ( connectionController != null) {
             stopStreaming();
-        } else {
-            if ( !Util.areHeadphonesActive(audioManager)) {
-                // No headphones=no reason to try to stream (would just be annoying if we waited
-                // until we connected to notice this...)
-                showPlaybackError(getString(R.string.headphones_not_connected));
-                return;
-            }
-            connectionController = new ListenConnectionController(getContext(), getActivity(), this);
-            Toast.makeText(getContext(), "Looking for other devices...this will take a few seconds.", Toast.LENGTH_LONG).show();
+            return;
         }
+
+        DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext().getApplicationContext());
+        if ( !deviceInfoManager.hasDevices()) {
+            // No devices==connect for the first time
+            makeUsDiscoverable();
+            startConnectionController(true);
+            return;
+        }
+
+        // Show the current presets, with edit/delete buttons (and a new one)
+        // Some of the code here came from https://stackoverflow.com/questions/23464232/how-would-you-create-a-popover-view-in-android-like-facebook-comments
+        LayoutInflater layoutInflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View inflatedView = layoutInflater.inflate(R.layout.new_old_connection_popup, null,false);
+
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+
+        // Make it square along the dimension of the
+        //int sideLength = (int)(Math.min(size.x, size.y) * .8);
+
+        final PopupWindow popupWindow = new PopupWindow(inflatedView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
+
+        Button reconnectButton = inflatedView.findViewById(R.id.reconnectButton);
+        reconnectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionController(false);
+            }
+        });
+
+        Button newConnectionButton = inflatedView.findViewById(R.id.newConnectionButton);
+        newConnectionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                makeUsDiscoverable();
+            }
+        });
+
+        TableLayout bottomPanel = getView().findViewById(R.id.bottomMenu);
+        int[] position = new int[2];
+        bottomPanel.getLocationOnScreen(position);
+
+        popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.CENTER_HORIZONTAL, 0, size.y-bottomPanel.getTop());
+    }
+
+    private void makeUsDiscoverable() {
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BLUETOOTH_VISIBILITY_TIMEOUT);
+        startActivityForResult(discoverableIntent, REQUEST_BT_DISCOVERABLE);
+    }
+
+    private void startConnectionController(boolean makeVisible) {
+        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        if (Util.noHeadphonesConnected(audioManager)) {
+            // No headphones=no reason to try to stream (would just be annoying if we waited
+            // until we connected to notice this...)
+            showPlaybackError(getString(R.string.headphones_not_connected));
+            return;
+        }
+        try {
+            connectionController = new ListenConnectionController(getContext().getApplicationContext(), getActivity(), this, makeVisible);
+            connectionController.start();
+        } catch ( BluetoothNotEnabledException ex) {
+            // Bluetooth isn't on. Ask the user to turn it on...
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } catch (IOException ex) {
+            showPlaybackError(ex.getMessage());
+        }
+
     }
 
     private void updatePresetViewer() {
         TextView textForPresetChooser = getView().findViewById(R.id.textForPresetChooser);
-        SoundPreset preset = Preferences.getInstance(getContext()).getSelectedPreset();
+        SoundPreset preset = Preferences.getInstance(getContext().getApplicationContext()).getSelectedPreset();
         if ( preset != null) {
             textForPresetChooser.setText(preset.getName());
         } else {
@@ -316,7 +400,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void updateMicToUseButton() {
-        Preferences preferences = Preferences.getInstance(getContext());
+        Preferences preferences = Preferences.getInstance(getContext().getApplicationContext());
         Preferences.MicToUse micToUse = preferences.getMicToUse();
         ImageButton micToUseButton = getView().findViewById(R.id.micToUseButton);
         TextView micToUseText = getView().findViewById(R.id.micToUseText);
@@ -338,7 +422,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     private void updateMakeDiscoverableButton() {
         ImageButton makeDiscoverableButton = getView().findViewById(R.id.makeDiscoverable);
         TextView textForMakeDiscoverableButton = getView().findViewById(R.id.textForMakeDiscoverableButton);
-        TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
+
+        // Left in case we someday bring back WiFi connections...
+        //TextView pinTextView = getView().findViewById(R.id.ourPinTextView);
         if ( connectionController == null) {
             makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
             textForMakeDiscoverableButton.setText(R.string.not_connected);
@@ -351,23 +437,20 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_blue);
                 Util.rotateImageButton(makeDiscoverableButton);
                 textForMakeDiscoverableButton.setText(R.string.connecting);
-                pinTextView.setVisibility(View.VISIBLE);
+                //pinTextView.setVisibility(View.VISIBLE);
                 break;
             case STREAMING:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_green);
                 makeDiscoverableButton.setAnimation(null);
                 textForMakeDiscoverableButton.setText(R.string.connected);
-                pinTextView.setVisibility(View.GONE);
-                break;
-            case RETRY:
-                Util.rotateImageButton(makeDiscoverableButton);
+                //pinTextView.setVisibility(View.GONE);
                 break;
             case FAILED:
             case STOPPED:
                 makeDiscoverableButton.setImageResource(R.drawable.ic_phone_in_gray);
                 makeDiscoverableButton.setAnimation(null);
                 textForMakeDiscoverableButton.setText(R.string.not_connected);
-                pinTextView.setVisibility(View.GONE);
+                //pinTextView.setVisibility(View.GONE);
                 break;
             default:
                 throw new RuntimeException("Unknown connection state " + connectionController.getState() + "!");
@@ -390,7 +473,26 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        updatePresetViewer();
+        switch ( requestCode) {
+            case REQUEST_ENABLE_BT:
+                if ( resultCode == Activity.RESULT_OK) {
+                    // Restart the controller
+                    startConnectionController(true);
+                } else {
+                    Toast.makeText(getContext(), "Unable to connect without Bluetooth", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case REQUEST_NEW_PRESET:
+                updatePresetViewer();
+                break;
+            case REQUEST_BT_DISCOVERABLE:
+                if ( resultCode != Activity.RESULT_CANCELED) {
+                    startConnectionController(true);
+                }
+                break;
+            default:
+                throw new RuntimeException("Unknown ListenFragment activity request: " + requestCode);
+        }
     }
 
     private void showPlaybackError(final String reason) {
@@ -459,35 +561,18 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     @Override
-    public void askAboutConnection(final String connectionName, final PeerCallback callback) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ( connectionPopup != null) {
-                    connectionPopup.dismiss();
-                }
-                connectionPopup = new ConnectionPopupFragment();
-                connectionPopup.setListener(
-                        new ConnectionPopupFragment.OnFragmentInteractionListener() {
-                            @Override
-                            public void connectionConfirmed() {
-                                callback.approveConnection(connectionName);
-                            }
+    public void connectionCheckStarted() {
+        // Won't happen since we won't be trying to discover another service
+    }
 
-                            @Override
-                            public void cancelled() {
-                                callback.denyConnection(connectionName);
-                                if (connectionPopup != null) {
-                                    connectionPopup.dismiss();
-                                    connectionPopup = null;
-                                }
-                            }
-                        });
-                connectionPopup.setTargetFragment(ListenFragment.this, 1);
-                connectionPopup.setConnection(connectionName);
-                connectionPopup.show(getFragmentManager(), "Connections");
-            }
-        });
+    @Override
+    public void askAboutConnection(final String connectionNames, final PeerCallback callback) {
+        // Won't get called for Bluetooth...
+    }
+
+    @Override
+    public void connectionCheckFinished() {
+        // Won't happen for Bluetooth
     }
 
     @Override
@@ -497,7 +582,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void deletePresetButtonPushed(PopupWindow popupWindow, SoundPreset soundPreset) {
-        SoundPresetManager.getInstance(getContext()).deletePreset(soundPreset);
+        SoundPresetManager.getInstance(getContext().getApplicationContext()).deletePreset(soundPreset);
         updatePresetViewer();
 
         // Replace the adapter since the preset list has changed
@@ -507,6 +592,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                         this,
                         getContext(),
                         R.layout.preset_popup_list_item,
-                        SoundPresetManager.getInstance(getContext()).getAllSortedPresets()));
+                        SoundPresetManager.getInstance(getContext().getApplicationContext()).getAllSortedPresets()));
     }
 }

@@ -10,7 +10,7 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +28,13 @@ public class DestinationFactory {
      * Create a local audio destination (audio track)
      * @return SoundDestination
      */
-    public static SoundDestination createLocalAudioDestination(SoundPreset preset, Context context) throws IOException {
+    public static SoundDestination createLocalAudioDestination(SoundPreset preset, Context context, boolean remote) throws IOException {
+
+        // Mono for remote source; stereo for local source
+        int monoOrStereo = remote ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
+        int sampleRate = remote ? Util.REMOTE_SAMPLE_RATE : Util.LOCAL_SAMPLE_RATE;
+        int bufferSize = remote ? Util.REMOTE_MIN_BUFFER_SIZE : Util.LOCAL_MIN_BUFFER_SIZE;
+
         AudioAttributes audioAttributes =
                 new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -38,15 +44,15 @@ public class DestinationFactory {
         if ( Build.VERSION.SDK_INT >= 26) {
             // Android O contains a low-latency playback mode
             audioTrack = new AudioTrack.Builder().setAudioAttributes(audioAttributes)
-                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
-                    .setBufferSizeInBytes(Util.INPUT_MIN_BUFFER_SIZE)
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(sampleRate).setChannelMask(monoOrStereo).build())
+                    .setBufferSizeInBytes(bufferSize)
                     .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .build();
         } else {
             audioTrack = new AudioTrack.Builder().setAudioAttributes(audioAttributes)
-                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
-                    .setBufferSizeInBytes(Util.INPUT_MIN_BUFFER_SIZE)
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(sampleRate).setChannelMask(monoOrStereo).build())
+                    .setBufferSizeInBytes(bufferSize)
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .build();
         }
@@ -68,10 +74,10 @@ public class DestinationFactory {
 
     /**
      * For sending sound to a remote headset
-     * @param socket Socket to write to
+     * @param outputStream Output stream to write to
      */
-    public static SoundDestination createRemoteSoundDestination(Socket socket) throws IOException {
-        return new RemoteSoundDestination(socket);
+    public static SoundDestination createRemoteSoundDestination(OutputStream outputStream) {
+        return new RemoteSoundDestination(outputStream);
     }
 
 

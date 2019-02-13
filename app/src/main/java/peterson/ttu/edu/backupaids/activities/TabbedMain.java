@@ -1,11 +1,14 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
 import android.support.v4.app.Fragment;
@@ -13,6 +16,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,8 +29,45 @@ import peterson.ttu.edu.backupaids.service.StreamSoundService;
 
 public class TabbedMain extends AppCompatActivity {
 
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    private static final String TAG = "TabbedMain";
+
+    public enum Permission {
+        REQUEST_RECORD_AUDIO_PERMISSION(200,
+                Manifest.permission.RECORD_AUDIO,
+                "This app needs to access your microphone in order to listen to your surroundings. " +
+                        "This app will not store or send audio data without your permission. " +
+                        "Please say \"Allow\" on the following screen."),
+        REQUEST_COARSE_LOCATION_PERMISSION(201,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                "In order to find other devices Android requires the use of your general location. " +
+                        "This app will not store or share your location; it's purely to connect to another device. " +
+                        "If that's okay with you, please say \"Allow\" on the following screen.");
+
+        private final int id;
+        private final String name;
+        private final String message;
+
+        Permission(int id, String name, String message) {
+            this.id = id;
+            this.name = name;
+            this.message = message;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    /* package */ interface PermissionCallback {
+        void permissionGranted();
+        void permissionDenied();
+    }
+
+    private final SparseArray<PermissionCallback> permissionCallbackMap = new SparseArray<>();
+
     private final String[] permissions = {Manifest.permission.RECORD_AUDIO};
+
+    private TabLayout tabLayout;
 
 
     @Override
@@ -33,8 +75,26 @@ public class TabbedMain extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed_main);
 
-        // Request audio recording permission. The app is useless without it, so ask up-front
-        ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
+        // Without the "record audio" permission this app is useless...
+        if (ContextCompat.checkSelfPermission(this, Permission.REQUEST_RECORD_AUDIO_PERMISSION.getName())
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermission(Permission.REQUEST_RECORD_AUDIO_PERMISSION, new PermissionCallback() {
+                @Override
+                public void permissionGranted() {
+                    // Nothing to do
+                }
+
+                @Override
+                public void permissionDenied() {
+                    // Have to exit
+                    Log.e(TAG, "User denied record audio permission. Can't continue");
+                    finish();
+                }
+            });
+        }
+
+        // We use the music stream, so make sure the user can adjust the volume for us correctly
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -44,7 +104,7 @@ public class TabbedMain extends AppCompatActivity {
         ViewPager viewPager = (ViewPager) findViewById(R.id.container);
         viewPager.setAdapter(sectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
 
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
@@ -55,24 +115,52 @@ public class TabbedMain extends AppCompatActivity {
 
     }
 
+    /* package */ void requestPermission(final Permission permission, @NonNull final PermissionCallback callback) {
+        // 1) Show a dialog telling the user what this is
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(permission.message)
+                .setTitle(getString(R.string.app_name) + " needs your permission");
+
+        DialogInterface.OnClickListener okButtonListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // 2) Ask for the permission and set the callback for it
+                permissionCallbackMap.put(permission.id, callback);
+                ActivityCompat.requestPermissions(TabbedMain.this, new String[] {permission.name}, permission.id);
+
+            }
+        };
+        builder.setPositiveButton("OK", okButtonListener);
+        builder.create().show();
+    }
+
+    /**
+     * Switch to the listen tab
+     */
+    /* package */ void showListenTab() {
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.getTabAt(0).select();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean permissionToRecordAccepted = false;
-        switch (requestCode){
-            case REQUEST_RECORD_AUDIO_PERMISSION:
-                permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
-        }
-        if (!permissionToRecordAccepted ) {
-            finish();
+
+        PermissionCallback callback = permissionCallbackMap.get(requestCode);
+        if ( callback == null) {
             return;
         }
+        permissionCallbackMap.delete(requestCode);
 
-        // Getting here means permission is granted!
-
-        // We use the music stream, so make sure the user can adjust the volume for us correctly
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        switch ( grantResults[0]) {
+            case PackageManager.PERMISSION_GRANTED:
+                callback.permissionGranted();
+                break;
+            case PackageManager.PERMISSION_DENIED:
+                callback.permissionDenied();
+            default:
+                Log.e(TAG, "Unexpected permission response for " + requestCode + ": " + grantResults[0]);
+        }
     }
 
     @Override
@@ -125,8 +213,7 @@ public class TabbedMain extends AppCompatActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_tabbed_main, container, false);
-            return rootView;
+            return inflater.inflate(R.layout.fragment_tabbed_main, container, false);
         }
     }
 
@@ -134,9 +221,9 @@ public class TabbedMain extends AppCompatActivity {
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+    /*package*/ class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-        public SectionsPagerAdapter(FragmentManager fm) {
+        /*package*/ public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 

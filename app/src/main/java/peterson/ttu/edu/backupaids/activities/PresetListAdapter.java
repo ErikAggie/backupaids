@@ -20,7 +20,7 @@ import peterson.ttu.edu.backupaids.model.SoundPreset;
 /**
  * Inspired by https://stackoverflow.com/questions/8166497/custom-adapter-for-list-view
  */
-public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
+/* package */ class PresetListAdapter extends ArrayAdapter<SoundPreset> {
 
     private final ButtonListener buttonListener;
     private final PopupWindow popupWindow;
@@ -50,7 +50,7 @@ public class PresetListAdapter extends ArrayAdapter<SoundPreset> {
         nameView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Preferences.getInstance(getContext()).setSelectedPreset(soundPreset.getName());
+                Preferences.getInstance(getContext().getApplicationContext()).setSelectedPreset(soundPreset.getName());
                 popupWindow.dismiss();
             }
         });

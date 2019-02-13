@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class BaseService extends IntentService {
 
-    private static CopyOnWriteArrayList<BaseService> ALL_SERVICES = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<BaseService> ALL_SERVICES = new CopyOnWriteArrayList<>();
 
     public BaseService(String name) {
         super(name);
@@ -23,7 +23,7 @@ public abstract class BaseService extends IntentService {
         ALL_SERVICES.remove(this);
     }
 
-    public abstract boolean isRunning();
+    protected abstract boolean isRunning();
 
     public static boolean isAnyServiceRunning() {
         for ( BaseService service : ALL_SERVICES) {

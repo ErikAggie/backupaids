@@ -105,13 +105,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
      * Called when the setup is finished so we can save off the preset
      */
     private void setupComplete() {
-        // TODO: add something here when we're editing a preset...
-        /*if ( mEditingAPreset) {
-            presetComplete();
-            finish();
-        } else {*/
-            requestName();
-        //}
+        requestName();
     }
 
     private void requestName() {
@@ -149,8 +143,8 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
     }
 
     private void presetComplete() {
-        SoundPresetManager.getInstance(this).addOrReplacePreset(soundPreset);
-        Preferences.getInstance(this).setSelectedPreset(soundPreset.getName());
+        SoundPresetManager.getInstance(getApplicationContext()).addOrReplacePreset(soundPreset);
+        Preferences.getInstance(getApplicationContext()).setSelectedPreset(soundPreset.getName());
     }
 
     private void showVolumeFragment() {

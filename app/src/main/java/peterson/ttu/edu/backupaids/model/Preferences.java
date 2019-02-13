@@ -1,6 +1,8 @@
 package peterson.ttu.edu.backupaids.model;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.JsonReader;
 import android.util.JsonWriter;
@@ -9,33 +11,36 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import peterson.ttu.edu.backupaids.R;
 
 public class Preferences {
+    @SuppressLint("StaticFieldLeak")
     private static Preferences smInstance;
     private final List<PresetUpdateListener> presetUpdateListeners = new ArrayList<>();
 
     private static final String SELECTED_PRESET = "SelectedPreset";
     private static final String MIC_TO_USE = "MicToUse";
 
+    /**
+     * This is Bluetooth connections we've made, not the full list from the phone...
+     */
+    private static final String BLUETOOTH_PEER_NAME = "BluetoothPeerName";
+
     public enum MicToUse {
         PHONE_MIC,
-        HEADSET_MIC;
+        HEADSET_MIC
     }
 
     private final Context context;
     private String selectedPreset;
     private MicToUse micToUse = MicToUse.PHONE_MIC;
 
-    public static Preferences getInstance(Context context) {
+    public static Preferences getInstance(@NonNull Context context) {
         if ( smInstance == null) {
             synchronized (Preferences.class) {
                 if ( smInstance == null) {
@@ -46,7 +51,7 @@ public class Preferences {
         return smInstance;
     }
 
-    private Preferences(Context context) {
+    private Preferences(@NonNull Context context) {
         this.context = context;
         readPreferences();
     }
@@ -55,7 +60,7 @@ public class Preferences {
         presetUpdateListeners.add(listener);
     }
 
-    public void removePresetUpdateListner(PresetUpdateListener listener) {
+    public void removePresetUpdateListener(PresetUpdateListener listener) {
         presetUpdateListeners.remove(listener);
     }
 
@@ -66,8 +71,16 @@ public class Preferences {
                                      new FileInputStream(
                                              new File(context.getFilesDir(), context.getString(R.string.preferences_file_name)))))) {
             jsonReader.beginObject();
-            while (jsonReader.hasNext()) {
-                readPreference(jsonReader);
+            if ( jsonReader.hasNext()) {
+                jsonReader.nextName();
+                selectedPreset = jsonReader.nextString();
+                if (selectedPreset.isEmpty()) {
+                    selectedPreset = null;
+                }
+            }
+            if ( jsonReader.hasNext()) {
+                jsonReader.nextName();
+                micToUse = micToUseFromInt(jsonReader.nextInt());
             }
             jsonReader.endObject();
         } catch (FileNotFoundException e) {
@@ -75,19 +88,6 @@ public class Preferences {
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: handle this better...
-        }
-    }
-
-    private void readPreference(JsonReader jsonReader) throws IOException {
-        switch(jsonReader.nextName()) {
-            case SELECTED_PRESET:
-                selectedPreset = jsonReader.nextString();
-                break;
-            case MIC_TO_USE:
-                micToUse = micToUseFromInt(jsonReader.nextInt());
-                break;
-            default:
-                // Nothing to do, really. It'll get destroyed the next time we save...
         }
     }
 
@@ -124,7 +124,9 @@ public class Preferences {
                         new File(context.getFilesDir(),
                                 context.getString(R.string.preferences_file_name))))) {
             jsonWriter.beginObject();
-            if (selectedPreset != null) {
+            if ( selectedPreset == null) {
+                jsonWriter.name(SELECTED_PRESET).value("");
+            } else {
                 jsonWriter.name(SELECTED_PRESET).value(selectedPreset);
             }
             jsonWriter.name(MIC_TO_USE).value(intFromMicToUse(micToUse));

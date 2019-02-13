@@ -12,8 +12,6 @@ import android.support.v4.app.DialogFragment;
  */
 public class ConnectionPopupFragment extends DialogFragment {
 
-    public static final String CONNECTIONS_ARGUMENT = "connections";
-
     private OnFragmentInteractionListener listener;
     private String availableConnection;
 
@@ -60,7 +58,7 @@ public class ConnectionPopupFragment extends DialogFragment {
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnFragmentInteractionListener {
+    /* package */ interface OnFragmentInteractionListener {
         void connectionConfirmed();
         void cancelled();
     }
