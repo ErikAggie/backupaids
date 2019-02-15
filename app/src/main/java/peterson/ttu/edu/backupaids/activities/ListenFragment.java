@@ -306,8 +306,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         DeviceInfoManager deviceInfoManager = DeviceInfoManager.getInstance(getContext().getApplicationContext());
         if ( !deviceInfoManager.hasDevices()) {
             // No devices==connect for the first time
-            makeUsDiscoverable();
-            startConnectionController(true);
+            startConnectionControllerNewConnection();
             return;
         }
 
@@ -328,21 +327,37 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         popupWindow.setOutsideTouchable(true);
         popupWindow.setBackgroundDrawable(getContext().getDrawable(R.drawable.popup_drawable));
 
-        Button reconnectButton = inflatedView.findViewById(R.id.reconnectButton);
-        reconnectButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                popupWindow.dismiss();
-                startConnectionController(false);
-            }
-        });
-
-        Button newConnectionButton = inflatedView.findViewById(R.id.newConnectionButton);
+        ImageButton newConnectionButton = inflatedView.findViewById(R.id.newConnectionButton);
         newConnectionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
-                makeUsDiscoverable();
+                startConnectionControllerNewConnection();
+            }
+        });
+        TextView newConnectionTextView = inflatedView.findViewById(R.id.newConnectionButtonText);
+        newConnectionTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionControllerNewConnection();
+            }
+        });
+
+        ImageButton reconnectButton = inflatedView.findViewById(R.id.reconnectButton);
+        reconnectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionControllerReconnect();
+            }
+        });
+        TextView reconnectTextView = inflatedView.findViewById(R.id.reconnectButtonText);
+        reconnectTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+                startConnectionControllerReconnect();
             }
         });
 
@@ -353,10 +368,15 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         popupWindow.showAtLocation(bottomPanel, Gravity.BOTTOM + Gravity.CENTER_HORIZONTAL, 0, size.y-bottomPanel.getTop());
     }
 
-    private void makeUsDiscoverable() {
+    private void startConnectionControllerReconnect() {
+        startConnectionController(false);
+    }
+
+    private void startConnectionControllerNewConnection() {
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BLUETOOTH_VISIBILITY_TIMEOUT);
         startActivityForResult(discoverableIntent, REQUEST_BT_DISCOVERABLE);
+        startConnectionController(true);
     }
 
     private void startConnectionController(boolean makeVisible) {
