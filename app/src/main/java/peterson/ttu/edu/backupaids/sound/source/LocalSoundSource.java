@@ -1,6 +1,7 @@
 package peterson.ttu.edu.backupaids.sound.source;
 
 import android.media.AudioRecord;
+import android.util.Log;
 
 /**
  * Sound coming from a local source (phone mics or connected headset)
@@ -8,6 +9,8 @@ import android.media.AudioRecord;
 public class LocalSoundSource implements SoundSource {
 
     private final AudioRecord audioRecord;
+
+    private boolean firstRead = true;
 
     public LocalSoundSource(AudioRecord audioRecord) {
         this.audioRecord = audioRecord;
@@ -20,7 +23,13 @@ public class LocalSoundSource implements SoundSource {
 
     @Override
     public int read(byte[] buffer) {
-        return audioRecord.read(buffer, 0, buffer.length);
+        if ( firstRead) {
+            // Dump everything in the first read so we have as little latency as possible
+            audioRecord.read(buffer, 0, buffer.length, AudioRecord.READ_NON_BLOCKING);
+            firstRead = false;
+        }
+        int amountRead = audioRecord.read(buffer, 0, buffer.length, AudioRecord.READ_NON_BLOCKING);
+        return amountRead;
     }
 
     @Override

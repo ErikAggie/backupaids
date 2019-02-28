@@ -11,6 +11,8 @@ public class RemoteSoundSource implements SoundSource {
 
     private final InputStream inputStream;
 
+    private boolean firstTime = true;
+
     public RemoteSoundSource(InputStream inputStream) {
         this.inputStream = new BufferedInputStream(inputStream);
     }
@@ -22,10 +24,14 @@ public class RemoteSoundSource implements SoundSource {
 
     @Override
     public int read(byte[] buffer) throws IOException {
-        while ( inputStream.available() > buffer.length * 2) {
-            // We've fallen behind
-            //noinspection ResultOfMethodCallIgnored
+        if ( firstTime) {
             inputStream.read(buffer);
+            firstTime = false;
+        }
+        if ( inputStream.available() > buffer.length) {
+            // We've fallen behind, so throw everything away and start with the most current data
+            //noinspection ResultOfMethodCallIgnored
+            inputStream.skip(inputStream.available());
         }
 
         return inputStream.read(buffer);
