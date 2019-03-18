@@ -100,6 +100,11 @@ public class WiFiConnectionMaker extends BroadcastReceiver
     }
 
     @Override
+    public boolean isConnected() {
+        return waitingSocket != null;
+    }
+
+    @Override
     public void close() {
         // Only do this once (probably won't hurt to do it again, but it wastes time/energy)
         if ( isClosed.getAndSet(true)) {
@@ -132,18 +137,25 @@ public class WiFiConnectionMaker extends BroadcastReceiver
 
     @Override
     public void readyForInputStream(InputStreamHandler handler) throws IOException {
-        handler.inputStreamReady(waitingSocket.getInputStream());
-
-        // This call returning means that the caller is done with the socket
-        connectionListener.connectionClosed();
+        try {
+            handler.inputStreamReady(waitingSocket.getInputStream());
+        } finally {
+            // This call returning means that the caller is done with the socket
+            waitingSocket = null;
+            connectionListener.connectionClosed();
+        }
     }
 
     @Override
     public void readyForOutputStream(OutputStreamHandler handler) throws IOException {
-        handler.outputStreamReady(waitingSocket.getOutputStream());
-
-        // This call returning means that the caller is done with the socket
-        connectionListener.connectionClosed();    }
+        try {
+            handler.outputStreamReady(waitingSocket.getOutputStream());
+        } finally {
+            // This call returning means that the caller is done with the socket
+            waitingSocket = null;
+            connectionListener.connectionClosed();
+        }
+    }
 
     /**
      * Publish our service

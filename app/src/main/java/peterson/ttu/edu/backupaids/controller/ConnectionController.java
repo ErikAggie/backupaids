@@ -23,7 +23,6 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
     }
 
     protected final Context context;
-    protected final Activity activity;
     private ConnectionMaker connectionMaker;
     private final Listener listener;
 
@@ -32,9 +31,8 @@ public abstract class ConnectionController implements ConnectionListener, PeerCa
 
     private volatile boolean stopped = false;
 
-    protected ConnectionController(Context context, Activity activity, Listener listener) {
+    protected ConnectionController(Context context, Listener listener) {
         this.context = context;
-        this.activity = activity;
         this.listener = listener;
     }
 

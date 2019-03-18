@@ -36,8 +36,6 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket waitingSocket;
 
-
-
     /**
      * Constructor. Package-private since this should be factory-built
      * @param context Context
@@ -84,6 +82,11 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             }
             listenForConnections();
         }
+    }
+
+    @Override
+    public boolean isConnected() {
+        return waitingSocket != null;
     }
 
     private void discoverConnections() {
@@ -205,6 +208,12 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             handler.inputStreamReady(waitingSocket.getInputStream());
         } finally {
             // This call returning means that the caller is done with the socket
+            try {
+                waitingSocket.close();
+            } catch ( Exception e) {
+
+            }
+            waitingSocket = null;
             connectionListener.connectionClosed();
         }
     }
@@ -215,6 +224,12 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             handler.outputStreamReady(waitingSocket.getOutputStream());
         } finally {
             // This call returning means that the caller is done with the socket
+            try {
+                waitingSocket.close();
+            } catch ( Exception e) {
+
+            }
+            waitingSocket = null;
             connectionListener.connectionClosed();
         }
     }

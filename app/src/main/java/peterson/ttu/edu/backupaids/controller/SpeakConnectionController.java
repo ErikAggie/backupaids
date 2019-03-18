@@ -16,20 +16,20 @@ public class SpeakConnectionController extends ConnectionController implements S
 
     private DeviceInfo deviceInfo;
 
-    public SpeakConnectionController(Context context, Activity activity, Listener listener) {
-        super(context, activity, listener);
+    public SpeakConnectionController(Context context, Listener listener) {
+        super(context, listener);
     }
 
-    public SpeakConnectionController(Context context, Activity activity, Listener listener, DeviceInfo deviceInfo) {
-        super(context, activity, listener);
+    public SpeakConnectionController(Context context, Listener listener, DeviceInfo deviceInfo) {
+        super(context, listener);
         this.deviceInfo = deviceInfo;
     }
 
     @Override
     protected ConnectionMaker getConnectionMaker() throws IOException {
-        if ( StreamSoundService.isCurrentlyStreaming()) {
+        ConnectionMaker connectionMaker = StreamSoundService.getConnectionMaker();
+        if ( connectionMaker != null && connectionMaker.isConnected()) {
             // We're already connected; so just hook up with what's there
-            ConnectionMaker connectionMaker = StreamSoundService.getConnectionMaker();
             connectionMaker.changeConnectionListener(this);
             updateState(State.STREAMING);
             return connectionMaker;
@@ -45,13 +45,13 @@ public class SpeakConnectionController extends ConnectionController implements S
     protected void startService() {
         StreamSoundService.registerListener(this);
         Intent startIntent = new Intent(context, StreamSoundService.class);
-        activity.startService(startIntent);
+        context.startService(startIntent);
     }
 
     @Override
     protected void stopService() {
         StreamSoundService.unregisterListener(this);
-        activity.stopService(new Intent(context, StreamSoundService.class));
+        context.stopService(new Intent(context, StreamSoundService.class));
     }
 
     @Override

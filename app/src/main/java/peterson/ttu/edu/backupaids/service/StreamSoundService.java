@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -53,34 +54,31 @@ public class StreamSoundService extends BaseStreamService {
                TabbedMain.class);
     }
 
-    public static boolean isCurrentlyStreaming() {
-        return currentlyStreaming.get();
-    }
-
-    public static ConnectionMaker getConnectionMaker() {
+    public synchronized static ConnectionMaker getConnectionMaker() {
         if ( instance == null) {
-            throw new RuntimeException("Attempt to get StreamSoundService when one isn't active!");
+            return null;
         }
         return instance.connectionMaker;
     }
 
     @Override
     public boolean isRunning() {
-        return isCurrentlyStreaming();
+        return currentlyStreaming.get();
     }
 
     @Override
     public void onDestroy() {
-        currentlyStreaming.set(false); // This will stop the thread
-        instance = null;
+        synchronized(StreamSoundService.class) {
+            instance = null;
 
-        if ( usedBluetooth) {
-            AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            audioManager.stopBluetoothSco();
-            usedBluetooth = false;
+            if ( usedBluetooth) {
+                AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                audioManager.stopBluetoothSco();
+                usedBluetooth = false;
+            }
+
+            super.onDestroy();
         }
-
-        super.onDestroy();
     }
 
     /**
@@ -89,7 +87,11 @@ public class StreamSoundService extends BaseStreamService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-        instance = this;
+        synchronized(StreamSoundService.class) {
+            currentlyStreaming.set(false); // This will stop the thread
+            instance = this;
+        }
+
         if (BluetoothMonitor.createIfNeeded(this).isHeadsetConnected()) {
             usedBluetooth = true;
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -97,20 +99,24 @@ public class StreamSoundService extends BaseStreamService {
         }
         try {
             setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID, ConnectionType.SPEAK);
-        } catch ( IOException e) {
+        } catch (IOException e) {
             Log.w(TAG, "Unable to start streaming sound to another device: " + e.getMessage());
         }
     }
 
     @Override
     protected void streamingStarted() {
-        currentlyStreaming.set(true);
+        synchronized(StreamSoundService.class) {
+            currentlyStreaming.set(true);
+        }
     }
 
     @Override
     protected void streamingStopped() {
-        instance = null;
-        currentlyStreaming.set(false);
+        synchronized(StreamSoundService.class) {
+            currentlyStreaming.set(false);
+            instance = null;
+        }
     }
 
     @Override

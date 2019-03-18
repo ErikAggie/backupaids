@@ -109,7 +109,7 @@ public class TabbedMain extends AppCompatActivity {
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
 
-        if (StreamSoundService.isCurrentlyStreaming()) {
+        if (StreamSoundService.getConnectionMaker() != null) {
             tabLayout.getTabAt(1).select();
         }
 

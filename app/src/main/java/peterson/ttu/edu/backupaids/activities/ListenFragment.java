@@ -63,7 +63,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     private final LocalSoundService.Listener listener = new LocalSoundService.Listener() {
         @Override
         public void playbackStarted() {
-            getActivity().runOnUiThread(new Runnable() {
+            Activity activity = getActivity();
+            if ( activity == null) {
+                return;
+            }
+            activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     updatePlayButton();
@@ -73,7 +77,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
         @Override
         public void playbackStopped() {
-            getActivity().runOnUiThread(new Runnable() {
+            Activity activity = getActivity();
+            if ( activity == null) {
+                return;
+            }
+            activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     updatePlayButton();
@@ -380,7 +388,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void startConnectionController(boolean makeVisible) {
-        AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
+        AudioManager audioManager = getContext().getApplicationContext().getSystemService(AudioManager.class);
         if (Util.noHeadphonesConnected(audioManager)) {
             // No headphones=no reason to try to stream (would just be annoying if we waited
             // until we connected to notice this...)
@@ -388,7 +396,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             return;
         }
         try {
-            connectionController = new ListenConnectionController(getContext().getApplicationContext(), getActivity(), this, makeVisible);
+            connectionController = new ListenConnectionController(getContext().getApplicationContext(), this, makeVisible);
             connectionController.start();
         } catch ( BluetoothNotEnabledException ex) {
             // Bluetooth isn't on. Ask the user to turn it on...
@@ -486,7 +494,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private void stopPlaying() {
         if ( LocalSoundService.isLocalSoundServiceRunning()) {
-            getActivity().stopService(new Intent(getContext(), LocalSoundService.class));
+            getContext().stopService(new Intent(getContext(), LocalSoundService.class));
         }
     }
 
@@ -516,7 +524,11 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void showPlaybackError(final String reason) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 updatePlayButton();
@@ -541,7 +553,12 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     @Override
     public void stateChanged(final ConnectionController.State state) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            // We're likely just floating around here...
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 updateMakeDiscoverableButton();

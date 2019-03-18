@@ -73,8 +73,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (StreamSoundService.isCurrentlyStreaming()) {
-            connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this);
+        if (StreamSoundService.getConnectionMaker() != null) {
+            connectionController = new SpeakConnectionController(getContext().getApplicationContext(), this);
             try {
                 connectionController.start();
             } catch (IOException e) {
@@ -111,6 +111,9 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     != PackageManager.PERMISSION_GRANTED) {
                 // Permission is not granted
                 Activity activity = getActivity();
+                if ( activity == null) {
+                    return;
+                }
                 if ( !(activity instanceof TabbedMain)) {
                     throw new RuntimeException("Must be under a TabbedMain!");
                 }
@@ -149,7 +152,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     private void displayConnectionChoices() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle("Pick a Connection");
         final List<DeviceInfo> deviceInfoList = DeviceInfoManager.getInstance(getContext().getApplicationContext()).getCurrentList();
         String[] listNames = new String[deviceInfoList.size()];
@@ -173,6 +180,9 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 TabbedMain activity = (TabbedMain) getActivity();
+                if ( activity == null) {
+                    return;
+                }
                 activity.showListenTab();
             }
         });
@@ -188,7 +198,10 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void onDestroyView() {
-        getActivity().unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext().getApplicationContext()));
+        Activity activity = getActivity();
+        if ( activity != null) {
+            activity.unregisterReceiver(BluetoothMonitor.createIfNeeded(getContext().getApplicationContext()));
+        }
         stopTryingToConnect();
         super.onDestroyView();
     }
@@ -240,9 +253,9 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private void startConnectionController(DeviceInfo deviceInfo) {
         try {
             if ( deviceInfo != null) {
-                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this, deviceInfo);
+                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), this, deviceInfo);
             } else {
-                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), getActivity(), this);
+                connectionController = new SpeakConnectionController(getContext().getApplicationContext(), this);
             }
             connectionController.start();
         } catch (BluetoothNotEnabledException ex) {
@@ -250,13 +263,16 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } catch ( IOException ex) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder.setTitle("Error trying to connect");
             builder.setMessage("Error trying to connect: " + ex.getMessage());
             builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     TabbedMain activity = (TabbedMain) getActivity();
+                    if ( activity == null) {
+                        return;
+                    }
                     activity.showListenTab();
                 }
             });
@@ -274,7 +290,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     }
 
     private void updatePlayButton(View view) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
@@ -307,7 +327,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void stateChanged(final ConnectionController.State state) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 updatePlayButton();
@@ -349,7 +373,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void failed(final String reason) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 updatePlayButton();
@@ -377,7 +405,12 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
             connectionNamesAsArray = null;
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        final Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle("Scanning for devices...");
         connectionNamesAsArray = new ArrayAdapter<>(getContext(), android.R.layout.select_dialog_multichoice);
         builder.setAdapter(connectionNamesAsArray, new DialogInterface.OnClickListener() {
@@ -398,8 +431,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                 connectionAlertDialog = null;
                 connectionNamesAsArray = null;
                 peerCallback = null;
-                TabbedMain activity = (TabbedMain) getActivity();
-                activity.showListenTab();
+                TabbedMain tabbedMain = (TabbedMain) getActivity();
+                if ( tabbedMain == null) {
+                    return;
+                }
+                tabbedMain.showListenTab();
             }
         });
         connectionAlertDialog = builder.create();
@@ -416,7 +452,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void askAboutConnection(final String connectionName, final PeerCallback callback) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if ( connectionNamesAsArray != null) {
@@ -455,7 +495,11 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
     @Override
     public void connectionCheckFinished() {
-        getActivity().runOnUiThread(new Runnable() {
+        final Activity activity = getActivity();
+        if ( activity == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if ( connectionNamesAsArray == null) {
@@ -466,7 +510,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     connectionAlertDialog = null;
                     connectionNamesAsArray = null;
                     peerCallback = null;
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                     builder.setTitle("No devices found!");
                     builder.setMessage("No devices found. " +
                             "Please ensure that the other device is on the \"Listen\" tab and that the " +
@@ -474,8 +518,8 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            TabbedMain activity = (TabbedMain) getActivity();
-                            activity.showListenTab();
+                            TabbedMain tabbedMain = (TabbedMain) activity;
+                            tabbedMain.showListenTab();
                         }
                     });
                     builder.show();

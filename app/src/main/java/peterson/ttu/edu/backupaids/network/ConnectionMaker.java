@@ -14,6 +14,11 @@ public interface ConnectionMaker {
     void changeConnectionListener(ConnectionListener connectionListener);
 
     /**
+     * True if we're connected with a remote device
+     */
+    boolean isConnected();
+
+    /**
      * Stop everything
      */
     void close();

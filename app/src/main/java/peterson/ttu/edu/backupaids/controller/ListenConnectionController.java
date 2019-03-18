@@ -16,8 +16,8 @@ public class ListenConnectionController extends ConnectionController implements 
 
     private final boolean makeVisible;
 
-    public ListenConnectionController(@NonNull Context context, @NonNull Activity activity, @NonNull Listener listener, boolean makeVisible) throws IOException {
-        super(context, activity, listener);
+    public ListenConnectionController(@NonNull Context context, @NonNull Listener listener, boolean makeVisible) throws IOException {
+        super(context, listener);
         this.makeVisible = makeVisible;
     }
 
@@ -42,13 +42,13 @@ public class ListenConnectionController extends ConnectionController implements 
     public void startService() {
         RemoteSoundService.registerListener(this);
         Intent startIntent = new Intent(context, RemoteSoundService.class);
-        activity.startService(startIntent);
+        context.startService(startIntent);
     }
 
     @Override
     protected void stopService() {
         RemoteSoundService.unregisterListener(this);
-        activity.stopService(new Intent(context, RemoteSoundService.class));
+        context.stopService(new Intent(context, RemoteSoundService.class));
     }
 
     @Override
