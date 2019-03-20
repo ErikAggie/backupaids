@@ -146,6 +146,20 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
         updatePlayButton();
         updateMicToUseButton();
         updateMakeDiscoverableButton();
+
+        // TODO: only if preference not checked...
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getContext());
+        dialogBuilder.setPositiveButton("OK", null);
+        dialogBuilder.setNegativeButton("Don't show again", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO: set preference to not show again...
+            }
+        });
+        LayoutInflater layoutInflater = getLayoutInflater();
+        dialogBuilder.setView(layoutInflater.inflate(R.layout.welcome_screen, null));
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
     }
 
 
