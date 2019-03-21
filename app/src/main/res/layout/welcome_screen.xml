@@ -5,241 +5,252 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="4dp"
-        android:text="Welcome to Hearing Phone!"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        app:layout_constraintBottom_toTopOf="@id/subtitle"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="spread_inside" />
-
-    <TextView
-        android:id="@+id/subtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp"
-        android:text="Let's get you started"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        app:layout_constraintBottom_toTopOf="@id/tabTextView"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title" />
-
-    <TextView
-        android:id="@+id/tabTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="4dp"
-        android:layout_marginStart="8dp"
-        android:text="There are 2 tabs:"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        app:layout_constraintBottom_toTopOf="@+id/tabTable"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/subtitle" />
-
-    <TableLayout
-        android:id="@+id/tabTable"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        app:layout_constraintBottom_toTopOf="@+id/buttonTextView"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tabTextView">
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/textView5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Listen: "
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-                android:layout_margin="8dp" />
-
-            <TextView
-                android:id="@+id/textView6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Listen to what the phone hears PLUS what another phone sends you"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-                android:layout_margin="8dp" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/textView7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Speak:"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-                android:layout_margin="8dp" />
-
-            <TextView
-                android:id="@+id/textView8"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Send sound to another phone (FM style)"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-                android:layout_weight="1"
-                android:layout_margin="8dp" />
-        </TableRow>
-
-    </TableLayout>
-
-    <TextView
-        android:id="@+id/buttonTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="4dp"
-        android:layout_marginStart="8dp"
-        android:text="Here are the buttons"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
-        app:layout_constraintTop_toBottomOf="@id/tabTable"
-        app:layout_constraintBottom_toTopOf="@id/buttonTableLayout"
-        app:layout_constraintLeft_toLeftOf="parent"/>
-
-    <TableLayout
-        android:id="@+id/buttonTableLayout"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonTextView">
-
-        <TableRow
+        android:layout_height="match_parent">
+        <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <ImageButton
-                android:id="@+id/powerButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_vertical"
-                android:layout_margin="8dp"
-                android:background="@android:color/transparent"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/ic_power_button_blue" />
-
             <TextView
-                android:id="@+id/powerButtonTextView"
+                android:id="@+id/title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:text="Start/stop"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <ImageButton
-                android:id="@+id/imageButton2"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_vertical"
-                android:layout_margin="8dp"
-                android:background="@android:color/transparent"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/ic_phone_mic_blue" />
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:text="Welcome to Hearing Phone!"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                app:layout_constraintBottom_toTopOf="@id/subtitle"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="spread_inside" />
 
             <TextView
-                android:id="@+id/textView10"
+                android:id="@+id/subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:text="Switch between phone mic and headset mic"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <ImageButton
-                android:id="@+id/imageButton3"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_vertical"
-                android:layout_margin="8dp"
-                android:background="@android:color/transparent"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/ic_phone_in_gray" />
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:text="Let's get you started"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                app:layout_constraintBottom_toTopOf="@id/tabTextView"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/title" />
 
             <TextView
-                android:id="@+id/textView11"
+                android:id="@+id/tabTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:text="Listen for connections from another phone (either make a new connection or listen for an existing one)"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </TableRow>
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginStart="8dp"
+                android:text="There are 2 tabs:"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                app:layout_constraintBottom_toTopOf="@+id/tabTable"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/subtitle" />
 
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            <TableLayout
+                android:id="@+id/tabTable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                app:layout_constraintBottom_toTopOf="@+id/buttonTextView"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tabTextView">
 
-            <ImageButton
-                android:id="@+id/imageButton4"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_vertical"
-                android:layout_margin="8dp"
-                android:background="@android:color/transparent"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/ic_equalizer" />
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/textView5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Listen: "
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                        android:layout_margin="8dp" />
+
+                    <TextView
+                        android:id="@+id/textView6"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Listen to what the phone hears PLUS what another phone sends you"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                        android:layout_margin="8dp" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/textView7"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Speak:"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                        android:layout_margin="8dp" />
+
+                    <TextView
+                        android:id="@+id/textView8"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Send sound to another phone (FM style)"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                        android:layout_weight="1"
+                        android:layout_margin="8dp" />
+                </TableRow>
+
+            </TableLayout>
 
             <TextView
-                android:id="@+id/textView12"
+                android:id="@+id/buttonTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:text="Customize what you hear to your hearing needs, phone, and headphones"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
-        </TableRow>
-    </TableLayout>
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginStart="8dp"
+                android:text="Here are the buttons"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault"
+                app:layout_constraintTop_toBottomOf="@id/tabTable"
+                app:layout_constraintBottom_toTopOf="@id/buttonTableLayout"
+                app:layout_constraintLeft_toLeftOf="parent"/>
+
+            <TableLayout
+                android:id="@+id/buttonTableLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/buttonTextView">
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageButton
+                        android:id="@+id/powerButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_margin="8dp"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/ic_power_button_blue" />
+
+                    <TextView
+                        android:id="@+id/powerButtonTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:layout_margin="8dp"
+                        android:text="Start/stop"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageButton
+                        android:id="@+id/imageButton2"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_margin="8dp"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/ic_phone_mic_blue" />
+
+                    <TextView
+                        android:id="@+id/textView10"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:layout_margin="8dp"
+                        android:text="Switch between phone mic and headset mic"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageButton
+                        android:id="@+id/imageButton3"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_margin="8dp"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/ic_phone_in_gray" />
+
+                    <TextView
+                        android:id="@+id/textView11"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:layout_margin="8dp"
+                        android:text="Listen for connections from another phone (either make a new connection or listen for an existing one)"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageButton
+                        android:id="@+id/imageButton4"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_margin="8dp"
+                        android:background="@android:color/transparent"
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/ic_equalizer" />
+
+                    <TextView
+                        android:id="@+id/textView12"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:layout_margin="8dp"
+                        android:text="Customize what you hear to your hearing needs, phone, and headphones"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+                </TableRow>
+            </TableLayout>
+
+        </android.support.constraint.ConstraintLayout>
+    </ScrollView>
+
 
 </android.support.constraint.ConstraintLayout>

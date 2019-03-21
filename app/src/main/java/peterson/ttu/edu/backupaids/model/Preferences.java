@@ -25,6 +25,7 @@ public class Preferences {
 
     private static final String SELECTED_PRESET = "SelectedPreset";
     private static final String MIC_TO_USE = "MicToUse";
+    private static final String SHOW_WELCOME_SCREEN = "ShowWelcomeScreen";
 
     /**
      * This is Bluetooth connections we've made, not the full list from the phone...
@@ -39,6 +40,7 @@ public class Preferences {
     private final Context context;
     private String selectedPreset;
     private MicToUse micToUse = MicToUse.PHONE_MIC;
+    private boolean showWelcomeScreen = true; // Show it the 1st time
 
     public static Preferences getInstance(@NonNull Context context) {
         if ( smInstance == null) {
@@ -81,6 +83,10 @@ public class Preferences {
             if ( jsonReader.hasNext()) {
                 jsonReader.nextName();
                 micToUse = micToUseFromInt(jsonReader.nextInt());
+            }
+            if ( jsonReader.hasNext()) {
+                jsonReader.nextName();
+                showWelcomeScreen = jsonReader.nextBoolean();
             }
             jsonReader.endObject();
         } catch (FileNotFoundException e) {
@@ -130,6 +136,7 @@ public class Preferences {
                 jsonWriter.name(SELECTED_PRESET).value(selectedPreset);
             }
             jsonWriter.name(MIC_TO_USE).value(intFromMicToUse(micToUse));
+            jsonWriter.name(SHOW_WELCOME_SCREEN).value(showWelcomeScreen);
             jsonWriter.endObject();
         } catch (IOException e) {
             // TODO: handle this better...
@@ -167,6 +174,15 @@ public class Preferences {
 
     public void setMicToUse(MicToUse micToUse) {
         this.micToUse = micToUse;
+        writePreferences();
+    }
+
+    public boolean shouldShowWelcomeScreen() {
+        return showWelcomeScreen;
+    }
+
+    public void showWelcomeScreen(boolean newShowWelcomeScreen) {
+        showWelcomeScreen = newShowWelcomeScreen;
         writePreferences();
     }
 
