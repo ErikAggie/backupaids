@@ -31,7 +31,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 
     private final BluetoothAdapter bluetoothAdapter;
 
-    private final ConnectionListener connectionListener;
+    private ConnectionListener connectionListener;
 
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket waitingSocket;
@@ -170,6 +170,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
 
     @Override
     public void changeConnectionListener(ConnectionListener connectionListener) {
+        this.connectionListener = connectionListener;
     }
 
     @Override

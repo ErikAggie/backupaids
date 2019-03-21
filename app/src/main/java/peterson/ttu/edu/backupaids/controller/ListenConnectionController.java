@@ -26,10 +26,14 @@ public class ListenConnectionController extends ConnectionController implements 
         if ( RemoteSoundService.isCurrentlyStreaming()) {
             // We're already connected; so just hook up with what's there
             ConnectionMaker connectionMaker = RemoteSoundService.getConnectionMaker();
-            connectionMaker.changeConnectionListener(this);
-            updateState(State.STREAMING);
-            return connectionMaker;
-        } else if (makeVisible){
+            if ( connectionMaker != null) {
+                connectionMaker.changeConnectionListener(this);
+                updateState(State.STREAMING);
+                return connectionMaker;
+            }
+        }
+
+        if (makeVisible){
             return ConnectionMakerFactory.createConnectionMaker(context, this, ConnectionType.LISTEN);
         } else {
             // Just listen
