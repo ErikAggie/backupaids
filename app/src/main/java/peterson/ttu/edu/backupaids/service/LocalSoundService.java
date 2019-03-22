@@ -171,6 +171,15 @@ public class LocalSoundService extends BaseService {
         return isLocalSoundServiceRunning();
     }
 
+    @Override
+    protected void stopNow() {
+        running.set(false);
+        for ( Listener listener : listeners) {
+            listener.playbackStopped();
+        }
+        stopSelf();
+    }
+
     public interface Listener {
         void playbackStarted();
         void playbackStopped();

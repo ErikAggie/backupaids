@@ -67,6 +67,12 @@ public class StreamSoundService extends BaseStreamService {
     }
 
     @Override
+    protected void stopNow() {
+        currentlyStreaming.set(false);
+        stopSelf();
+    }
+
+    @Override
     public void onDestroy() {
         synchronized(StreamSoundService.class) {
             instance = null;

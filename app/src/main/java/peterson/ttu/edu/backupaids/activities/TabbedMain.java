@@ -14,7 +14,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
@@ -100,11 +99,12 @@ public class TabbedMain extends AppCompatActivity {
         // primary sections of the activity.
         SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
-        // Set up the ViewPager with the sections adapter.
-        ViewPager viewPager = (ViewPager) findViewById(R.id.container);
-        viewPager.setAdapter(sectionsPagerAdapter);
-
         tabLayout = (TabLayout) findViewById(R.id.tabs);
+
+        // Set up the ViewPager with the sections adapter.
+        NoSwipeIfActiveViewPager viewPager = (NoSwipeIfActiveViewPager) findViewById(R.id.container);
+        viewPager.setTabLayout(tabLayout);
+        viewPager.setAdapter(sectionsPagerAdapter);
 
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
@@ -242,8 +242,9 @@ public class TabbedMain extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            // Show 3 total pages.
             return 2;
         }
+
+
     }
 }

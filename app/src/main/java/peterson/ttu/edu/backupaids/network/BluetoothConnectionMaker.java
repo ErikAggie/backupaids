@@ -191,7 +191,6 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
     }
 
     private void makeConnection(BluetoothDevice serverDevice) {
-
         try {
             waitingSocket = serverDevice.createRfcommSocketToServiceRecord(UUID.fromString(Util.UUID_STRING));
             ReadyConnectionMaker.setReadyConnectionMaker(BluetoothConnectionMaker.this);

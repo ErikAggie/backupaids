@@ -25,6 +25,8 @@ public abstract class BaseService extends IntentService {
 
     protected abstract boolean isRunning();
 
+    protected abstract void stopNow();
+
     public static boolean isAnyServiceRunning() {
         for ( BaseService service : ALL_SERVICES) {
             if ( service.isRunning()) {
@@ -32,5 +34,18 @@ public abstract class BaseService extends IntentService {
             }
         }
         return false;
+    }
+
+    /**
+     * Stop all running services
+     * @return
+     */
+    public static void stopAllServices() {
+        for ( BaseService service : ALL_SERVICES) {
+            if ( service.isRunning()) {
+                // Use this to make sure that the service won't report itself as running anymore
+                service.stopNow();
+            }
+        }
     }
 }

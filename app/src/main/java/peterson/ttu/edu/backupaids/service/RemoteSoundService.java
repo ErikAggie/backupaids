@@ -83,9 +83,15 @@ public class RemoteSoundService extends BaseStreamService {
         super.onDestroy();
     }
 
-        @Override
+    @Override
     public boolean isRunning() {
         return isCurrentlyStreaming();
+    }
+
+    @Override
+    protected void stopNow() {
+        currentlyStreaming.set(false);
+        stopSelf();
     }
 
     @Override
