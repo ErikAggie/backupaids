@@ -121,6 +121,21 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String name = input.getText().toString();
+                if ( SoundPresetManager.getInstance(getApplicationContext()).presetExists(name)) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(PresetSetupActivity.this)
+                            .setTitle("This preset exists.")
+                            .setMessage("The preset already exists. Please choose a different name.")
+                            .setPositiveButton("OK", null);
+                    // When dismissed, just show the original popop again
+                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialog) {
+                            requestName();
+                        }
+                    });
+                    builder.show();
+                    return;
+                }
                 if ( name.isEmpty()) {
                     // Need a name, people...
                     requestName();

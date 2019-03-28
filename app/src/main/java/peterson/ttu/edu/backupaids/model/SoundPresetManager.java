@@ -74,6 +74,10 @@ public class SoundPresetManager {
         jsonReader.endArray();
     }
 
+    public boolean presetExists(String name) {
+        return (presets.get(name) != null);
+    }
+
     public void addOrReplacePreset(SoundPreset preset) {
         presets.put(preset.getName(), preset);
         savePresets();
