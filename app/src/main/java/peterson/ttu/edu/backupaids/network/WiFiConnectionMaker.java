@@ -325,7 +325,7 @@ public class WiFiConnectionMaker extends BroadcastReceiver
                         Log.i(TAG, "Listening for connections.");
                         waitingSocket = serverSocket.accept();
                         if ( serverSocket == null) {
-                            // We're not listening anymore, so stop
+                            // We're not listening anymore, so stopRequested
                             try {
                                 waitingSocket.close();
                             } catch ( Exception e) {

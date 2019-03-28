@@ -77,7 +77,7 @@ public class RemoteSoundService extends BaseStreamService {
 
     @Override
     public void onDestroy() {
-        currentlyStreaming.set(false); // This will stop the thread
+        currentlyStreaming.set(false); // This will stopRequested the thread
         instance = null;
 
         super.onDestroy();

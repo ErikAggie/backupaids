@@ -29,11 +29,14 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 /**
  * Service for playing local sound.
  */
-public class LocalSoundService extends BaseService {
+public class LocalSoundService extends BaseService implements ServiceBroadcastReceiver.Callback {
 
     private static final String TAG = "LocalSoundService";
+    // Used so ServiceBroadcastReceiver can direct intents to us
+    private static final String SERVICE_NAME = LocalSoundService.class.getCanonicalName();
     private static final int FOREGROUND_ID = 1234;
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
+    private static final String ACTION_STOP = "peterson.ttu.edu.backupaids.service.LocalSoundService.StopLocalPlayback";
 
     private static final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -61,7 +64,7 @@ public class LocalSoundService extends BaseService {
     public void onDestroy() {
         unregisterThisService();
 
-        // This will tell the thread to stop
+        // This will tell the thread to stopRequested
         playing = false;
 
         for ( Listener listener : listeners) {
@@ -96,6 +99,7 @@ public class LocalSoundService extends BaseService {
         SoundDestination soundDestination = null;
 
         try {
+            ServiceBroadcastReceiver.registerCallback(SERVICE_NAME, this);
             soundSource = SourceFactory.createCamcorderAudioRecord(this);
             // TODO: find current sound source (key/value store)
             soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset, this, false);
@@ -114,6 +118,11 @@ public class LocalSoundService extends BaseService {
                     .setContentText("Playing audio from the phone's microphones")
                     .setContentIntent(pendingIntent);
 
+            Intent stopIntent = new Intent(this, ServiceBroadcastReceiver.class);
+            stopIntent.putExtra(ServiceBroadcastReceiver.SERVICE_NAME_EXTRA, SERVICE_NAME);
+            PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            notificationBuilder.addAction(R.drawable.ic_stop_black_24dp, "Stop", stopPendingIntent);
+
             startForeground(FOREGROUND_ID, notificationBuilder.build());
 
             running.set(true);
@@ -124,11 +133,11 @@ public class LocalSoundService extends BaseService {
 
             // Here's the playing loop!
             while (playing) {
-                int amountRead = soundSource.read(audioBuffer);
-                if (amountRead < 0) {
+                if (soundDestination.hasStopped()) {
                     break;
                 }
-                if (soundDestination.hasStopped()) {
+                int amountRead = soundSource.read(audioBuffer);
+                if (amountRead < 0) {
                     break;
                 }
                 soundDestination.write(audioBuffer, amountRead);
@@ -143,6 +152,8 @@ public class LocalSoundService extends BaseService {
             Log.w(TAG, "Stopping playback: " + e.getMessage());
         } finally {
             running.set(false);
+
+            ServiceBroadcastReceiver.unregisterCallback(SERVICE_NAME);
 
             for ( Listener listener : listeners) {
                 listener.playbackStopped();
@@ -178,6 +189,11 @@ public class LocalSoundService extends BaseService {
             listener.playbackStopped();
         }
         stopSelf();
+    }
+
+    @Override
+    public void stopRequested() {
+        stopNow();
     }
 
     public interface Listener {
