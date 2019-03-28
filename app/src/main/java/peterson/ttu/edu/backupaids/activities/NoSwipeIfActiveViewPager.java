@@ -56,7 +56,7 @@ public class NoSwipeIfActiveViewPager extends ViewPager {
         if ( BaseService.isAnyServiceRunning()) {
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
             alertDialogBuilder.setTitle("Stop recording/playback?");
-            alertDialogBuilder.setMessage("Cannot switch tabs unless you stopRequested playback. Do you wish to stopRequested playback?");
+            alertDialogBuilder.setMessage("Cannot switch tabs unless you stop playback. Do you wish to stopRequested playback?");
             alertDialogBuilder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {

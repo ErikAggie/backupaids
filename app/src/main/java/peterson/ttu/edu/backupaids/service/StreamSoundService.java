@@ -94,7 +94,7 @@ public class StreamSoundService extends BaseStreamService {
     @Override
     protected void onHandleIntent(Intent intent) {
         synchronized(StreamSoundService.class) {
-            currentlyStreaming.set(false); // This will stopRequested the thread
+            currentlyStreaming.set(false); // This will stop the thread
             instance = this;
         }
 

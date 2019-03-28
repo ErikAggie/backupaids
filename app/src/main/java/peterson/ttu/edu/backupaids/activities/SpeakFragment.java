@@ -354,7 +354,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                                     }
                                 })
                                 .show();
-                        // Don't have to stopRequested since we'll get a STOPPED state shortly...
+                        // Don't have to stop since we'll get a STOPPED state shortly...
                         break;
                     case STOPPED:
                         Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();

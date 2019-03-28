@@ -265,7 +265,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
                         Log.i(TAG, "Listening for connections.");
                         waitingSocket = serverSocket.accept();
                         if ( serverSocket == null) {
-                            // We're not listening anymore, so stopRequested
+                            // We're not listening anymore, so stop
                             try {
                                 waitingSocket.close();
                             } catch ( Exception e) {

@@ -36,7 +36,6 @@ public class LocalSoundService extends BaseService implements ServiceBroadcastRe
     private static final String SERVICE_NAME = LocalSoundService.class.getCanonicalName();
     private static final int FOREGROUND_ID = 1234;
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
-    private static final String ACTION_STOP = "peterson.ttu.edu.backupaids.service.LocalSoundService.StopLocalPlayback";
 
     private static final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -64,7 +63,7 @@ public class LocalSoundService extends BaseService implements ServiceBroadcastRe
     public void onDestroy() {
         unregisterThisService();
 
-        // This will tell the thread to stopRequested
+        // This will tell the thread to stop
         playing = false;
 
         for ( Listener listener : listeners) {
