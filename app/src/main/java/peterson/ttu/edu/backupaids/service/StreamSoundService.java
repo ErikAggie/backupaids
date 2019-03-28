@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import peterson.ttu.edu.backupaids.BluetoothMonitor;
 import peterson.ttu.edu.backupaids.R;
@@ -25,9 +24,8 @@ import peterson.ttu.edu.backupaids.util.ConnectionType;
 /**
  * Service for streaming sound to another device
  */
-public class StreamSoundService extends BaseStreamService {
+public class StreamSoundService extends BaseStreamService implements ServiceNotificationCallback {
     private static final String TAG = "StreamSoundService";
-
     private static final int FOREGROUND_ID = 1235;
     private static final String STREAM_CHANNEL_NAME = "Stream Out";
     private static final AtomicBoolean currentlyStreaming = new AtomicBoolean(false);
@@ -52,6 +50,8 @@ public class StreamSoundService extends BaseStreamService {
               "Streaming audio",
               "Streaming audio to another device (FM style)",
                TabbedMain.class);
+
+        RemotePlaybackBroadcastReceiver.registerCallback(this);
     }
 
     public synchronized static ConnectionMaker getConnectionMaker() {
@@ -79,7 +79,9 @@ public class StreamSoundService extends BaseStreamService {
 
             if ( usedBluetooth) {
                 AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                audioManager.stopBluetoothSco();
+                if (audioManager != null) {
+                    audioManager.stopBluetoothSco();
+                }
                 usedBluetooth = false;
             }
 
@@ -101,7 +103,9 @@ public class StreamSoundService extends BaseStreamService {
         if (BluetoothMonitor.createIfNeeded(this).isHeadsetConnected()) {
             usedBluetooth = true;
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            audioManager.startBluetoothSco();
+            if (audioManager != null) {
+                audioManager.startBluetoothSco();
+            }
         }
         try {
             setUpService(intent, STREAM_CHANNEL_NAME, FOREGROUND_ID, ConnectionType.SPEAK);
@@ -123,6 +127,7 @@ public class StreamSoundService extends BaseStreamService {
             currentlyStreaming.set(false);
             instance = null;
         }
+        RemotePlaybackBroadcastReceiver.unregisterCallback();
     }
 
     @Override
@@ -131,7 +136,7 @@ public class StreamSoundService extends BaseStreamService {
     }
 
     @Override
-    protected SoundDestination createDestination(OutputStream outputStream) throws IOException {
+    protected SoundDestination createDestination(OutputStream outputStream) {
         return DestinationFactory.createRemoteSoundDestination(outputStream);
     }
 
@@ -142,6 +147,10 @@ public class StreamSoundService extends BaseStreamService {
         }
     }
 
+    @Override
+    public void stopRequested() {
+        stopNow();
+    }
 
     public interface Listener {
         void streamingErrored(String error);

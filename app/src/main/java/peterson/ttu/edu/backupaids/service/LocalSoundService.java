@@ -29,11 +29,9 @@ import peterson.ttu.edu.backupaids.sound.source.SourceFactory;
 /**
  * Service for playing local sound.
  */
-public class LocalSoundService extends BaseService implements ServiceBroadcastReceiver.Callback {
+public class LocalSoundService extends BaseService implements ServiceNotificationCallback {
 
     private static final String TAG = "LocalSoundService";
-    // Used so ServiceBroadcastReceiver can direct intents to us
-    private static final String SERVICE_NAME = LocalSoundService.class.getCanonicalName();
     private static final int FOREGROUND_ID = 1234;
     private static final String PLAYBACK_CHANNEL_NAME = "Playback";
 
@@ -98,9 +96,8 @@ public class LocalSoundService extends BaseService implements ServiceBroadcastRe
         SoundDestination soundDestination = null;
 
         try {
-            ServiceBroadcastReceiver.registerCallback(SERVICE_NAME, this);
+            LocalPlaybackBroadcastReceiver.registerCallback(this);
             soundSource = SourceFactory.createCamcorderAudioRecord(this);
-            // TODO: find current sound source (key/value store)
             soundDestination = DestinationFactory.createLocalAudioDestination(soundPreset, this, false);
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
@@ -117,9 +114,8 @@ public class LocalSoundService extends BaseService implements ServiceBroadcastRe
                     .setContentText("Playing audio from the phone's microphones")
                     .setContentIntent(pendingIntent);
 
-            Intent stopIntent = new Intent(this, ServiceBroadcastReceiver.class);
-            stopIntent.putExtra(ServiceBroadcastReceiver.SERVICE_NAME_EXTRA, SERVICE_NAME);
-            PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            Intent stopIntent = new Intent(this, LocalPlaybackBroadcastReceiver.class);
+            PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, 0);
             notificationBuilder.addAction(R.drawable.ic_stop_black_24dp, "Stop", stopPendingIntent);
 
             startForeground(FOREGROUND_ID, notificationBuilder.build());
@@ -152,7 +148,7 @@ public class LocalSoundService extends BaseService implements ServiceBroadcastRe
         } finally {
             running.set(false);
 
-            ServiceBroadcastReceiver.unregisterCallback(SERVICE_NAME);
+            LocalPlaybackBroadcastReceiver.unregisterCallback();
 
             for ( Listener listener : listeners) {
                 listener.playbackStopped();

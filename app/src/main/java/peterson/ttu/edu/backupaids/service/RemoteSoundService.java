@@ -29,9 +29,10 @@ import peterson.ttu.edu.backupaids.util.ConnectionType;
  * <p>
  * helper methods.
  */
-public class RemoteSoundService extends BaseStreamService {
+public class RemoteSoundService extends BaseStreamService implements ServiceNotificationCallback {
 
     private static final String TAG = "RemoteSoundService";
+
     private static final int FOREGROUND_ID = 1236;
     private static final String STREAM_CHANNEL_NAME = "Stream In";
 
@@ -53,8 +54,6 @@ public class RemoteSoundService extends BaseStreamService {
 
     private static RemoteSoundService instance;
 
-    private Timer killTimer = new Timer();
-
     /**
      * Returns the current ConnectionMaker. If we aren't running, this will be null;
      * @return The ConnectionMaker we're using
@@ -72,8 +71,8 @@ public class RemoteSoundService extends BaseStreamService {
               "Streaming audio",
               "Streaming audio from another device (FM style)",
                TabbedMain.class);
+        RemotePlaybackBroadcastReceiver.registerCallback(this);
     }
-
 
     @Override
     public void onDestroy() {
@@ -114,10 +113,11 @@ public class RemoteSoundService extends BaseStreamService {
     protected void streamingStopped() {
         currentlyStreaming.set(false);
         instance = null;
+        RemotePlaybackBroadcastReceiver.unregisterCallback();
     }
 
     @Override
-    protected SoundSource createSource(InputStream inputStream) throws IOException {
+    protected SoundSource createSource(InputStream inputStream) {
         return SourceFactory.createStreamSource(inputStream);
     }
 
@@ -135,6 +135,10 @@ public class RemoteSoundService extends BaseStreamService {
         }
     }
 
+    @Override
+    public void stopRequested() {
+        stopNow();
+    }
 
     public interface Listener {
         void playbackErrored(String error);

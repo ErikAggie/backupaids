@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.network.InputStreamHandler;
 import peterson.ttu.edu.backupaids.network.OutputStreamHandler;
 import peterson.ttu.edu.backupaids.network.ReadyConnectionMaker;
@@ -123,7 +124,9 @@ public abstract class BaseStreamService extends BaseService implements InputStre
                 // Create the notification channel needed to show this notification...
                 NotificationChannel channel = new NotificationChannel(channelName, channelName, NotificationManager.IMPORTANCE_DEFAULT);
                 NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.createNotificationChannel(channel);
+                if (notificationManager != null) {
+                    notificationManager.createNotificationChannel(channel);
+                }
             }
 
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelName)
@@ -132,6 +135,11 @@ public abstract class BaseStreamService extends BaseService implements InputStre
                     .setContentTitle(notificationTitle)
                     .setContentText(notificationContent)
                     .setContentIntent(pendingIntent);
+
+            Intent stopIntent = new Intent(this, RemotePlaybackBroadcastReceiver.class);
+            PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+            notificationBuilder.addAction(R.drawable.ic_stop_black_24dp, "Stop", stopPendingIntent);
+
 
             startForeground(foregroundId, notificationBuilder.build());
 

@@ -62,7 +62,8 @@
             android:name=".service.RemoteSoundService"
             android:exported="false" />
 
-        <receiver android:name=".service.ServiceBroadcastReceiver"/>
+        <receiver android:name=".service.LocalPlaybackBroadcastReceiver"/>
+        <receiver android:name=".service.RemotePlaybackBroadcastReceiver"/>
     </application>
 
 </manifest>
