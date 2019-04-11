@@ -41,5 +41,20 @@
     <string name="closeX">X</string>
     <string name="delete_this_preset">Delete this preset</string>
     <string name="new_preset">New Preset</string>
+    <string name="welcome_to_hearing_phone">Welcome to Hearing Phone!</string>
+    <string name="let_s_get_you_started">Let\'s get you started</string>
+    <string name="there_are_2_tabs">There are 2 tabs:</string>
+    <string name="listen_colon">Listen:</string>
+    <string name="listen_to_what_the_phone_hears">Listen to what the phone hears PLUS what another phone sends you</string>
+    <string name="speak_colon">Speak:</string>
+    <string name="send_sound_to_another_phone_fm_style">Send sound to another phone (FM style)</string>
+    <string name="here_are_the_buttons">Here are the buttons</string>
+    <string name="start_stop">Start/stop</string>
+    <string name="microphone_button">Microphone button</string>
+    <string name="switch_between_phone_mic_and_headset_mic">Switch between phone mic and headset mic</string>
+    <string name="phone_to_phone_button">Phone to phone button</string>
+    <string name="listen_for_connections_from_another_phone_either_make_a_new_connection_or_listen_for_an_existing_one">Listen for connections from another phone (either make a new connection or listen for an existing one)</string>
+    <string name="presets_button">Presets button</string>
+    <string name="customize_what_you_hear">Customize what you hear to your hearing needs, phone, and headphones</string>
 
 </resources>

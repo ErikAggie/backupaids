@@ -99,7 +99,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                switch ( intent.getAction()) {
+                switch ( action) {
                     case BluetoothDevice.ACTION_FOUND:
                         BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                         if ( device == null || device.getName() == null) {
@@ -144,7 +144,7 @@ public class BluetoothConnectionMaker implements ConnectionMaker {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                switch ( intent.getAction()) {
+                switch ( action) {
                     case BluetoothDevice.ACTION_ACL_CONNECTED:
                         Log.i(TAG, "Connected!");
                         context.unregisterReceiver(this);

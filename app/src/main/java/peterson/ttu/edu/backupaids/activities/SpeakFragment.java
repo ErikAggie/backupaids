@@ -44,7 +44,6 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
     private static final int REQUEST_ENABLE_BT = 1;
 
     private ConnectionController connectionController;
-    private ConnectionPopupFragment connectionPopup;
 
     private AlertDialog connectionAlertDialog;
     private PeerCallback peerCallback;
@@ -86,7 +85,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
         //setContentView(R.layout.fragment_speak);
 
-        TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
+        @SuppressWarnings("ConstantConditions") TextView ourPin = getView().findViewById(R.id.sendSoundOurPinTextView);
         ourPin.setText(getString(R.string.our_pin, ConnectionMaker.OUR_PIN));
 
         // Listen for Bluetooth connections (for recording)
@@ -297,7 +296,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
+                @SuppressWarnings("ConstantConditions") ImageButton playButton = getView().findViewById(R.id.sendSoundStartButton);
                 if ( connectionController == null) {
                     playButton.setImageResource(R.drawable.ic_refresh_gray);
                 } else {
@@ -337,10 +336,6 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                 updatePlayButton();
                 switch ( state) {
                     case STREAMING:
-                        if ( connectionPopup != null) {
-                            connectionPopup.dismiss();
-                            connectionPopup = null;
-                        }
                         break;
                     case FAILED:
                         new AlertDialog.Builder(getContext())
@@ -358,10 +353,6 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                         break;
                     case STOPPED:
                         Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                        if ( connectionPopup != null) {
-                            connectionPopup.dismiss();
-                            connectionPopup = null;
-                        }
                         connectionController = null;
                         break;
                     default:

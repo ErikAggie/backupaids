@@ -16,7 +16,7 @@ public class ListenConnectionController extends ConnectionController implements 
 
     private final boolean makeVisible;
 
-    public ListenConnectionController(@NonNull Context context, @NonNull Listener listener, boolean makeVisible) throws IOException {
+    public ListenConnectionController(@NonNull Context context, @NonNull Listener listener, boolean makeVisible) {
         super(context, listener);
         this.makeVisible = makeVisible;
     }

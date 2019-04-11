@@ -8,6 +8,7 @@ import java.io.IOException;
 
 public interface SoundSource {
 
+    byte[] getByteBuffer();
     void record();
     int read(byte[] buffer) throws IOException;
     void stop() throws IOException;

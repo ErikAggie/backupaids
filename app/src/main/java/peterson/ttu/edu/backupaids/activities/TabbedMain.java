@@ -99,10 +99,10 @@ public class TabbedMain extends AppCompatActivity {
         // primary sections of the activity.
         SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
-        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout = findViewById(R.id.tabs);
 
         // Set up the ViewPager with the sections adapter.
-        NoSwipeIfActiveViewPager viewPager = (NoSwipeIfActiveViewPager) findViewById(R.id.container);
+        NoSwipeIfActiveViewPager viewPager = findViewById(R.id.container);
         viewPager.setTabLayout(tabLayout);
         viewPager.setAdapter(sectionsPagerAdapter);
 
@@ -138,7 +138,7 @@ public class TabbedMain extends AppCompatActivity {
      * Switch to the listen tab
      */
     /* package */ void showListenTab() {
-        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout = findViewById(R.id.tabs);
         tabLayout.getTabAt(0).select();
     }
 

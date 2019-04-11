@@ -65,7 +65,9 @@ public class DestinationFactory {
         // Set up the audio effects
         if ( preset != null) {
             AudioManager audioManager = context.getSystemService(AudioManager.class);
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preset.getVolumeAdjust(), 0);
+            if (audioManager != null) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preset.getVolumeAdjust(), 0);
+            }
             applyEffects(preset, audioTrack.getAudioSessionId());
         }
 

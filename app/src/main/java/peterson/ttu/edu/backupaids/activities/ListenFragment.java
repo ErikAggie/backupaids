@@ -52,9 +52,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
 
     private Runnable todoOnServiceStopped;
 
-    // For showing a popup with available connections
-    private ConnectionPopupFragment connectionPopup;
-
     private ConnectionController connectionController;
 
     /**
@@ -578,10 +575,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 updateMakeDiscoverableButton();
                 switch ( state) {
                     case STREAMING:
-                        if ( connectionPopup != null) {
-                            connectionPopup.dismiss();
-                            connectionPopup = null;
-                        }
                         break;
                     case FAILED:
                         // Should have a separate notification, so don't show anything here
@@ -589,10 +582,6 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                         break;
                     case STOPPED:
                         Toast.makeText(getContext(), "Connection to the other device was closed.", Toast.LENGTH_SHORT).show();
-                        if ( connectionPopup != null) {
-                            connectionPopup.dismiss();
-                            connectionPopup = null;
-                        }
                         if ( todoOnServiceStopped != null) {
                             todoOnServiceStopped.run();
                             todoOnServiceStopped = null;

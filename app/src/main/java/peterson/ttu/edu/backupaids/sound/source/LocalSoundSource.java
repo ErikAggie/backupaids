@@ -3,6 +3,8 @@ package peterson.ttu.edu.backupaids.sound.source;
 import android.media.AudioRecord;
 import android.util.Log;
 
+import peterson.ttu.edu.backupaids.util.Util;
+
 /**
  * Sound coming from a local source (phone mics or connected headset)
  */
@@ -17,6 +19,11 @@ public class LocalSoundSource implements SoundSource {
     }
 
     @Override
+    public byte[] getByteBuffer() {
+        return new byte[Util.LOCAL_MIN_BUFFER_SIZE];
+    }
+
+    @Override
     public void record() {
         audioRecord.startRecording();
     }
@@ -28,8 +35,7 @@ public class LocalSoundSource implements SoundSource {
             audioRecord.read(buffer, 0, buffer.length, AudioRecord.READ_NON_BLOCKING);
             firstRead = false;
         }
-        int amountRead = audioRecord.read(buffer, 0, buffer.length, AudioRecord.READ_NON_BLOCKING);
-        return amountRead;
+        return audioRecord.read(buffer, 0, buffer.length, AudioRecord.READ_NON_BLOCKING);
     }
 
     @Override

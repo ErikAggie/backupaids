@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -18,7 +17,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="4dp"
-                android:text="Welcome to Hearing Phone!"
+                android:text="@string/welcome_to_hearing_phone"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -34,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp"
-                android:text="Let's get you started"
+                android:text="@string/let_s_get_you_started"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -50,7 +49,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="4dp"
                 android:layout_marginStart="8dp"
-                android:text="There are 2 tabs:"
+                android:text="@string/there_are_2_tabs"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -79,7 +78,7 @@
                         android:id="@+id/textView5"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Listen: "
+                        android:text="@string/listen_colon"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -90,7 +89,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Listen to what the phone hears PLUS what another phone sends you"
+                        android:text="@string/listen_to_what_the_phone_hears"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
                         android:layout_margin="8dp" />
                 </TableRow>
@@ -103,7 +102,7 @@
                         android:id="@+id/textView7"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Speak:"
+                        android:text="@string/speak_colon"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -113,7 +112,7 @@
                         android:id="@+id/textView8"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Send sound to another phone (FM style)"
+                        android:text="@string/send_sound_to_another_phone_fm_style"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault"
                         android:layout_weight="1"
                         android:layout_margin="8dp" />
@@ -128,7 +127,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="4dp"
                 android:layout_marginStart="8dp"
-                android:text="Here are the buttons"
+                android:text="@string/here_are_the_buttons"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault"
@@ -169,7 +168,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_weight="1"
                         android:layout_margin="8dp"
-                        android:text="Start/stop"
+                        android:text="@string/start_stop"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
                 </TableRow>
 
@@ -185,7 +184,8 @@
                         android:layout_margin="8dp"
                         android:background="@android:color/transparent"
                         android:scaleType="fitCenter"
-                        app:srcCompat="@drawable/ic_phone_mic_blue" />
+                        app:srcCompat="@drawable/ic_phone_mic_blue"
+                        android:contentDescription="@string/microphone_button" />
 
                     <TextView
                         android:id="@+id/textView10"
@@ -194,7 +194,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_weight="1"
                         android:layout_margin="8dp"
-                        android:text="Switch between phone mic and headset mic"
+                        android:text="@string/switch_between_phone_mic_and_headset_mic"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
                 </TableRow>
 
@@ -210,7 +210,8 @@
                         android:layout_margin="8dp"
                         android:background="@android:color/transparent"
                         android:scaleType="fitCenter"
-                        app:srcCompat="@drawable/ic_phone_in_gray" />
+                        app:srcCompat="@drawable/ic_phone_in_gray"
+                        android:contentDescription="@string/phone_to_phone_button" />
 
                     <TextView
                         android:id="@+id/textView11"
@@ -219,7 +220,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_weight="1"
                         android:layout_margin="8dp"
-                        android:text="Listen for connections from another phone (either make a new connection or listen for an existing one)"
+                        android:text="@string/listen_for_connections_from_another_phone_either_make_a_new_connection_or_listen_for_an_existing_one"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
                 </TableRow>
 
@@ -235,7 +236,8 @@
                         android:layout_margin="8dp"
                         android:background="@android:color/transparent"
                         android:scaleType="fitCenter"
-                        app:srcCompat="@drawable/ic_equalizer" />
+                        app:srcCompat="@drawable/ic_equalizer"
+                        android:contentDescription="@string/presets_button" />
 
                     <TextView
                         android:id="@+id/textView12"
@@ -244,7 +246,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_weight="1"
                         android:layout_margin="8dp"
-                        android:text="Customize what you hear to your hearing needs, phone, and headphones"
+                        android:text="@string/customize_what_you_hear"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
                 </TableRow>
             </TableLayout>

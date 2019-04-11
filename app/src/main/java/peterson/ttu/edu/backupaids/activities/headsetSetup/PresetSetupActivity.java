@@ -126,7 +126,7 @@ public class PresetSetupActivity extends FragmentActivity implements VolumeSetFr
                             .setTitle("This preset exists.")
                             .setMessage("The preset already exists. Please choose a different name.")
                             .setPositiveButton("OK", null);
-                    // When dismissed, just show the original popop again
+                    // When dismissed, just show the original popup again
                     builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
                         @Override
                         public void onDismiss(DialogInterface dialog) {

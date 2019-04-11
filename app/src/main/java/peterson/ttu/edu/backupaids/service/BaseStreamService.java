@@ -19,7 +19,6 @@ import peterson.ttu.edu.backupaids.network.InputStreamHandler;
 import peterson.ttu.edu.backupaids.network.OutputStreamHandler;
 import peterson.ttu.edu.backupaids.network.ReadyConnectionMaker;
 import peterson.ttu.edu.backupaids.util.ConnectionType;
-import peterson.ttu.edu.backupaids.util.Util;
 import peterson.ttu.edu.backupaids.network.ConnectionMaker;
 import peterson.ttu.edu.backupaids.sound.destination.SoundDestination;
 import peterson.ttu.edu.backupaids.sound.source.SoundSource;
@@ -111,7 +110,7 @@ public abstract class BaseStreamService extends BaseService implements InputStre
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size
-            byte[] audioBuffer = new byte[Util.LOCAL_MIN_BUFFER_SIZE];
+            byte[] audioBuffer = soundSource.getByteBuffer();
 
             Log.i(TAG, "Ready to send/receive!");
 
