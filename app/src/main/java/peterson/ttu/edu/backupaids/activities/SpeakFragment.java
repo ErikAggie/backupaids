@@ -125,7 +125,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
 
                     @Override
                     public void permissionDenied() {
-                        tabbedMain.showListenTab();
+                        bluetoothNotAvailable();
                     }
                 });
             } else {
@@ -213,21 +213,26 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                 if ( resultCode == Activity.RESULT_OK) {
                     presentConnectionChoice();
                 } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setTitle("Cannot connect without Bluetooth");
-                    builder.setMessage("Please turn on Bluetooth before attempting to connect to another device. ");
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            TabbedMain activity = (TabbedMain) getActivity();
-                            activity.showListenTab();
-                        }
-                    });
+                    bluetoothNotAvailable();
                 }
                 break;
             default:
                 throw new RuntimeException("Unknown SpeakFragment request code: " + requestCode);
         }
+    }
+
+    private void bluetoothNotAvailable() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Cannot connect without Bluetooth");
+        builder.setMessage("Please turn on Bluetooth before attempting to connect to another device. ");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                TabbedMain activity = (TabbedMain) getActivity();
+                activity.showListenTab();
+            }
+        });
+        builder.show();
     }
 
     //----------------------------------------------------------------------------------------------
@@ -275,6 +280,7 @@ public class SpeakFragment extends Fragment implements View.OnClickListener, Con
                     activity.showListenTab();
                 }
             });
+            builder.show();
         }
     }
 
