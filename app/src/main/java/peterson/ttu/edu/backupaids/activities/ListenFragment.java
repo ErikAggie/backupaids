@@ -501,6 +501,7 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
             connectionController.stop();
             connectionController = null;
         }
+        updateMakeDiscoverableButton();
     }
 
     private void stopPlaying() {
@@ -525,7 +526,9 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
                 updatePresetViewer();
                 break;
             case REQUEST_BT_DISCOVERABLE:
-                if ( resultCode != Activity.RESULT_CANCELED) {
+                if ( resultCode == Activity.RESULT_CANCELED) {
+                    stopStreaming();
+                } else {
                     startConnectionController(true);
                 }
                 break;
