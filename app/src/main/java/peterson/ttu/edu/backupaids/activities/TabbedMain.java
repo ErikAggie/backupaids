@@ -1,6 +1,7 @@
 package peterson.ttu.edu.backupaids.activities;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
@@ -25,6 +26,7 @@ import android.view.ViewGroup;
 
 import peterson.ttu.edu.backupaids.R;
 import peterson.ttu.edu.backupaids.service.StreamSoundService;
+import peterson.ttu.edu.backupaids.util.Util;
 
 public class TabbedMain extends AppCompatActivity {
 
@@ -73,6 +75,9 @@ public class TabbedMain extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tabbed_main);
+
+        Util.setUpSampleRates((AudioManager) this.getSystemService(Context.AUDIO_SERVICE));
+
 
         // Without the "record audio" permission this app is useless...
         if (ContextCompat.checkSelfPermission(this, Permission.REQUEST_RECORD_AUDIO_PERMISSION.getName())

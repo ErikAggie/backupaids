@@ -32,18 +32,29 @@ public class Util {
     public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
     public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
 
-    public static final int LOCAL_SAMPLE_RATE = 44100;
-    public static final int REMOTE_SAMPLE_RATE = 22050;
+    public static int LOCAL_SAMPLE_RATE;
+    public static int REMOTE_SAMPLE_RATE;
 
-    public static final int LOCAL_MIN_BUFFER_SIZE =
-            AudioRecord.getMinBufferSize(LOCAL_SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_STEREO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-    public static final int REMOTE_MIN_BUFFER_SIZE =
-            AudioRecord.getMinBufferSize(REMOTE_SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
+    public static int LOCAL_MIN_BUFFER_SIZE;
+    public static int REMOTE_MIN_BUFFER_SIZE;
 
+    public static void setUpSampleRates(AudioManager audioManager) {
+        int preferredRate = Integer.parseInt(audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE));
+
+        // 48000 ought to be fine, but the equalizer balks at it
+        LOCAL_SAMPLE_RATE = Math.min(44100, preferredRate);
+        // Maximum we can stream is 22050, so make sure we cap things at that rate
+        REMOTE_SAMPLE_RATE = Math.min(22050, preferredRate);
+
+        LOCAL_MIN_BUFFER_SIZE =
+                AudioRecord.getMinBufferSize(LOCAL_SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_STEREO,
+                        AudioFormat.ENCODING_PCM_16BIT);
+        REMOTE_MIN_BUFFER_SIZE =
+                AudioRecord.getMinBufferSize(REMOTE_SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT);
+    }
 
     public static final String SELECTED_PRESET_ITEM = "SelectedPreset";
 
