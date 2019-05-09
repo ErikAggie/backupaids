@@ -1,7 +1,6 @@
 package peterson.ttu.edu.backupaids.sound.source;
 
 import android.media.AudioRecord;
-import android.util.Log;
 
 import peterson.ttu.edu.backupaids.util.Util;
 
@@ -20,7 +19,7 @@ public class LocalSoundSource implements SoundSource {
 
     @Override
     public byte[] getByteBuffer() {
-        return new byte[Util.LOCAL_MIN_BUFFER_SIZE];
+        return new byte[Util.getLocalMinBufferSize()];
     }
 
     @Override

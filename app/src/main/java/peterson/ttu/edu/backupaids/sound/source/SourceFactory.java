@@ -29,10 +29,10 @@ public class SourceFactory {
     public static SoundSource createCamcorderAudioRecord(Context context) throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.CAMCORDER,
-                        Util.LOCAL_SAMPLE_RATE,
+                        Util.getLocalSampleRate(),
                         AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT,
-                        Util.LOCAL_MIN_BUFFER_SIZE);
+                        Util.getLocalMinBufferSize());
 
         Preferences.MicToUse micToUse = Preferences.getInstance(context).getMicToUse();
         switch (micToUse) {
@@ -69,10 +69,10 @@ public class SourceFactory {
     public static SoundSource createMicAudioRecord() throws IOException {
         AudioRecord audioRecord =
                 new AudioRecord(MediaRecorder.AudioSource.MIC,
-                        Util.REMOTE_SAMPLE_RATE,
+                        Util.getRemoteSampleRate(),
                         AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT,
-                        Util.REMOTE_MIN_BUFFER_SIZE);
+                        Util.getRemoteMinBufferSize());
         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(TAG, "Audio Record won't initialize!");
             throw new IOException("Audio Record won't initialize!");

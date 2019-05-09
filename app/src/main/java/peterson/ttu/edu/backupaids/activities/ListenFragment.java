@@ -309,6 +309,20 @@ public class ListenFragment extends Fragment implements View.OnClickListener, Co
     }
 
     private void listenForConnections() {
+        if ( !Util.canSendData()) {
+            new AlertDialog.Builder(getContext())
+                    .setTitle("Unable to connect to another device")
+                    .setMessage("We're sorry, but this device doesn't support a high enough audio sampling rate to play data from another device.")
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Do nothing...
+                        }
+                    })
+                    .show();
+            return;
+        }
         AudioManager audioManager = getActivity().getApplicationContext().getSystemService(AudioManager.class);
         if (Util.noHeadphonesConnected(audioManager)) {
             // No headphones=no reason to try to stream (would just be annoying if we waited

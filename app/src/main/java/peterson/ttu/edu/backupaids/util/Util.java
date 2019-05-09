@@ -32,19 +32,42 @@ public class Util {
     public static final String LISTEN_BUDDY_NAME = "HearingPhoneListen";
     public static final String SPEAK_BUDDY_NAME = "HearingPhoneSpeak";
 
-    public static int LOCAL_SAMPLE_RATE;
-    public static int REMOTE_SAMPLE_RATE;
+    private static int LOCAL_SAMPLE_RATE;
+    public static int getLocalSampleRate() {
+        return LOCAL_SAMPLE_RATE;
+    }
 
-    public static int LOCAL_MIN_BUFFER_SIZE;
-    public static int REMOTE_MIN_BUFFER_SIZE;
+    private static int REMOTE_SAMPLE_RATE;
+    public static int getRemoteSampleRate() {
+        return REMOTE_SAMPLE_RATE;
+    }
+
+    private static boolean CAN_SEND_DATA = true;
+    public static boolean canSendData() {
+        return CAN_SEND_DATA;
+    }
+
+    private static int LOCAL_MIN_BUFFER_SIZE;
+    public static int getLocalMinBufferSize() {
+        return LOCAL_MIN_BUFFER_SIZE;
+    }
+
+    private static int REMOTE_MIN_BUFFER_SIZE;
+    public static int getRemoteMinBufferSize() {
+        return REMOTE_MIN_BUFFER_SIZE;
+    }
 
     public static void setUpSampleRates(AudioManager audioManager) {
         int preferredRate = Integer.parseInt(audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE));
 
         // 48000 ought to be fine, but the equalizer balks at it
         LOCAL_SAMPLE_RATE = Math.min(44100, preferredRate);
-        // Maximum we can stream is 22050, so make sure we cap things at that rate
-        REMOTE_SAMPLE_RATE = Math.min(22050, preferredRate);
+
+        // We expect to stream at 22050, so if the device can't do that, don't bother trying...
+        REMOTE_SAMPLE_RATE = 22050;
+        if ( REMOTE_SAMPLE_RATE > preferredRate) {
+            CAN_SEND_DATA = false;
+        }
 
         LOCAL_MIN_BUFFER_SIZE =
                 AudioRecord.getMinBufferSize(LOCAL_SAMPLE_RATE,
@@ -116,5 +139,4 @@ public class Util {
         }
         return true;
     }
-
 }

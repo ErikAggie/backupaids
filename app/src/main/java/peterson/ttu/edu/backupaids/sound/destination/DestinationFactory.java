@@ -32,8 +32,8 @@ public class DestinationFactory {
 
         // Mono for remote source; stereo for local source
         int monoOrStereo = remote ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
-        int sampleRate = remote ? Util.REMOTE_SAMPLE_RATE : Util.LOCAL_SAMPLE_RATE;
-        int bufferSize = remote ? Util.REMOTE_MIN_BUFFER_SIZE : Util.LOCAL_MIN_BUFFER_SIZE;
+        int sampleRate = remote ? Util.getRemoteSampleRate() : Util.getLocalSampleRate();
+        int bufferSize = remote ? Util.getRemoteMinBufferSize() : Util.getLocalMinBufferSize();
 
         AudioAttributes audioAttributes =
                 new AudioAttributes.Builder()

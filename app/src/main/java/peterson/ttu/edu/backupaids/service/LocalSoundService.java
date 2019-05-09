@@ -102,7 +102,7 @@ public class LocalSoundService extends BaseService implements ServiceNotificatio
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
             // Short buffer would be half of the buffer size; byte buffer is the full size
-            byte[] audioBuffer = new byte[Util.LOCAL_MIN_BUFFER_SIZE];
+            byte[] audioBuffer = new byte[Util.getLocalMinBufferSize()];
 
             soundSource.record();
             soundDestination.play();

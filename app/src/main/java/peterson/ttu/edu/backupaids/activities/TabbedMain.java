@@ -77,6 +77,10 @@ public class TabbedMain extends AppCompatActivity {
         setContentView(R.layout.activity_tabbed_main);
 
         Util.setUpSampleRates((AudioManager) this.getSystemService(Context.AUDIO_SERVICE));
+        if ( !Util.canSendData()) {
+            // We can't send remote audio
+            findViewById(R.id.tabs).setVisibility(View.INVISIBLE);
+        }
 
 
         // Without the "record audio" permission this app is useless...

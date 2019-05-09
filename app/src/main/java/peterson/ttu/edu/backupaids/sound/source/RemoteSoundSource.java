@@ -22,7 +22,7 @@ public class RemoteSoundSource implements SoundSource {
     @Override
     public byte[] getByteBuffer() {
         // Make it 2 to add in some extra buffering
-        return new byte[Util.LOCAL_MIN_BUFFER_SIZE*2];
+        return new byte[Util.getLocalMinBufferSize() *2];
     }
 
     @Override
