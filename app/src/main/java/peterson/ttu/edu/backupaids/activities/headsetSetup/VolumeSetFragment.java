@@ -195,7 +195,7 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
             mAudioTrack.release();
         }
 
-        byte[] tone = new byte[100000];
+        byte[] tone = new byte[150000];
         int amountRead;
         try
         {
@@ -207,17 +207,17 @@ public class VolumeSetFragment extends Fragment implements View.OnClickListener{
         }
 
         mAudioTrack = new AudioTrack.Builder().setAudioAttributes(
-                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(Util.getLocalSampleRate()).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
                 .setBufferSizeInBytes(tone.length)
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build();
 
         mAudioTrack.write(tone, 0, amountRead);
-        mAudioTrack.setPlaybackHeadPosition(44); // To avoid a click
+        mAudioTrack.setPlaybackHeadPosition(44); // To avoid header info
 
         // Play this forever
-        mAudioTrack.setLoopPoints(0, amountRead / 4 - 1, -1);
+        mAudioTrack.setLoopPoints(0, amountRead / 4, -1);
         mAudioTrack.play();
 
         mPlaying = true;
