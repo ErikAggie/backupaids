@@ -18,6 +18,9 @@
     <uses-permission
         android:name="android.permission.ACCESS_COARSE_LOCATION"
         android:required="true" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        android:required="true"/>
     <!-- These are for WiFi direct
     <uses-permission
         android:name="android.permission.ACCESS_WIFI_STATE"
