@@ -6,8 +6,8 @@ android {
         applicationId "peterson.ttu.edu.backupaids"
         minSdkVersion 23
         targetSdkVersion 28
-        versionCode 10
-        versionName "0.5.3"
+        versionCode 11
+        versionName "0.6"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
